@@ -1,0 +1,7 @@
+name: Customer Content Example
+version: 1
+volume: 0.4
+
+body:
+  - log: "customer-hosted script started"
+  - play: { signal: chime, wait: true }

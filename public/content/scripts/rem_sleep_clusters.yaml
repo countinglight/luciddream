@@ -1,0 +1,21 @@
+# Buka-style cadence: 
+#The session description consist of 1) description of the cluster; 2) schedule of clusters.
+#A typical cluster would be: file 5 30 (5 replays with a 30 second interval).
+
+
+name: Buka Cycles
+version: 1
+volume: 0.6
+
+body:
+  - log: "REM run started"
+  - wait: 5m
+  - with: { gain: 0.2 }
+  - repeat: infinite
+    until: { elapsed: { gte: 2h } }
+    body:
+      - repeat: 6
+        body:
+          - play: { signal:chime, wait: true }
+          - wait: 40s
+          
