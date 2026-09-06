@@ -39,6 +39,12 @@ describe("parseDuration", () => {
       long: 90 * 60_000,
     };
 
+    it("uses the built-in defaults when no preset map is provided", () => {
+      expect(parseDuration("$short")).toBe(300_000);
+      expect(parseDuration("$medium")).toBe(1_200_000);
+      expect(parseDuration("$long")).toBe(5_400_000);
+    });
+
     it("expands a $preset macro through the provided presets", () => {
       expect(parseDuration("$short", presets)).toBe(300_000);
       expect(parseDuration("$medium", presets)).toBe(1_200_000);
@@ -48,10 +54,6 @@ describe("parseDuration", () => {
     it("rejects an unknown preset name, naming the macro", () => {
       expect(() => parseDuration("$huge", presets)).toThrow(DurationParseError);
       expect(() => parseDuration("$huge", presets)).toThrow("$huge");
-    });
-
-    it("rejects a macro when no presets are provided", () => {
-      expect(() => parseDuration("$short")).toThrow(DurationParseError);
     });
   });
 });

@@ -61,15 +61,21 @@ body:
   });
 
   it("rejects an unknown preset macro, naming the failing node", () => {
-    expect(() => parseScript("name: Bad\nbody:\n  - wait: $nope\n")).toThrow(
-      ScriptParseError,
-    );
-    expect(() => parseScript("name: Bad\nbody:\n  - wait: $nope\n")).toThrow(
-      "$.body[0].wait",
-    );
-    expect(() => parseScript("name: Bad\nbody:\n  - wait: $nope\n")).toThrow(
-      "$nope",
-    );
+    expect(() =>
+      parseScript("name: Bad\nbody:\n  - wait: $nope\n", {
+        durationPresets: {},
+      }),
+    ).toThrow(ScriptParseError);
+    expect(() =>
+      parseScript("name: Bad\nbody:\n  - wait: $nope\n", {
+        durationPresets: {},
+      }),
+    ).toThrow("$.body[0].wait");
+    expect(() =>
+      parseScript("name: Bad\nbody:\n  - wait: $nope\n", {
+        durationPresets: {},
+      }),
+    ).toThrow("$nope");
   });
 
   it("parses a finite repeat with a nested body", () => {

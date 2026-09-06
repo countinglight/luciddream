@@ -48,6 +48,12 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "generate:bundled-scripts": "node ./scripts/sync-bundled-scripts.js",
+    "preweb": "npm run generate:bundled-scripts",
+    "prebuild:web": "npm run generate:bundled-scripts",
+    "prepreview:web": "npm run generate:bundled-scripts",
+    "predeploy:web": "npm run generate:bundled-scripts",
+    "pretest": "npm run generate:bundled-scripts",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",

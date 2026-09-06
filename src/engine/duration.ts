@@ -20,15 +20,21 @@ const MACRO_PATTERN = /^\$([A-Za-z][A-Za-z0-9]*)$/;
  * `$short` / `$medium` / `$long` from the Settings screen's Period presets. */
 export type DurationPresets = Record<string, number>;
 
+export const DEFAULT_DURATION_PRESETS: DurationPresets = {
+  short: 5 * 60_000,
+  medium: 20 * 60_000,
+  long: 90 * 60_000,
+};
+
 export class DurationParseError extends Error {}
 
 /** Parses a duration string into milliseconds. Throws DurationParseError on
  * anything that isn't a non-empty run of `<number><unit>` tokens. A
- * `$name` token (bash-style) expands through `presets`; an unknown preset
- * name is a parse error naming the macro. */
+ * `$name` token (bash-style) expands through `presets`; if omitted, the
+ * project defaults are used. */
 export function parseDuration(
   input: string,
-  presets?: DurationPresets,
+  presets: DurationPresets = DEFAULT_DURATION_PRESETS,
 ): number {
   const trimmed = input.trim();
   if (trimmed.length === 0) {
@@ -37,7 +43,7 @@ export function parseDuration(
 
   const macro = MACRO_PATTERN.exec(trimmed);
   if (macro) {
-    const value = presets?.[macro[1]];
+    const value = presets[macro[1]];
     if (value === undefined) {
       throw new DurationParseError(
         `Unknown period preset "$${macro[1]}" — configure presets like $short, $medium, or $long in Settings.`,
