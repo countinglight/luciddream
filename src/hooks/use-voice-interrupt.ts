@@ -1,5 +1,5 @@
 import { RecordingPresets, requestRecordingPermissionsAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { DEFAULT_VOICE_INTERRUPT_CONFIG, VoiceInterruptDetector, type VoiceInterruptEvent } from '@/session/voice-interrupt';
 
@@ -19,11 +19,18 @@ const POLL_INTERVAL_MS = 500;
  * expo-audio has no imperative recorder constructor — `useAudioRecorder` is
  * hook-only (see AudioModule.types.d.ts), unlike `createAudioPlayer`.
  */
-export function useVoiceInterrupt(enabled: boolean, onEvent: (event: VoiceInterruptEvent) => void): void {
+export type VoiceInterruptMonitor = {
+  isRecording: boolean;
+  meteringDb: number | null;
+  permission: 'idle' | 'requesting' | 'granted' | 'denied' | 'error';
+};
+
+export function useVoiceInterrupt(enabled: boolean, onEvent: (event: VoiceInterruptEvent) => void): VoiceInterruptMonitor {
   const recorder = useAudioRecorder(RECORDING_OPTIONS);
   const state = useAudioRecorderState(recorder, POLL_INTERVAL_MS);
   const detectorRef = useRef<VoiceInterruptDetector | null>(null);
   const onEventRef = useRef(onEvent);
+  const [permission, setPermission] = useState<VoiceInterruptMonitor['permission']>('idle');
 
   useEffect(() => {
     onEventRef.current = onEvent;
@@ -34,9 +41,15 @@ export function useVoiceInterrupt(enabled: boolean, onEvent: (event: VoiceInterr
     detectorRef.current = new VoiceInterruptDetector(DEFAULT_VOICE_INTERRUPT_CONFIG);
     let cancelled = false;
 
-    requestRecordingPermissionsAsync().then(({ granted }) => {
-      if (granted && !cancelled) recorder.record();
-    });
+    requestRecordingPermissionsAsync()
+      .then(({ granted }) => {
+        if (cancelled) return;
+        setPermission(granted ? 'granted' : 'denied');
+        if (granted) recorder.record();
+      })
+      .catch(() => {
+        if (!cancelled) setPermission('error');
+      });
 
     return () => {
       cancelled = true;
@@ -50,4 +63,10 @@ export function useVoiceInterrupt(enabled: boolean, onEvent: (event: VoiceInterr
     const event = detectorRef.current.feed(state.metering, Date.now());
     if (event) onEventRef.current(event);
   }, [state.isRecording, state.metering]);
+
+  return {
+    isRecording: state.isRecording,
+    meteringDb: state.metering ?? null,
+    permission: enabled ? permission : 'idle',
+  };
 }
