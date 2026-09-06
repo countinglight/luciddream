@@ -14,17 +14,39 @@ const UNIT_MS: Record<string, number> = {
 
 const DURATION_TOKEN = /(\d+)(ms|s|m|h)/g;
 
+const MACRO_PATTERN = /^\$([A-Za-z][A-Za-z0-9]*)$/;
+
+/** Named period values (spec §3.2) that scripts reference with `$name` — e.g.
+ * `$short` / `$medium` / `$long` from the Settings screen's Period presets. */
+export type DurationPresets = Record<string, number>;
+
 export class DurationParseError extends Error {}
 
 /** Parses a duration string into milliseconds. Throws DurationParseError on
- * anything that isn't a non-empty run of `<number><unit>` tokens. */
-export function parseDuration(input: string): number {
+ * anything that isn't a non-empty run of `<number><unit>` tokens. A
+ * `$name` token (bash-style) expands through `presets`; an unknown preset
+ * name is a parse error naming the macro. */
+export function parseDuration(
+  input: string,
+  presets?: DurationPresets,
+): number {
   const trimmed = input.trim();
   if (trimmed.length === 0) {
-    throw new DurationParseError('Duration is empty.');
+    throw new DurationParseError("Duration is empty.");
   }
 
-  let matched = '';
+  const macro = MACRO_PATTERN.exec(trimmed);
+  if (macro) {
+    const value = presets?.[macro[1]];
+    if (value === undefined) {
+      throw new DurationParseError(
+        `Unknown period preset "$${macro[1]}" — configure presets like $short, $medium, or $long in Settings.`,
+      );
+    }
+    return value;
+  }
+
+  let matched = "";
   let totalMs = 0;
   let sawToken = false;
 
@@ -37,7 +59,7 @@ export function parseDuration(input: string): number {
 
   if (!sawToken || matched.length !== trimmed.length) {
     throw new DurationParseError(
-      `Invalid duration "${input}" — expected tokens like "10s", "2m", or "1h30m".`
+      `Invalid duration "${input}" — expected tokens like "10s", "2m", or "1h30m".`,
     );
   }
 
@@ -47,7 +69,7 @@ export function parseDuration(input: string): number {
 /** Formats milliseconds back into a compact duration string, largest unit
  * first, for display in logs and the UI. Zero renders as "0s". */
 export function formatDuration(ms: number): string {
-  if (ms <= 0) return '0s';
+  if (ms <= 0) return "0s";
 
   const hours = Math.floor(ms / UNIT_MS.h);
   const minutes = Math.floor((ms % UNIT_MS.h) / UNIT_MS.m);
@@ -60,5 +82,5 @@ export function formatDuration(ms: number): string {
   if (seconds > 0) parts.push(`${seconds}s`);
   if (millis > 0 && hours === 0 && minutes === 0) parts.push(`${millis}ms`);
 
-  return parts.join('');
+  return parts.join("");
 }
