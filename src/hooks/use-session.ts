@@ -1,18 +1,38 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { collectSignalNames, ExpoAudioPort, firstSignalName, resolveSignalMap } from '@/audio';
-import { getLibraryFileStore } from '@/context/library-context';
-import { useSettings } from '@/context/settings-context';
-import { parseScript, type EngineEvent, type LogPort } from '@/engine';
-import { describeEvent, FanOutLogPort, FilteringLogPort, JsonlLogPort } from '@/logging';
-import { loadRunIndex, saveRunIndex, upsertRun } from '@/logging/run-index';
-import { ManualContextProvider } from '@/runtime/context-providers';
-import { startSession, type SessionController, type SessionPhase } from '@/session';
-import type { VoiceInterruptEvent } from '@/session/voice-interrupt';
-import type { LibraryScript, LibrarySignal } from '@/storage/library-types';
-import { resolveScriptText } from '@/storage/scripts';
+import {
+  collectSignalNames,
+  ExpoAudioPort,
+  firstSignalName,
+  resolveSignalMap,
+} from "@/audio";
+import { getLibraryFileStore } from "@/context/library-context";
+import { useSettings } from "@/context/settings-context";
+import { parseScript, type EngineEvent, type LogPort } from "@/engine";
+import {
+  describeEvent,
+  FanOutLogPort,
+  FilteringLogPort,
+  JsonlLogPort,
+} from "@/logging";
+import { loadRunIndex, saveRunIndex, upsertRun } from "@/logging/run-index";
+import { ManualContextProvider } from "@/runtime/context-providers";
+import {
+  startSession,
+  type SessionController,
+  type SessionPhase,
+} from "@/session";
+import type { VoiceInterruptEvent } from "@/session/voice-interrupt";
+import type { LibraryScript, LibrarySignal } from "@/storage/library-types";
+import { resolveScriptText } from "@/storage/scripts";
 
-export type SessionStatus = 'idle' | 'starting' | 'running' | 'completed' | 'stopped' | 'error';
+export type SessionStatus =
+  | "idle"
+  | "starting"
+  | "running"
+  | "completed"
+  | "stopped"
+  | "error";
 
 const MAX_RECENT_EVENTS = 6;
 
@@ -26,21 +46,34 @@ function generateRunId(): string {
   return `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function persistRunStart(id: string, scriptName: string, startedAt: number): Promise<void> {
+async function persistRunStart(
+  id: string,
+  scriptName: string,
+  startedAt: number,
+): Promise<void> {
   const runs = await loadRunIndex();
-  await saveRunIndex(upsertRun(runs, { id, scriptName, startedAt, eventCount: 0 }));
+  await saveRunIndex(
+    upsertRun(runs, { id, scriptName, startedAt, eventCount: 0 }),
+  );
 }
 
 async function persistRunEnd(
   id: string,
   scriptName: string,
   startedAt: number,
-  event: Extract<EngineEvent, { type: 'run.stop' }>,
+  event: Extract<EngineEvent, { type: "run.stop" }>,
   eventCount: number,
 ): Promise<void> {
   const runs = await loadRunIndex();
   await saveRunIndex(
-    upsertRun(runs, { id, scriptName, startedAt, endedAt: event.at, eventCount, reason: event.reason }),
+    upsertRun(runs, {
+      id,
+      scriptName,
+      startedAt,
+      endedAt: event.at,
+      eventCount,
+      reason: event.reason,
+    }),
   );
 }
 
@@ -52,7 +85,7 @@ async function persistRunEnd(
  */
 export function useSession(signals: LibrarySignal[]) {
   const { settings } = useSettings();
-  const [status, setStatus] = useState<SessionStatus>('idle');
+  const [status, setStatus] = useState<SessionStatus>("idle");
   const [scriptName, setScriptName] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -74,15 +107,19 @@ export function useSession(signals: LibrarySignal[]) {
   // beyond it) only knows `undefined` for that.
   useEffect(() => {
     const { sleepStage, ...rest } = settings.simulatedContext;
-    context.set({ ...rest, sleepStage: sleepStage === 'none' ? undefined : sleepStage });
+    context.set({
+      ...rest,
+      sleepStage: sleepStage === "none" ? undefined : sleepStage,
+    });
   }, [context, settings.simulatedContext]);
 
   useEffect(() => {
-    if (status !== 'running' || startedAt === null) return;
+    if (status !== "running" || startedAt === null) return;
     const id = setInterval(() => {
       const now = Date.now();
       setElapsedMs(now - startedAt);
-      if (phaseStartedAtRef.current !== null) setPhaseElapsedMs(now - phaseStartedAtRef.current);
+      if (phaseStartedAtRef.current !== null)
+        setPhaseElapsedMs(now - phaseStartedAtRef.current);
     }, 1000);
     return () => clearInterval(id);
   }, [status, startedAt]);
@@ -91,29 +128,38 @@ export function useSession(signals: LibrarySignal[]) {
     async (selectedPhases: SelectedRunPhase[], masterVolume: number) => {
       if (sessionRef.current) return; // one run at a time
       if (selectedPhases.length !== 3) {
-        setStatus('error');
-        setErrorMessage('A run requires the three fixed phases.');
+        setStatus("error");
+        setErrorMessage("A run requires the three fixed phases.");
         return;
       }
-      if (!selectedPhases.some((phase) => (phase.index === 1 || phase.index === 2) && phase.script)) {
-        setStatus('error');
-        setErrorMessage('Choose a script for Early Sleep or Wake Up (at least one is required).');
+      if (
+        !selectedPhases.some(
+          (phase) => (phase.index === 1 || phase.index === 2) && phase.script,
+        )
+      ) {
+        setStatus("error");
+        setErrorMessage(
+          "Choose a script for Early Sleep or Wake Up (at least one is required).",
+        );
         return;
       }
       const populatedPhases = selectedPhases.filter(
-        (phase): phase is { index: number; label: string; script: LibraryScript } => phase.script !== null,
+        (
+          phase,
+        ): phase is { index: number; label: string; script: LibraryScript } =>
+          phase.script !== null,
       );
       if (populatedPhases.length === 0) {
-        setStatus('error');
-        setErrorMessage('Choose at least one script before starting.');
+        setStatus("error");
+        setErrorMessage("Choose at least one script before starting.");
         return;
       }
 
       const runName = selectedPhases
-        .map((phase) => `${phase.label}: ${phase.script?.name ?? 'Empty'}`)
-        .join(' · ');
+        .map((phase) => `${phase.label}: ${phase.script?.name ?? "Empty"}`)
+        .join(" · ");
 
-      setStatus('starting');
+      setStatus("starting");
       setErrorMessage(null);
       setScriptName(runName);
       setActivePhaseLabel(null);
@@ -135,14 +181,25 @@ export function useSession(signals: LibrarySignal[]) {
             return {
               index: phase.index,
               label: phase.label,
-              script: { ...parseScript(text), volume: masterVolume },
+              script: {
+                ...parseScript(text, {
+                  durationPresets: settings.periodPresets,
+                }),
+                volume: masterVolume,
+              },
             };
           }),
         );
         const signalNames = [
-          ...new Set(phases.flatMap((phase) => [...collectSignalNames(phase.script)])),
+          ...new Set(
+            phases.flatMap((phase) => [...collectSignalNames(phase.script)]),
+          ),
         ];
-        const sourceMap = await resolveSignalMap(signalNames, signals, fileStore);
+        const sourceMap = await resolveSignalMap(
+          signalNames,
+          signals,
+          fileStore,
+        );
 
         const id = generateRunId();
         const started = Date.now();
@@ -153,31 +210,48 @@ export function useSession(signals: LibrarySignal[]) {
           log: (event) => {
             eventCountRef.current += 1;
             setLastEvent(event);
-            setRecentEvents((prev) => [...prev, event].slice(-MAX_RECENT_EVENTS));
-            if (event.type === 'error') setErrorMessage(event.message);
-            if (event.type === 'phase.start') {
+            setRecentEvents((prev) =>
+              [...prev, event].slice(-MAX_RECENT_EVENTS),
+            );
+            if (event.type === "error") setErrorMessage(event.message);
+            if (event.type === "phase.start") {
               setActivePhaseLabel(event.phase);
               setActiveScriptName(event.scriptName);
               phaseStartedAtRef.current = event.at;
               setPhaseElapsedMs(0);
             }
-            if (event.type === 'run.stop') {
+            if (event.type === "run.stop") {
               finishedBeforeStartReturned = true;
-              setStatus(event.reason === 'error' ? 'error' : event.reason === 'stopped' ? 'stopped' : 'completed');
+              setStatus(
+                event.reason === "error"
+                  ? "error"
+                  : event.reason === "stopped"
+                    ? "stopped"
+                    : "completed",
+              );
               sessionRef.current = null;
-              void persistRunEnd(id, runName, started, event, eventCountRef.current);
+              void persistRunEnd(
+                id,
+                runName,
+                started,
+                event,
+                eventCountRef.current,
+              );
             }
           },
         };
         const log = new FanOutLogPort([
-          new FilteringLogPort(new JsonlLogPort(id, fileStore), settings.logCategories),
+          new FilteringLogPort(
+            new JsonlLogPort(id, fileStore),
+            settings.logCategories,
+          ),
           uiLog,
         ]);
         failStartedSession = (message) => {
           const at = Date.now();
-          log.log({ type: 'run.start', at: started, scriptName: runName });
-          log.log({ type: 'error', at, message });
-          log.log({ type: 'run.stop', at, reason: 'error' });
+          log.log({ type: "run.start", at: started, scriptName: runName });
+          log.log({ type: "error", at, message });
+          log.log({ type: "run.stop", at, reason: "error" });
         };
 
         setStartedAt(started);
@@ -193,18 +267,24 @@ export function useSession(signals: LibrarySignal[]) {
         });
         if (!finishedBeforeStartReturned) {
           sessionRef.current = session;
-          setStatus('running');
+          setStatus("running");
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (failStartedSession) failStartedSession(message);
         else {
-          setStatus('error');
+          setStatus("error");
           setErrorMessage(message);
         }
       }
     },
-    [context, signals, settings.audioFocus, settings.logCategories],
+    [
+      context,
+      signals,
+      settings.audioFocus,
+      settings.logCategories,
+      settings.periodPresets,
+    ],
   );
 
   const stop = useCallback(() => {
@@ -221,7 +301,9 @@ export function useSession(signals: LibrarySignal[]) {
     async (item: LibraryScript, volume: number) => {
       const fileStore = getLibraryFileStore();
       const text = await resolveScriptText(item, fileStore);
-      const script = parseScript(text);
+      const script = parseScript(text, {
+        durationPresets: settings.periodPresets,
+      });
       const signal = firstSignalName(script);
       if (!signal) return;
 
@@ -230,7 +312,7 @@ export function useSession(signals: LibrarySignal[]) {
       const handle = await audio.play(signal, { gain: volume, rate: 1 });
       handle.finished.then(() => audio.release()).catch(() => {});
     },
-    [signals],
+    [signals, settings.periodPresets],
   );
 
   return {
