@@ -43,14 +43,14 @@ cheaply as `expo start --web`.
 
 ### 2.1 Domain concepts
 
-| Concept | Meaning |
-|---|---|
-| **Signal** | A named short audio file. `{ name, source, gain? }`. `name` is the moniker scripts refer to. |
-| **Script** | A YAML document defining what to play, when, how many times and under what conditions. |
-| **Phase** | One of three fixed v1 slots: Pre-sleep Training, Early Sleep, or Wake Up. A populated phase executes one selected script. |
-| **Run** | One ordered execution of the three-phase plan, from Start to Stop/completion. Produces exactly one log file. |
-| **Context** | Live values a script can branch on: elapsed time, clock, and wearable readings (`hr`, `hrv`, `rem`, `sleepStage`). |
-| **Event** | One timestamped line in the run log. |
+| Concept     | Meaning                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Signal**  | A named short audio file. `{ name, source, gain? }`. `name` is the moniker scripts refer to.                              |
+| **Script**  | A YAML document defining what to play, when, how many times and under what conditions.                                    |
+| **Phase**   | One of three fixed v1 slots: Pre-sleep Training, Early Sleep, or Wake Up. A populated phase executes one selected script. |
+| **Run**     | One ordered execution of the three-phase plan, from Start to Stop/completion. Produces exactly one log file.              |
+| **Context** | Live values a script can branch on: elapsed time, clock, and wearable readings (`hr`, `hrv`, `rem`, `sleepStage`).        |
+| **Event**   | One timestamped line in the run log.                                                                                      |
 
 ### 2.2 The night, end to end (primary use case)
 
@@ -82,7 +82,7 @@ time, current step description, next scheduled event, and a live latest-events s
 master volume initializes every phase; a script's internal volume changes do not leak into the next
 phase. This is the only screen with a running-state layout.
 
-**Library** — two sections, *Signals* and *Scripts*. Each entry shows name, source badge
+**Library** — two sections, _Signals_ and _Scripts_. Each entry shows name, source badge
 (`bundled` / `url` / `file`) and resolution status. A `url`-sourced entry additionally shows an
 **offline badge** (saved locally / not saved) and a **Save offline** / **Remove local copy** action
 (§4.5). Other actions: add from URL, add from file, re-resolve, remove, preview (signals) / view
@@ -94,7 +94,9 @@ event timeline. Actions per run: share, delete. Global action: delete all. Loggi
 nothing leaves the device except a log the user explicitly shares.
 
 **Settings** — theme (system/light/dark), master default volume, per-category logging toggles
-(playback / context / engine / errors), audio focus behaviour (duck vs. exclusive), a
+(playback / context / engine / errors), audio focus behaviour (duck vs. exclusive), **Period
+presets** (T-shirt-sized `short` / `medium` / `long` period values that scripts reference as
+`$short` / `$medium` / `$long` — §3.2), a
 **Simulated context** panel (§4.3) for testing conditionals without a wearable, and a
 **Voice interrupt** control (off / gentle / stop — §4.6).
 
@@ -129,25 +131,25 @@ mapping whose key names the node type — the parser is a validator, not a gramm
 ```yaml
 name: MILD with REM targeting
 version: 1
-volume: 0.4                # master gain for this script, 0..1
+volume: 0.4 # master gain for this script, 0..1
 
 body:
   - log: "run started"
-  - wait: 90m              # let the first sleep cycle pass
+  - wait: 90m # let the first sleep cycle pass
 
-  - repeat: 6              # finite loop
+  - repeat: 6 # finite loop
     body:
       - play: chime
       - wait: 10s
       - play: bell
       - wait: 20m
 
-  - with: { gain: 0.6 }    # scoped effect — applies to everything inside
+  - with: { gain: 0.6 } # scoped effect — applies to everything inside
     body:
-      - repeat: infinite   # until stopped, or until the condition holds
+      - repeat: infinite # until stopped, or until the condition holds
         until: { elapsed: { gte: 8h } }
         body:
-          - if: { all: [ { rem: true }, { hr: { lt: 60 } } ] }
+          - if: { all: [{ rem: true }, { hr: { lt: 60 } }] }
             then:
               - play: { signal: chime, gain: 0.8, wait: true }
               - wait: 3s
@@ -158,41 +160,46 @@ body:
 
 ### 3.2 Statements
 
-| Statement | Form | Semantics |
-|---|---|---|
-| `play` | `play: <name>` or `play: { signal, gain?, rate?, wait? }` | Plays a signal. `gain` multiplies the enclosing scope's gain. `wait: true` blocks until playback finishes; default is fire-and-forget. |
-| `wait` | `wait: 10s` \| `2m` \| `1h30m` | Suspends for a duration. |
-| `repeat` | `repeat: <n>` \| `infinite`, `body:`, optional `until:` | Loop. `until` is evaluated **before** each iteration; an `infinite` loop without `until` runs until the user stops. |
-| `if` | `if: <condition>`, `then:`, optional `else:` | Branch. |
-| `with` | `with: { gain?, rate? }`, `body:` | Pushes an effect scope for its body. Nested scopes multiply. `gain` and `rate` are the only effects in v1 — reverb, EQ and spatial audio need native DSP Expo doesn't provide, and land in v2; the grammar leaves room for them. |
-| `set` | `set: { volume: 0.3 }` | Changes master volume for the rest of the run. |
-| `log` | `log: "text"` | Writes a user marker into the event log. |
-| `stop` | `stop:` | Ends the run cleanly. |
+| Statement | Form                                                      | Semantics                                                                                                                                                                                                                        |
+| --------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `play`    | `play: <name>` or `play: { signal, gain?, rate?, wait? }` | Plays a signal. `gain` multiplies the enclosing scope's gain. `wait: true` blocks until playback finishes; default is fire-and-forget.                                                                                           |
+| `wait`    | `wait: 10s` \| `2m` \| `1h30m`                            | Suspends for a duration.                                                                                                                                                                                                         |
+| `repeat`  | `repeat: <n>` \| `infinite`, `body:`, optional `until:`   | Loop. `until` is evaluated **before** each iteration; an `infinite` loop without `until` runs until the user stops.                                                                                                              |
+| `if`      | `if: <condition>`, `then:`, optional `else:`              | Branch.                                                                                                                                                                                                                          |
+| `with`    | `with: { gain?, rate? }`, `body:`                         | Pushes an effect scope for its body. Nested scopes multiply. `gain` and `rate` are the only effects in v1 — reverb, EQ and spatial audio need native DSP Expo doesn't provide, and land in v2; the grammar leaves room for them. |
+| `set`     | `set: { volume: 0.3 }`                                    | Changes master volume for the rest of the run.                                                                                                                                                                                   |
+| `log`     | `log: "text"`                                             | Writes a user marker into the event log.                                                                                                                                                                                         |
+| `stop`    | `stop:`                                                   | Ends the run cleanly.                                                                                                                                                                                                            |
 
-**Durations** are `<number><unit>` with units `ms|s|m|h`, concatenable (`1h30m`).
+**Durations** are `<number><unit>` with units `ms|s|m|h`, concatenable (`1h30m`). Anywhere a
+duration is accepted (`wait`, `elapsed` conditions), a script may instead use a bash-style
+**period preset macro** — `$short`, `$medium`, or `$long` — which expands at parse time to the
+corresponding Period preset value configured in Settings (§2.3). Referencing a preset name with
+no configured value is a parse error naming the macro and the failing node, per §2.4.
 
 ### 3.3 Conditions
 
 Conditions are mappings over context fields, with comparators `eq|ne|lt|lte|gt|gte` and the
 combinators `all` / `any` / `not`.
 
-| Field | Type | Source in v1 |
-|---|---|---|
-| `elapsed` | duration | Engine (time since run start) |
-| `clock` | `"HH:MM"` | Device clock |
-| `iteration` | number | Index of the enclosing `repeat`, 0-based |
-| `hr`, `hrv` | number | Context provider |
-| `rem` | boolean | Context provider |
-| `sleepStage` | `awake\|light\|deep\|rem` | Context provider |
+| Field        | Type                      | Source in v1                             |
+| ------------ | ------------------------- | ---------------------------------------- |
+| `elapsed`    | duration                  | Engine (time since run start)            |
+| `clock`      | `"HH:MM"`                 | Device clock                             |
+| `iteration`  | number                    | Index of the enclosing `repeat`, 0-based |
+| `hr`, `hrv`  | number                    | Context provider                         |
+| `rem`        | boolean                   | Context provider                         |
+| `sleepStage` | `awake\|light\|deep\|rem` | Context provider                         |
 
 A condition over a field with no reading available evaluates to **false**, and the engine logs a
 `context.unavailable` event. Scripts therefore degrade quietly rather than stalling.
 
 ### 3.4 Explicitly deferred from the script language
 
-User-defined variables and arithmetic, function/macro definitions, parallel branches, `goto`, and
-importing one script from another. Each is a clean addition later; none is needed to express the
-experiments described in the requirements.
+User-defined variables and arithmetic, in-script function/macro definitions, parallel branches,
+`goto`, and importing one script from another. Each is a clean addition later; none is needed to
+express the experiments described in the requirements. (Settings-level period presets — §3.2 —
+are expansion of named constants, not in-script macro definitions.)
 
 ### 3.5 Bundled example scripts
 
@@ -258,18 +265,18 @@ phase boundary events into the same log. Empty phases are skipped; normal comple
 
 ```ts
 interface ContextPort {
-  snapshot(): Promise<ContextSnapshot>;   // { hr?, hrv?, rem?, sleepStage?, at }
+  snapshot(): Promise<ContextSnapshot>; // { hr?, hrv?, rem?, sleepStage?, at }
 }
 ```
 
 v1 ships two implementations: **`ManualContextProvider`** (values set from sliders on the Settings
 debug panel — lets you drive a conditional by hand while watching the engine) and
-**`ScriptedContextProvider`** (a timeline fixture like *"REM from t+95m for 12m"* — used by
+**`ScriptedContextProvider`** (a timeline fixture like _"REM from t+95m for 12m"_ — used by
 automated tests and for realistic dry runs). Real wearable data is out of scope for v1.
 
 v2 adds `HealthConnectContextProvider`. One caveat worth recording now, because it affects whether
 the feature can ever work as written: Health Connect data is written by the wearable's companion app
-in *batches after sync*, so near-real-time sleep-stage triggering during the night may simply not be
+in _batches after sync_, so near-real-time sleep-stage triggering during the night may simply not be
 available. The mock-first approach means we find out without having built the app around it.
 
 ### 4.4 Overnight execution
@@ -302,11 +309,11 @@ re-fetching happens only when the user explicitly re-adds the same URL.
 ### 4.6 Voice/sound-triggered interruption
 
 **The problem:** the primary failure mode of an unattended overnight run is a half-asleep user who
-wants the playback to stop or quiet down *right now* and cannot reliably find, unlock, and tap the
+wants the playback to stop or quiet down _right now_ and cannot reliably find, unlock, and tap the
 phone in the dark. A voice trigger needs no coordination, which is what makes it worth having.
 
 **Design — on-device voice-activity detection, no speech recognition.** `expo-audio`'s existing
-recorder/metering monitors mic input *level* — no new dependency, no words parsed, no audio stored.
+recorder/metering monitors mic input _level_ — no new dependency, no words parsed, no audio stored.
 A burst of sustained loud input near the device (any voice, a cough, "hey, stop that") lowers volume
 and pauses briefly, then the run resumes on its own. It **never fully stops the run** on its own:
 since this is a level threshold and not real word recognition, a false positive (snoring, a partner
@@ -314,7 +321,7 @@ talking, rolling into the phone) must be recoverable rather than silently ending
 experiment. A full stop still requires an explicit tap on the phone or the persistent notification
 (§4.4).
 
-This is the gentler alternative to true command recognition: rather than distinguishing the *word*
+This is the gentler alternative to true command recognition: rather than distinguishing the _word_
 "stop" from "quieter" — which needs a real recognizer — v1 treats every trigger as the gentle action
 and reserves the more consequential outcome for a physical interaction.
 
@@ -369,13 +376,13 @@ as the on-ramp.
 There is no iOS equivalent of "APK on a release page." Apple's two options for getting a build to
 users outside the App Store are:
 
-| | TestFlight (chosen) | Ad Hoc |
-|---|---|---|
-| How users get it | Install the TestFlight app once, accept a link/email invite | Receive a signed `.ipa`, install via Mac + Xcode/Apple Configurator |
-| Tester ceiling | 10,000 external testers | 100 devices per device type per year, and every device's UDID must be registered in the Apple Developer account **before** the build is made |
-| Review | Light App Review for external testers (usually fast) | None |
-| Build lifetime | Expires **90 days** after upload — needs periodic re-upload | Up to 1 year |
-| Fit for LucidDream | Matches the "share a link, tap install" feel of the APK flow | Collecting UDIDs up front is real friction for a rolling group of testers |
+|                    | TestFlight (chosen)                                          | Ad Hoc                                                                                                                                       |
+| ------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| How users get it   | Install the TestFlight app once, accept a link/email invite  | Receive a signed `.ipa`, install via Mac + Xcode/Apple Configurator                                                                          |
+| Tester ceiling     | 10,000 external testers                                      | 100 devices per device type per year, and every device's UDID must be registered in the Apple Developer account **before** the build is made |
+| Review             | Light App Review for external testers (usually fast)         | None                                                                                                                                         |
+| Build lifetime     | Expires **90 days** after upload — needs periodic re-upload  | Up to 1 year                                                                                                                                 |
+| Fit for LucidDream | Matches the "share a link, tap install" feel of the APK flow | Collecting UDIDs up front is real friction for a rolling group of testers                                                                    |
 
 **TestFlight** is the closer analog to the Android flow's ease of distribution, and EAS already has
 first-class support for it (`eas submit --platform ios`). The cost accepted in exchange: **a build
@@ -478,14 +485,14 @@ approved release branch into the protected `deploy` branch; Cloudflare watches o
 
 ## 7. Delivery plan
 
-| Milestone | Contents | Exit criterion |
-|---|---|---|
-| **M1 — Engine** | `src/engine/` complete: AST, parser, conditions, interpreter, virtual clock. No UI. | All 5 example scripts execute correctly under test; ≥ 90 % coverage. |
-| **M2 — Audio & library** | AudioPort over expo-audio, signal resolution/caching, save-offline persistence (§4.5), Library screen. | A script can be loaded from a URL, saved offline, and played end to end in the foreground with the network off. |
-| **M3 — Run & session** | Run screen, foreground service, wake lock, master volume, Stop, voice/sound interrupt (§4.6) — Android first; iOS background-audio equivalent follows once Android is proven. | An 8-hour script runs on a physical Android device with the screen off; a loud sound near the device audibly quiets playback without stopping the run. |
-| **M4 — Logging & context** | JSONL event log, Log screen, export, mock/scripted context providers, conditionals wired. | A conditional script branches on simulated REM; log exports and reads correctly. |
-| **M5 — Android release** | `release-android.yml`, versioning, README install instructions, overnight checklist run. | A `v1.0.0` tag produces a GitHub Release with an installable APK. |
-| **M6 — iOS release** | Apple Developer Program enrollment, App Store Connect app record + API key, `ios-testflight` EAS profile, `release-ios.yml` + `eas-build-ios.yml`, scheduled re-submit. | The same `v1.0.0` tag (or the next tag once Android is stable) produces a TestFlight build installable by an external tester. |
+| Milestone                  | Contents                                                                                                                                                                      | Exit criterion                                                                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **M1 — Engine**            | `src/engine/` complete: AST, parser, conditions, interpreter, virtual clock. No UI.                                                                                           | All 5 example scripts execute correctly under test; ≥ 90 % coverage.                                                                                   |
+| **M2 — Audio & library**   | AudioPort over expo-audio, signal resolution/caching, save-offline persistence (§4.5), Library screen.                                                                        | A script can be loaded from a URL, saved offline, and played end to end in the foreground with the network off.                                        |
+| **M3 — Run & session**     | Run screen, foreground service, wake lock, master volume, Stop, voice/sound interrupt (§4.6) — Android first; iOS background-audio equivalent follows once Android is proven. | An 8-hour script runs on a physical Android device with the screen off; a loud sound near the device audibly quiets playback without stopping the run. |
+| **M4 — Logging & context** | JSONL event log, Log screen, export, mock/scripted context providers, conditionals wired.                                                                                     | A conditional script branches on simulated REM; log exports and reads correctly.                                                                       |
+| **M5 — Android release**   | `release-android.yml`, versioning, README install instructions, overnight checklist run.                                                                                      | A `v1.0.0` tag produces a GitHub Release with an installable APK.                                                                                      |
+| **M6 — iOS release**       | Apple Developer Program enrollment, App Store Connect app record + API key, `ios-testflight` EAS profile, `release-ios.yml` + `eas-build-ios.yml`, scheduled re-submit.       | The same `v1.0.0` tag (or the next tag once Android is stable) produces a TestFlight build installable by an external tester.                          |
 
 M1 through M4 each end with something demonstrable and are platform-agnostic where the code allows
 it. M1 deliberately has no UI at all — the engine is the risky part and it is fully testable without

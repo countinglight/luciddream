@@ -1,52 +1,75 @@
-import { DurationParseError, formatDuration, parseDuration } from '../duration';
+import { DurationParseError, formatDuration, parseDuration } from "../duration";
 
-describe('parseDuration', () => {
-  it('parses a single unit', () => {
-    expect(parseDuration('10s')).toBe(10_000);
-    expect(parseDuration('5m')).toBe(300_000);
-    expect(parseDuration('2h')).toBe(7_200_000);
-    expect(parseDuration('250ms')).toBe(250);
+describe("parseDuration", () => {
+  it("parses a single unit", () => {
+    expect(parseDuration("10s")).toBe(10_000);
+    expect(parseDuration("5m")).toBe(300_000);
+    expect(parseDuration("2h")).toBe(7_200_000);
+    expect(parseDuration("250ms")).toBe(250);
   });
 
-  it('concatenates multiple units regardless of order', () => {
-    expect(parseDuration('1h30m')).toBe(90 * 60_000);
-    expect(parseDuration('30m1h')).toBe(90 * 60_000);
-    expect(parseDuration('1m30s')).toBe(90_000);
+  it("concatenates multiple units regardless of order", () => {
+    expect(parseDuration("1h30m")).toBe(90 * 60_000);
+    expect(parseDuration("30m1h")).toBe(90 * 60_000);
+    expect(parseDuration("1m30s")).toBe(90_000);
   });
 
-  it('trims surrounding whitespace', () => {
-    expect(parseDuration('  10s  ')).toBe(10_000);
+  it("trims surrounding whitespace", () => {
+    expect(parseDuration("  10s  ")).toBe(10_000);
   });
 
-  it('rejects an empty string', () => {
-    expect(() => parseDuration('')).toThrow(DurationParseError);
-    expect(() => parseDuration('   ')).toThrow(DurationParseError);
+  it("rejects an empty string", () => {
+    expect(() => parseDuration("")).toThrow(DurationParseError);
+    expect(() => parseDuration("   ")).toThrow(DurationParseError);
   });
 
-  it('rejects unknown units and garbage', () => {
-    expect(() => parseDuration('10x')).toThrow(DurationParseError);
-    expect(() => parseDuration('soon')).toThrow(DurationParseError);
+  it("rejects unknown units and garbage", () => {
+    expect(() => parseDuration("10x")).toThrow(DurationParseError);
+    expect(() => parseDuration("soon")).toThrow(DurationParseError);
   });
 
-  it('rejects a value with trailing garbage after valid tokens', () => {
-    expect(() => parseDuration('10s!')).toThrow(DurationParseError);
+  it("rejects a value with trailing garbage after valid tokens", () => {
+    expect(() => parseDuration("10s!")).toThrow(DurationParseError);
+  });
+
+  describe("period preset macros", () => {
+    const presets = {
+      short: 5 * 60_000,
+      medium: 20 * 60_000,
+      long: 90 * 60_000,
+    };
+
+    it("expands a $preset macro through the provided presets", () => {
+      expect(parseDuration("$short", presets)).toBe(300_000);
+      expect(parseDuration("$medium", presets)).toBe(1_200_000);
+      expect(parseDuration("$long", presets)).toBe(5_400_000);
+    });
+
+    it("rejects an unknown preset name, naming the macro", () => {
+      expect(() => parseDuration("$huge", presets)).toThrow(DurationParseError);
+      expect(() => parseDuration("$huge", presets)).toThrow("$huge");
+    });
+
+    it("rejects a macro when no presets are provided", () => {
+      expect(() => parseDuration("$short")).toThrow(DurationParseError);
+    });
   });
 });
 
-describe('formatDuration', () => {
-  it('formats zero and sub-second as 0s', () => {
-    expect(formatDuration(0)).toBe('0s');
-    expect(formatDuration(-5)).toBe('0s');
+describe("formatDuration", () => {
+  it("formats zero and sub-second as 0s", () => {
+    expect(formatDuration(0)).toBe("0s");
+    expect(formatDuration(-5)).toBe("0s");
   });
 
-  it('formats whole units without smaller zero units', () => {
-    expect(formatDuration(90 * 60_000)).toBe('1h30m');
-    expect(formatDuration(10_000)).toBe('10s');
-    expect(formatDuration(7_200_000)).toBe('2h');
+  it("formats whole units without smaller zero units", () => {
+    expect(formatDuration(90 * 60_000)).toBe("1h30m");
+    expect(formatDuration(10_000)).toBe("10s");
+    expect(formatDuration(7_200_000)).toBe("2h");
   });
 
-  it('includes ms only when there is no larger unit', () => {
-    expect(formatDuration(250)).toBe('250ms');
-    expect(formatDuration(60_250)).toBe('1m');
+  it("includes ms only when there is no larger unit", () => {
+    expect(formatDuration(250)).toBe("250ms");
+    expect(formatDuration(60_250)).toBe("1m");
   });
 });
