@@ -9,4 +9,4 @@ body:
   - repeat: 3
     body:
       - play: chime
-      - wait: 1m30s
+      - wait: $short
