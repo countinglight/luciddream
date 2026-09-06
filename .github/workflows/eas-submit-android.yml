@@ -1,0 +1,44 @@
+name: EAS Submit (Android → Play Store internal testing)
+
+# Manual trigger only. Before this workflow can succeed you must have:
+#  1. A completed `production` profile build (run "EAS Build (Android)" first).
+#  2. Manually uploaded that build's .aab to Google Play Console *once*, by
+#     hand, to create the app listing — Google requires the first upload to
+#     go through the web console before its API will accept anything.
+#  3. A Google Cloud service account with Play Console API access, added as
+#     the GOOGLE_SERVICE_ACCOUNT_KEY repo secret (its JSON key content).
+# See README.md's "Play Store internal testing" section for the full walkthrough.
+on:
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Write Play Store service account key
+        run: printf '%s' "$GOOGLE_SERVICE_ACCOUNT_KEY" > google-service-account.json
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+
+      # Submits the most recent finished `production` build (see eas.json's
+      # submit.production config) to the Play Console "internal testing" track.
+      - name: Submit
+        run: eas submit --platform android --profile production --non-interactive --latest
+
+      - name: Remove credentials from the runner
+        if: always()
+        run: rm -f google-service-account.json

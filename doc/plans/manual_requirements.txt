@@ -1,0 +1,82 @@
+Lucid Dream Rough Initial Requirements 
+
+This is a mobile app, used in self study of lucid dreaming. It helps users track their dreams, practice reality checks. App in it's first version is used to experiment with genetation of flexible sequences of audio signals. Future versions may include more advanced features for dream analysis and personalized guidance.
+
+# Key Features
+- Reality check reminders in v2
+- Audio signal generation for lucid dreaming experiments - that is primary focus for v1
+- Flexible scheduling in declarative manner
+- Support for conditionals and notifications based on user wearables, like sleep phases, HR and others
+- Personalized guidance and analysis in v2 
+
+# App organization
+
+Target platforms are IOS and Androis OS, later versions. 
+
+App is developed to have a single codebase for both IOS and Android platforms, using React Native. 
+
+Engineering process involves manual build for local testing in emulator or on physical devices, but automated build and deployment process also needs to work via GitHUb actions in the version 1 development cycle. Customers of v1 will get access to the app through these automated deployment channels, starting with APK for Android. APK will be placed as a release on GitHub. 
+
+## Development Environment
+
+- Operating System: macOS for iOS development, Windows/Linux for Android development
+- IDE: Visual Studio Code or WebStorm
+- Node.js and npm for managing dependencies
+- React Native CLI for building and running the app
+- Android Studio for Android emulator and SDK tools or alternatively other Android development setups (TBD)
+- Xcode for iOS simulator and build tools
+
+## Best practices
+Other engineering and deployment best practices include:
+- Consistent code style and linting
+- Version control using Git and GitHub
+- Automated testing for critical components
+- Continuous integration and deployment via GitHub Actions
+- Regular code reviews and documentation updates
+
+Distribution and CI/CD details will be proposed by coding agent and reviewed in discussion.
+
+## Modular Structure
+
+The app will have a modular structure, with separate components for reality check reminders, audio signal generation, and future dream analysis features.
+
+One of the goals for the modular structure is to allow independent development and testing of each feature, making it easier to maintain and extend the app in future versions. Second, very important goal is to support optimal context engineering, minimizing costs in tokens of ongoing development and fixing. 
+
+# Features initial set 
+
+## UI and visuals
+v1 Simplistic, most of the functionality will be exposed with screen off during sleep. 
+no authentication initially, no multi user support 
+basic logging of operations and events
+
+basic splash screen on start
+nice icons 
+dark and light mode
+
+
+## Audio Signal Generation
+- Users can configure audio signals for lucid dreaming experiments. 
+- Each signal is a playback of a small audio file, which can be loaded from the URL (so that there is common access to the audio files from different users) or from local to the device folder (including cloud drive replica, like OneDrive or Google Drive). 
+-SIgnals are loaded at the start of the app and referered to by configured in settigns moniker/name. 
+
+## Scheduling and grouping of playbacks is governed by the script, default or user defined
+- Script is a text file with DSL. We can consider LUA or loading actual JS or definining our own DSL, needs to be discussed in planning phase
+- Script execution is handled by the app, which interprets the DSL and triggers audio signal playbacks accordingly. Engine for scripting is modularized.
+- Script defines the timing and grouping of audio signal playbacks, allowing for complex experimental setups. 
+- Script mixes declarative statements (play N times group: play signal 1 + pause 10 sec + play signal 2) 
+- in v1 script also allows for most simple coding primitives (loop or conditional statements) 
+- Script can declare effectes, applied to signal playbacks (e.g., volume adjustment, pitch shift, reverb)
+- Looping can be either finite (specified number of iterations) or infinite (until manually stopped or a condition is met)
+- script is loaded by the app from location, specified by the user - URL or local folder 
+- number of primitive scripts are bundled into the package itself for immediate use and as examples for users to create their own scripts.
+- Script supports execution context, initially most simple : volume leveling for example, but can be extended to include other contextual adjustments like equalization or spatial audio effects.
+- conditional criteria can be defined within the script to control the execution of specific audio signal playbacks based on the current context or state of the app. Specific criterias of interests are data or notifications from health wearables, like Apple Watch or others, for instance phase of sleep (REM or deep), HR, vxo2 or HRV if avaialble. 
+- Logging of events must be controllable by the user, allowing them to enable or disable logging for specific types of events or signals.
+
+
+# Typical use case for v1
+User prepares to sleep, opens the lucid dreaming app, and selects the desired audio signal script for the night. Sets the starting volume, and activates the script. The app then manages the playback of audio signals according to the script, adjusting volume and applying effects as needed, while logging events based on user preferences.
+
+
+Next day user gets the log of events, including all relevant telemetry. They can review the playback history, volume adjustments, applied effects, and any contextual data recorded during the night, helping them analyze the effectiveness of the audio signals for lucid dreaming experiments.
+

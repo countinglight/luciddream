@@ -1,0 +1,13 @@
+{
+  "name": "luciddream-web",
+  "compatibility_date": "2026-09-05",
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    {
+      "pattern": "luciddream.countinglight.com",
+      "custom_domain": true
+    }
+  ]
+}

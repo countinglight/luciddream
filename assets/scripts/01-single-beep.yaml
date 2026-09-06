@@ -1,0 +1,10 @@
+# The simplest possible script: one signal, once, then the run ends on its
+# own. Good first thing to try, and a minimal fixture for the engine's
+# happy path (parse -> play -> natural completion).
+name: Single Beep
+version: 1
+volume: 0.5
+
+body:
+  - log: "single beep test"
+  - play: chime

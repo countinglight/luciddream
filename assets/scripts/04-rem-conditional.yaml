@@ -1,0 +1,24 @@
+# Branches on simulated wearable context: an "all" combinator (REM and a low
+# HR), an "else" that checks a second field (HRV) many providers won't
+# supply, and a fallback wait — showing how a script degrades quietly when a
+# reading isn't available rather than stalling. Runs until 8 hours elapse.
+name: REM Conditional
+version: 1
+volume: 0.5
+
+body:
+  - repeat: infinite
+    until: { elapsed: { gte: 8h } }
+    body:
+      - if: { all: [{ rem: true }, { hr: { lt: 60 } }] }
+        then:
+          - play: { signal: chime, gain: 0.8, wait: true }
+          - wait: 3s
+          - play: chime
+        else:
+          - if: { hrv: { gt: 50 } }
+            then:
+              - play: bell
+              - wait: 5m
+            else:
+              - wait: 5m

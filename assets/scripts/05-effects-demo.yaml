@@ -1,0 +1,17 @@
+# Demonstrates the effect vocabulary v1 actually has: `set` to change the
+# script's running volume, and nested `with` scopes for gain/rate, each
+# further overridable by a single play's own gain/rate.
+name: Effects Demo
+version: 1
+volume: 1
+
+body:
+  - set: { volume: 0.5 }
+  - play: chime
+  - with: { gain: 0.5, rate: 1.2 }
+    body:
+      - play: bell
+      - with: { gain: 0.5 }
+        body:
+          - play: { signal: alert, gain: 0.4, rate: 0.9 }
+  - play: chime

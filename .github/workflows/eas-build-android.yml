@@ -1,0 +1,41 @@
+name: EAS Build (Android)
+
+# Manual trigger only — building consumes your EAS free-tier build minutes,
+# so this shouldn't fire on every push. Run it from the Actions tab when
+# you actually want a new build (Actions → EAS Build (Android) → Run workflow).
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'eas.json build profile'
+        required: true
+        default: preview
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # --no-wait: kicks off the cloud build and returns immediately instead
+      # of tying up the runner for the ~10-15 minutes a build usually takes.
+      # Watch progress at https://expo.dev, or drop --no-wait to block here.
+      - name: Build
+        run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --no-wait

@@ -1,0 +1,12 @@
+# A finite loop with a wait between iterations — the "play something every
+# N minutes" shape most reality-check-style experiments start from.
+# Demonstrates concatenated duration units ("1m30s").
+name: Interval Chime
+version: 1
+volume: 0.6
+
+body:
+  - repeat: 3
+    body:
+      - play: chime
+      - wait: 1m30s

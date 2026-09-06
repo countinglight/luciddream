@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "baseUrl": "https://luciddream.countinglight.com/content/",
+  "scripts": [
+    {
+      "name": "Customer Content Example",
+      "url": "https://luciddream.countinglight.com/content/scripts/example.yaml"
+    }
+  ],
+  "signals": []
+}

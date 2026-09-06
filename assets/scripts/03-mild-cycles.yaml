@@ -1,0 +1,18 @@
+# MILD-style cadence: let the first sleep cycle pass, then run several
+# quieter (with: gain) two-signal cycles spaced well apart. This is the
+# shape most nights are expected to actually use.
+name: MILD Cycles
+version: 1
+volume: 0.4
+
+body:
+  - log: "run started"
+  - wait: 90m
+  - with: { gain: 0.6 }
+    body:
+      - repeat: 6
+        body:
+          - play: chime
+          - wait: 10s
+          - play: bell
+          - wait: 20m
