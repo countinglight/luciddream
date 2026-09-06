@@ -15,10 +15,23 @@ browser version of the app, not as a promise of native-quality unattended overni
 
 Requirements: Node.js 22 and npm.
 
+The repository pins Node 22/npm 10 through `.nvmrc`, `package.json`, and `.npmrc`. With nvm, run
+`nvm use` before installing dependencies. The strict engine check prevents a newer npm release from
+silently rewriting lockfile metadata.
+
 ```bash
 npm ci
 npm run build:web
 ```
+
+To start the development server with the lock-screen demo enabled locally, run:
+
+```bash
+npm run demo:web
+```
+
+This opens the normal local web address with the same controls enabled by the production
+`?demo=lock` query parameter.
 
 Expo writes the production site to the ignored `dist/` directory. To exercise Cloudflare's local
 static-asset server, run:
@@ -33,7 +46,8 @@ login is required for local preview.
 ## Branch policy
 
 - Feature and release preparation happens on development/release branches (currently `vlads-dev`).
-- `deploy` is Cloudflare's production branch. A push to it publishes production.
+- `deploy` is deployment-only. Never use it for development work, file edits, or direct commits.
+  Update it only through the approved release/deployment process; a push to it publishes production.
 - `master` remains the long-term stable branch and is not Cloudflare's deployment trigger.
 - Other branches may produce Cloudflare preview versions when non-production builds are enabled.
 
@@ -119,6 +133,28 @@ curl -I https://luciddream.countinglight.com/content/scripts/example.yaml
 The content response must include `access-control-allow-origin: *`. Exercise the app by adding the
 example script from its full URL, running its Test action, and reloading the browser to confirm the
 library and selected phase persist.
+
+## Web lock-screen demo
+
+The testing controls are available only at this exact production URL:
+
+```text
+https://luciddream.countinglight.com/?demo=lock
+```
+
+Start a run before using the controls. **Simulate Lock** replaces the normal page with a dark
+lock-screen presentation showing the active phase, current step, elapsed time, **Stop run**,
+**Wake / Unlock**, and **Simulate loud noise**. Stop uses the real session stop path. Wake returns to
+the running Home screen. Loud noise uses the real duck/resume behavior: playback is reduced and
+restored after 15 seconds.
+
+For a live microphone reading, enable **Voice interrupt > Gentle** in Settings and start a run. The
+demo panel reports the current dB level and the -30 dB trigger threshold when browser metering is
+available. The HTTPS site will request microphone permission. The simulated-noise button remains
+available when permission is denied or metering is unsupported.
+
+This is a UI and session-control demonstration only. It does not lock the physical device and does
+not prove that a browser run survives real screen-off/background execution.
 
 ## Publishing customer scripts and signals
 

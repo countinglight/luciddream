@@ -2,6 +2,11 @@
   "name": "luciddream",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "npm@10.9.8",
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
   "dependencies": {
     "@expo/ui": "~57.0.15",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -59,6 +64,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "demo:web": "EXPO_PUBLIC_DEMO=lock expo start --web",
     "build:web": "expo export --platform web",
     "preview:web": "npm run build:web && npx wrangler@4.129.0 dev",
     "deploy:web": "npm run build:web && npx wrangler@4.129.0 deploy",
