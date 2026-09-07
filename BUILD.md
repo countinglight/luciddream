@@ -223,3 +223,7 @@ Common failures:
   CORS header from `public/_headers`.
 - **Audio deployment is rejected:** verify that every individual file is below 25 MiB; larger files
   require a different store such as Cloudflare R2.
+
+## Android install APK via USB
+
+start %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install android\app\build\outputs\apk\release\luciddream-v1.0.0-release.apk
