@@ -56,9 +56,9 @@ export const DEFAULT_SETTINGS: Settings = {
     sleepStage: "none",
   },
   periodPresets: {
-    short: 5 * 60_000,
-    medium: 20 * 60_000,
-    long: 90 * 60_000,
+    short: 5_000,
+    medium: 20_000,
+    long: 5 * 60_000,
   },
   runPhaseScriptIds: DEFAULT_RUN_PHASE_SCRIPT_IDS,
 };

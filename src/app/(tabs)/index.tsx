@@ -1,28 +1,35 @@
 import { Slider } from '@expo/ui/community/slider';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { Chip } from '@/components/chip';
+import { ScriptPickerModal } from '@/components/script-picker-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useLibrary } from '@/context/library-context';
+import { useSessionContext } from '@/context/session-context';
 import { useSettings } from '@/context/settings-context';
-import { formatDuration } from '@/engine';
-import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { useVoiceInterrupt } from '@/hooks/use-voice-interrupt';
 import { isLockDemo } from '@/lib/demo-mode';
 import { RUN_PHASES, type RunPhaseKey, validateRunPhaseScriptIds } from '@/lib/run-phases';
-import { describeEvent } from '@/logging';
 import type { LibraryScript } from '@/storage/library-types';
 
+/**
+ * Setup only — choosing the three phases' scripts and the master volume,
+ * then starting a run. Live progress moved to the separate /run screen (see
+ * src/app/run.tsx) so this screen fits a narrow phone without scrolling and
+ * so "configure" and "watch it run" aren't fighting for the same space.
+ */
 export default function HomeScreen() {
   const { settings, updateSettings } = useSettings();
-  const { scripts, signals } = useLibrary();
-  const session = useSession(signals);
+  const { scripts } = useLibrary();
+  const session = useSessionContext();
   const theme = useTheme();
 
   const [volume, setVolume] = useState(settings.masterDefaultVolume);
@@ -30,6 +37,7 @@ export default function HomeScreen() {
   const [simulatedLocked, setSimulatedLocked] = useState(false);
   const [simulatedNoiseActive, setSimulatedNoiseActive] = useState(false);
   const noiseResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pickerPhase, setPickerPhase] = useState<RunPhaseKey | null>(null);
   const isBusy = session.status === 'starting' || session.status === 'running';
   const lockDemoEnabled =
     Platform.OS === 'web' &&
@@ -146,6 +154,12 @@ export default function HomeScreen() {
       </ThemedView>
     );
   }
+  const handleStart = () => {
+    session.start(selectedPhases, volume);
+    router.push('/run');
+  };
+
+  const pickerPhaseConfig = pickerPhase ? RUN_PHASES.find((phase) => phase.key === pickerPhase) : null;
 
   return (
     <ThemedView style={styles.container}>
@@ -193,6 +207,10 @@ export default function HomeScreen() {
                         ? `Live mic: ${voiceMonitor.meteringDb === null ? 'listening' : `${Math.round(voiceMonitor.meteringDb)} dB`} · threshold -30 dB`
                         : `Live mic: ${voiceMonitor.permission}`}
               </ThemedText>
+          {isBusy && (
+            <ThemedView type="backgroundSelected" style={styles.resumeBanner}>
+              <ThemedText type="small">A run is in progress.</ThemedText>
+              <Button label="View progress" onPress={() => router.push('/run')} size="small" />
             </ThemedView>
           )}
 
@@ -201,38 +219,30 @@ export default function HomeScreen() {
             const isTesting = testingPhase === phase.key;
             return (
               <ThemedView key={phase.key} type="backgroundElement" style={styles.card}>
-                <ThemedView style={styles.phaseHeader}>
-                  <ThemedView style={styles.phaseTitleGroup}>
-                    <ThemedText type="code" themeColor="textSecondary">
-                      PHASE {index + 1}
+                <ThemedView style={styles.phaseTitleGroup}>
+                  <ThemedText type="code" themeColor="textSecondary">
+                    PHASE {index + 1}
+                  </ThemedText>
+                  <ThemedText type="smallBold">{phase.label}</ThemedText>
+                </ThemedView>
+                <Pressable
+                  onPress={() => !isBusy && setPickerPhase(phase.key)}
+                  disabled={isBusy}
+                  style={({ pressed }) => [styles.phaseRow, pressed && !isBusy && styles.pressed]}>
+                  <ThemedView type="background" style={styles.phaseRowInner}>
+                    <ThemedText numberOfLines={1} style={styles.phaseRowLabel}>
+                      {selected ? selected.name : 'Empty'}
                     </ThemedText>
-                    <ThemedText type="smallBold">{phase.label}</ThemedText>
+                    <ThemedText themeColor="textSecondary">›</ThemedText>
                   </ThemedView>
-                  <Button
-                    label={isTesting ? 'Playing…' : 'Test'}
-                    onPress={() => handleTest(phase.key, selected)}
-                    loading={isTesting}
-                    disabled={!selected || isBusy || testingPhase !== null}
-                    size="small"
-                  />
-                </ThemedView>
-                <ThemedView style={styles.chipRow}>
-                  <Chip
-                    label="Empty"
-                    selected={selected === null}
-                    onPress={() => selectScript(phase.key, null)}
-                    disabled={isBusy}
-                  />
-                  {scripts.map((script) => (
-                    <Chip
-                      key={script.id}
-                      label={script.name}
-                      selected={script.id === selected?.id}
-                      onPress={() => selectScript(phase.key, script.id)}
-                      disabled={isBusy}
-                    />
-                  ))}
-                </ThemedView>
+                </Pressable>
+                <Button
+                  label={isTesting ? 'Playing…' : 'Test'}
+                  onPress={() => handleTest(phase.key, selected)}
+                  loading={isTesting}
+                  disabled={!selected || isBusy || testingPhase !== null}
+                  size="small"
+                />
               </ThemedView>
             );
           })}
@@ -270,43 +280,23 @@ export default function HomeScreen() {
             variant={isBusy ? 'danger' : 'primary'}
             loading={session.status === 'starting'}
             disabled={(!isBusy && selectionError !== null) || testingPhase !== null}
+            label={isBusy ? 'Run in progress' : 'Start all phases'}
+            onPress={handleStart}
+            variant="primary"
+            disabled={isBusy || selectionError !== null || testingPhase !== null}
             style={styles.startButton}
           />
-
-          {isBusy && (
-            <ThemedView type="backgroundElement" style={styles.card}>
-              <ThemedText type="code" themeColor="textSecondary">
-                {session.activePhaseLabel ?? 'Preparing phases'}
-              </ThemedText>
-              <ThemedText type="smallBold">{session.activeScriptName ?? session.scriptName}</ThemedText>
-              <ThemedText type="code">Phase {formatDuration(session.phaseElapsedMs)}</ThemedText>
-              <ThemedText type="code" themeColor="textSecondary">
-                Total {formatDuration(session.elapsedMs)}
-              </ThemedText>
-              {session.currentStepText && (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {session.currentStepText}
-                </ThemedText>
-              )}
-              {session.recentEvents.length > 0 && (
-                <ThemedView style={styles.eventsStrip}>
-                  {session.recentEvents.map((event, eventIndex) => (
-                    <ThemedText key={eventIndex} type="small" themeColor="textSecondary">
-                      {describeEvent(event)}
-                    </ThemedText>
-                  ))}
-                </ThemedView>
-              )}
-            </ThemedView>
-          )}
-
-          {session.errorMessage && (
-            <ThemedText type="small" themeColor="danger">
-              {session.errorMessage}
-            </ThemedText>
-          )}
         </ScrollView>
       </SafeAreaView>
+
+      <ScriptPickerModal
+        visible={pickerPhase !== null}
+        title={pickerPhaseConfig?.label ?? ''}
+        scripts={scripts}
+        selectedId={pickerPhase ? selectedScripts[pickerPhase]?.id ?? null : null}
+        onSelect={(scriptId) => pickerPhase && selectScript(pickerPhase, scriptId)}
+        onClose={() => setPickerPhase(null)}
+      />
     </ThemedView>
   );
 }
@@ -339,6 +329,15 @@ const styles = StyleSheet.create({
   intro: {
     textAlign: 'center',
   },
+  resumeBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.three,
+  },
   card: {
     gap: Spacing.two,
     alignSelf: 'stretch',
@@ -346,27 +345,32 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     borderRadius: Spacing.four,
   },
-  phaseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: Spacing.two,
-    backgroundColor: 'transparent',
-  },
   phaseTitleGroup: {
     gap: 2,
     backgroundColor: 'transparent',
+  },
+  phaseRow: {
+    alignSelf: 'stretch',
+  },
+  phaseRowInner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.two,
+    gap: Spacing.two,
+  },
+  phaseRowLabel: {
+    flexShrink: 1,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
     backgroundColor: 'transparent',
   },
   slider: {

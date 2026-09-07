@@ -1,6 +1,6 @@
 # A finite loop with a wait between iterations — the "play something every
 # N minutes" shape most reality-check-style experiments start from.
-# Demonstrates concatenated duration units ("1m30s").
+# Demonstrates the $short period-preset macro.
 name: Interval Chime
 version: 1
 volume: 0.6

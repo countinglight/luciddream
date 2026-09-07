@@ -7,16 +7,17 @@ import {
   TabListProps,
 } from 'expo-router/ui';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, useWindowDimensions, View, StyleSheet } from 'react-native';
+import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
 
 import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useViewportSize } from '@/context/simulated-viewport-context';
 
 export default function AppTabs() {
-  const { width } = useWindowDimensions();
+  const { width } = useViewportSize();
   const compact = width < 600;
 
   return (
