@@ -1,9 +1,7 @@
 import { Slider } from '@expo/ui/community/slider';
-import { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -14,8 +12,8 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useLibrary } from '@/context/library-context';
 import { useSessionContext } from '@/context/session-context';
 import { useSettings } from '@/context/settings-context';
+import { formatDuration } from '@/engine';
 import { useTheme } from '@/hooks/use-theme';
-import { useVoiceInterrupt } from '@/hooks/use-voice-interrupt';
 import { isLockDemo } from '@/lib/demo-mode';
 import { RUN_PHASES, type RunPhaseKey, validateRunPhaseScriptIds } from '@/lib/run-phases';
 import type { LibraryScript } from '@/storage/library-types';
@@ -60,11 +58,6 @@ export default function HomeScreen() {
     label: phase.label,
     script: selectedScripts[phase.key],
   }));
-
-  const voiceMonitor = useVoiceInterrupt(
-    settings.voiceInterrupt === 'gentle' && session.status === 'running',
-    session.handleVoiceInterrupt,
-  );
 
   useEffect(() => {
     if (session.status === 'running') return;
@@ -155,6 +148,7 @@ export default function HomeScreen() {
     );
   }
   const handleStart = () => {
+    resetDemoState();
     session.start(selectedPhases, volume);
     router.push('/run');
   };
@@ -199,14 +193,13 @@ export default function HomeScreen() {
               <ThemedText type="code" themeColor="textSecondary">
                 {settings.voiceInterrupt !== 'gentle'
                   ? 'Live mic: enable Voice interrupt → Gentle in Settings'
-                  : voiceMonitor.permission === 'denied'
-                    ? 'Live mic: permission denied'
-                    : voiceMonitor.permission === 'error'
-                      ? 'Live mic: unavailable in this browser'
-                      : voiceMonitor.isRecording
-                        ? `Live mic: ${voiceMonitor.meteringDb === null ? 'listening' : `${Math.round(voiceMonitor.meteringDb)} dB`} · threshold -30 dB`
-                        : `Live mic: ${voiceMonitor.permission}`}
+                  : session.status === 'running'
+                    ? 'Live mic: monitoring for sustained loud noise'
+                    : 'Live mic: starts when a run begins'}
               </ThemedText>
+            </ThemedView>
+          )}
+
           {isBusy && (
             <ThemedView type="backgroundSelected" style={styles.resumeBanner}>
               <ThemedText type="small">A run is in progress.</ThemedText>
@@ -268,21 +261,10 @@ export default function HomeScreen() {
           )}
 
           <Button
-            label={isBusy ? 'Stop' : 'Start all phases'}
-            onPress={
-              isBusy
-                ? stopRun
-                : () => {
-                    resetDemoState();
-                    session.start(selectedPhases, volume);
-                  }
-            }
-            variant={isBusy ? 'danger' : 'primary'}
-            loading={session.status === 'starting'}
-            disabled={(!isBusy && selectionError !== null) || testingPhase !== null}
             label={isBusy ? 'Run in progress' : 'Start all phases'}
             onPress={handleStart}
             variant="primary"
+            loading={session.status === 'starting'}
             disabled={isBusy || selectionError !== null || testingPhase !== null}
             style={styles.startButton}
           />
@@ -379,10 +361,6 @@ const styles = StyleSheet.create({
   startButton: {
     alignSelf: 'stretch',
     paddingVertical: Spacing.three,
-  },
-  eventsStrip: {
-    gap: Spacing.half,
-    backgroundColor: 'transparent',
   },
   demoCard: {
     gap: Spacing.two,
