@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Script format — LucidDream</title>
+    <meta
+      name="description"
+      content="How LucidDream scripts are written: statements, conditions, durations, and the scripts published for use in the app."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LucidDream script format" />
+    <meta
+      property="og:description"
+      content="Every statement and condition a LucidDream script can use, plus the published library."
+    />
+    <meta
+      property="og:image"
+      content="https://luciddream.countinglight.com/assets/img/owl-512.png"
+    />
+    <meta
+      property="og:url"
+      content="https://luciddream.countinglight.com/scripts/"
+    />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/assets/css/site.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="/">
+          <img src="/assets/img/owl-mark.svg" alt="" width="28" height="28" />
+          LucidDream
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="/#what">What it does</a>
+          <a href="/scripts/" aria-current="page">Scripts</a>
+          <a href="/install/">Install</a>
+          <a class="site-nav__more" href="/about/">About</a>
+          <a
+            class="btn btn--primary"
+            href="https://luciddreamapp.countinglight.com/"
+            >Open the web app</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="band" style="border-top: 0">
+        <div class="container">
+          <p class="eyebrow">Reference</p>
+          <h1>The script format</h1>
+          <p class="band__lede">
+            A script is a YAML document describing what to play through the
+            night. There is no separate language to learn beyond the handful of
+            statements below, and no editor to fight: write one in any text
+            editor, keep it in a file, and add it to the app.
+          </p>
+        </div>
+      </section>
+
+      <section class="band band--alt">
+        <div class="container">
+          <h2>Shape</h2>
+          <div class="prose">
+            <p>
+              A script has a name, a version, an optional master volume, and a
+              <code>body</code> — a list of statements executed in order. Each
+              statement is a single-key mapping whose key names what it does.
+            </p>
+          </div>
+          <pre><code>name: MILD with REM targeting
+version: 1
+volume: 0.4                        <span class="c"># master gain for this script, 0..1</span>
+
+body:
+  - log: "run started"
+  - wait: 90m                      <span class="c"># let the first sleep cycle pass</span>
+
+  - repeat: 6                      <span class="c"># finite loop</span>
+    body:
+      - play: chime
+      - wait: 10s
+      - play: bell
+      - wait: 20m
+
+  - with: { gain: 0.6 }            <span class="c"># scoped: applies to everything inside</span>
+    body:
+      - repeat: infinite
+        until: { elapsed: { gte: 8h } }
+        body:
+          - if: { all: [{ rem: true }, { hr: { lt: 60 } }] }
+            then:
+              - play: { signal: chime, gain: 0.8, wait: true }
+              - wait: 3s
+              - play: chime
+            else:
+              - wait: 5m</code></pre>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="container">
+          <h2>Statements</h2>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Statement</th>
+                  <th scope="col">Form</th>
+                  <th scope="col">What it does</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>play</code></td>
+                  <td>
+                    <code>play: &lt;name&gt;</code> or
+                    <code>play: { signal, gain?, rate?, wait? }</code>
+                  </td>
+                  <td>
+                    Plays a signal. <code>gain</code> multiplies the gain of the
+                    enclosing scope. <code>wait: true</code> blocks until
+                    playback finishes; by default the script carries on
+                    immediately.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>wait</code></td>
+                  <td>
+                    <code>wait: 10s</code> · <code>2m</code> ·
+                    <code>1h30m</code>
+                  </td>
+                  <td>Pauses for a duration.</td>
+                </tr>
+                <tr>
+                  <td><code>repeat</code></td>
+                  <td>
+                    <code>repeat: &lt;n&gt;</code> or <code>infinite</code>,
+                    with <code>body:</code> and optional <code>until:</code>
+                  </td>
+                  <td>
+                    A loop. <code>until</code> is checked before each pass. An
+                    <code>infinite</code> loop with no <code>until</code> runs
+                    until you stop the run.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>if</code></td>
+                  <td>
+                    <code>if: &lt;condition&gt;</code>, <code>then:</code>,
+                    optional <code>else:</code>
+                  </td>
+                  <td>A branch.</td>
+                </tr>
+                <tr>
+                  <td><code>with</code></td>
+                  <td>
+                    <code>with: { gain?, rate? }</code>, <code>body:</code>
+                  </td>
+                  <td>
+                    Applies an effect to everything inside it. Nested scopes
+                    multiply.
+                    <code>gain</code> and <code>rate</code> are the only effects
+                    available.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>set</code></td>
+                  <td><code>set: { volume: 0.3 }</code></td>
+                  <td>Changes the master volume for the rest of the run.</td>
+                </tr>
+                <tr>
+                  <td><code>log</code></td>
+                  <td><code>log: "text"</code></td>
+                  <td>Writes your own marker into the run log.</td>
+                </tr>
+                <tr>
+                  <td><code>stop</code></td>
+                  <td><code>stop:</code></td>
+                  <td>Ends the run cleanly.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Durations</h3>
+          <div class="prose">
+            <p>
+              Durations are a number followed by a unit — <code>ms</code>,
+              <code>s</code>, <code>m</code>, <code>h</code> — and can be
+              joined, as in <code>1h30m</code>. Anywhere a duration is accepted
+              you may instead write <code>$short</code>, <code>$medium</code> or
+              <code>$long</code>, which expand to the period presets configured
+              in the app's Settings. Referring to a preset that has no value
+              configured is an error the app reports by name before the run
+              starts.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="band band--alt">
+        <div class="container">
+          <h2>Conditions</h2>
+          <div class="prose">
+            <p>
+              Conditions compare a context field using <code>eq</code>,
+              <code>ne</code>, <code>lt</code>, <code>lte</code>,
+              <code>gt</code> or <code>gte</code>, and combine with
+              <code>all</code>, <code>any</code> and <code>not</code>.
+            </p>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Field</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Where the value comes from</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>elapsed</code></td>
+                  <td>duration</td>
+                  <td>Time since the run started</td>
+                </tr>
+                <tr>
+                  <td><code>clock</code></td>
+                  <td><code>"HH:MM"</code></td>
+                  <td>The device clock</td>
+                </tr>
+                <tr>
+                  <td><code>iteration</code></td>
+                  <td>number</td>
+                  <td>
+                    Index of the enclosing <code>repeat</code>, counting from
+                    zero
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>hr</code>, <code>hrv</code></td>
+                  <td>number</td>
+                  <td>A context provider</td>
+                </tr>
+                <tr>
+                  <td><code>rem</code></td>
+                  <td>true / false</td>
+                  <td>A context provider</td>
+                </tr>
+                <tr>
+                  <td><code>sleepStage</code></td>
+                  <td>
+                    <code>awake</code> · <code>light</code> ·
+                    <code>deep</code> · <code>rem</code>
+                  </td>
+                  <td>A context provider</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="notes">
+            <li>
+              <strong>A field with no reading is false.</strong> If nothing is
+              providing a value, the condition simply does not hold, the app
+              notes it in the log, and the script carries on rather than
+              stalling.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="container">
+          <h2>Published scripts and signals</h2>
+          <p class="band__lede">
+            These are hosted here and can be added to the app directly. Copy a
+            URL, then in LucidDream open
+            <strong>Library → Add from URL</strong> and paste it. Anything you
+            add from a URL can be saved offline so it is available with no
+            network at 3 a.m.
+          </p>
+          <div id="library">
+            <p class="library__empty">Loading the published library…</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="site-footer__grid">
+          <div>
+            <h2>The app</h2>
+            <ul>
+              <li>
+                <a href="https://luciddreamapp.countinglight.com/"
+                  >Open the web app</a
+                >
+              </li>
+              <li>
+                <a
+                  data-release="download"
+                  href="https://github.com/countinglight/luciddream/releases/latest"
+                  >Download for Android</a
+                >
+              </li>
+              <li><a href="/install/">Install guide</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Reference</h2>
+            <ul>
+              <li><a href="/scripts/">Script format &amp; library</a></li>
+              <li><a href="/privacy/">Privacy</a></li>
+              <li><a href="/about/">About the project</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Source</h2>
+            <ul>
+              <li>
+                <a href="https://github.com/countinglight/luciddream"
+                  >GitHub repository</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/countinglight/luciddream/blob/master/LICENSE"
+                  >Licence</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/countinglight/luciddream/issues"
+                  >Report a problem</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Contact</h2>
+            <ul>
+              <li><span class="pending">Email address coming soon</span></li>
+              <li>
+                Until then, please use
+                <a href="https://github.com/countinglight/luciddream/issues"
+                  >GitHub issues</a
+                >.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <p class="site-footer__base">
+          <span>Owl painting by Galina Landes.</span>
+          <span
+            >LucidDream Beta 1 ·
+            <span data-release="version">v0.5.0</span></span
+          >
+        </p>
+      </div>
+    </footer>
+
+    <script src="/assets/js/release.js" defer></script>
+    <script src="/assets/js/library.js" defer></script>
+  </body>
+</html>

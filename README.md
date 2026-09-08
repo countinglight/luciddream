@@ -59,7 +59,9 @@ src/session/     three-phase run lifecycle and platform keep-alive behavior
 src/logging/     JSONL logs, filtering, index, and export
 src/storage/     library persistence and web/native file stores
 src/app/         Expo Router screens
-public/content/  customer-hosted scripts, signals, and manifest
+public/          static assets copied into the web export (PWA manifest, icons)
+site/            the marketing website — hand-authored static HTML, no build step
+site/content/    customer-hosted scripts, signals, and manifest
 ```
 
 The engine imports no React Native, Expo, or sibling application modules. External behavior reaches
@@ -67,16 +69,28 @@ it only through port interfaces, which keeps overnight script behavior determini
 
 ## Building and publishing
 
+Two surfaces are published from the `deploy` branch, by one Cloudflare build:
+
+| Surface                       | Address                           | Source                        |
+| ----------------------------- | --------------------------------- | ----------------------------- |
+| Web application               | `luciddreamapp.countinglight.com` | Expo static export in `dist/` |
+| Website and published content | `luciddream.countinglight.com`    | `site/`                       |
+
 See [BUILD.md](BUILD.md) for:
 
-- production web export and local preview
-- the exact Cloudflare Git integration settings
+- production web export and local preview, and local website preview
+- the exact Cloudflare Git integration settings for both Workers
 - the `deploy` production branch workflow
-- `luciddream.countinglight.com` Custom Domain setup
+- Custom Domain setup for both hostnames
 - publishing customer scripts/signals
 - production verification, rollback, and troubleshooting
 
-Native Android/iOS distribution is specified in sections 5–7 of the v1 specification.
+The website's plan and content specification is
+[doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md).
+
+Native Android/iOS distribution is specified in sections 5–7 of the v1 specification. The current
+Android build is published as an APK on the repository's
+[releases page](https://github.com/countinglight/luciddream/releases).
 
 The hosted web app matches normal browser behavior, but browsers may throttle inactive tabs. Native
 mobile builds remain the target for reliable unattended overnight execution.

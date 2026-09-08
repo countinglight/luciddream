@@ -1,0 +1,17 @@
+{
+  // Marketing site and published customer content. Separate Worker from the
+  // Expo application (wrangler.jsonc), deployed from the same `deploy` branch.
+  // Content URLs already handed out point at this hostname, so /content/* is
+  // served here rather than from the application origin.
+  "name": "luciddream-site",
+  "compatibility_date": "2026-09-05",
+  "assets": {
+    "directory": "./site",
+  },
+  "routes": [
+    {
+      "pattern": "luciddream.countinglight.com",
+      "custom_domain": true,
+    },
+  ],
+}

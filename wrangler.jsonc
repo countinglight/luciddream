@@ -6,7 +6,7 @@
   },
   "routes": [
     {
-      "pattern": "luciddream.countinglight.com",
+      "pattern": "luciddreamapp.countinglight.com",
       "custom_domain": true
     }
   ]

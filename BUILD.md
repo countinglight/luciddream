@@ -2,7 +2,16 @@
 
 This file is the operational guide for producing and publishing LucidDream. Native Android/iOS
 release work remains described in the v1 specification; this guide covers local web builds and the
-Cloudflare Worker that serves both the web app and public customer content.
+two Cloudflare Workers that serve the project.
+
+| Worker            | Domain                            | Assets  | Serves                                               |
+| ----------------- | --------------------------------- | ------- | ---------------------------------------------------- |
+| `luciddream-web`  | `luciddreamapp.countinglight.com` | `dist/` | The Expo static web application                      |
+| `luciddream-site` | `luciddream.countinglight.com`    | `site/` | The marketing website and published customer content |
+
+Both are deployed from the same `deploy` branch by the same Cloudflare build. Published customer
+content lives on the site domain so that `/content/*` URLs already handed out keep working; see
+[doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md) for the reasoning.
 
 ## Web behavior and limitation
 
@@ -43,6 +52,26 @@ npm run preview:web
 The first invocation downloads the pinned Wrangler CLI (`4.129.0`) through `npx`. No Cloudflare
 login is required for local preview.
 
+## Local website preview
+
+The marketing website in `site/` is hand-authored static HTML and has **no build step**. Preview it
+with the same local static-asset server:
+
+```bash
+npm run preview:site
+```
+
+This serves `site/` exactly as the `luciddream-site` Worker will, including `/content/*` and the
+rules in `site/_headers`. Because nothing is compiled, an edit is visible on reload.
+
+Two runtime details are worth knowing when reviewing locally:
+
+- The download button and version badges call GitHub's public releases API. If the call fails —
+  offline, or rate-limited — the page falls back to the values hard-coded in
+  `site/assets/js/release.js`, which must be kept roughly current.
+- The `/scripts/` library is rendered from `/content/manifest.json` at page load. An entry missing
+  from the manifest does not appear, even if the file is published.
+
 ## Branch policy
 
 - Feature and release preparation happens on development/release branches (currently `vlads-dev`).
@@ -74,16 +103,17 @@ and the CI status check, and disallow force pushes/deletion.
 
 ## One-time Cloudflare setup
 
-The repository already contains `wrangler.jsonc`. It defines:
+The repository contains both Worker configurations:
 
-- Worker name: `luciddream-web`
-- Static output: `dist/`
-- Production custom domain: `luciddream.countinglight.com`
+- `wrangler.jsonc` — Worker `luciddream-web`, assets `dist/`, custom domain
+  `luciddreamapp.countinglight.com`.
+- `wrangler.site.jsonc` — Worker `luciddream-site`, assets `site/`, custom domain
+  `luciddream.countinglight.com`.
 
 Before connecting Git, open Cloudflare > `countinglight.com` > DNS > Records and confirm there is no
-existing A, AAAA, or CNAME record named `luciddream`. A Worker Custom Domain is the origin and
-Cloudflare creates its DNS record and TLS certificate. If a conflicting record exists, decide where
-its current traffic should go before deleting it.
+existing A, AAAA, or CNAME record named `luciddream` or `luciddreamapp`. A Worker Custom Domain is
+the origin and Cloudflare creates its DNS record and TLS certificate. If a conflicting record
+exists, decide where its current traffic should go before deleting it.
 
 Then configure Workers Builds:
 
@@ -91,55 +121,76 @@ Then configure Workers Builds:
 2. Open **Workers & Pages** > **Create application**.
 3. Under **Import a repository**, select **Get started**.
 4. Connect GitHub. Grant the Cloudflare GitHub app access to
-   `vladsadovsky/luciddream` (repository-only access is sufficient).
-5. Select the `vladsadovsky/luciddream` repository.
+   `countinglight/luciddream` (repository-only access is sufficient).
+5. Select the `countinglight/luciddream` repository.
 6. Set the application/Worker name to exactly `luciddream-web`. It must match `name` in
    `wrangler.jsonc`.
 7. Set **Production branch** to `deploy`.
 8. Leave **Root directory** empty (the project is at repository root).
 9. Set **Build command** to `npm run build:web`.
-10. Set **Deploy command** to `npx wrangler@4.129.0 deploy`.
+10. Set **Deploy command** to
+    `npx wrangler@4.129.0 deploy && npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`.
+    One build publishes both Workers; each keeps its own version history, so rollback stays
+    per-surface.
 11. Enable non-production branch builds if preview URLs are wanted. Set their deploy command to
-    `npx wrangler@4.129.0 versions upload`.
+    `npx wrangler@4.129.0 versions upload && npx wrangler@4.129.0 versions upload -c wrangler.site.jsonc`.
 12. Add build variable `NODE_VERSION` with value `22`.
 13. Accept Cloudflare's generated build API token. No application runtime secrets are required.
 14. Select **Save and Deploy**.
 
-The first production deployment reads the custom-domain route from `wrangler.jsonc`. Cloudflare
-creates the DNS record and provisions TLS. In the Worker, open **Settings > Domains & Routes** and
-confirm both the `workers.dev` address and `luciddream.countinglight.com` appear. Certificate/DNS
+The first production deployment reads each custom-domain route from its Wrangler configuration.
+Cloudflare creates the DNS records and provisions TLS. Open **Settings > Domains & Routes** on each
+Worker and confirm its `workers.dev` address and its custom domain appear. Certificate/DNS
 activation can take a few minutes.
 
-If the custom domain was not created, add it manually from **Settings > Domains & Routes > Add >
-Custom Domain**, enter `luciddream.countinglight.com`, and select **Add Custom Domain**. Do not add a
-Worker Route ending in `/*`; this Worker is the origin, so Custom Domain is the correct routing mode.
+If a custom domain was not created, add it manually from **Settings > Domains & Routes > Add >
+Custom Domain** on the correct Worker. Do not add a Worker Route ending in `/*`; these Workers are
+origins, so Custom Domain is the correct routing mode.
+
+**Moving the application off `luciddream.countinglight.com`.** A hostname can belong to only one
+Worker. When migrating an existing single-Worker setup, remove `luciddream.countinglight.com` from
+`luciddream-web` first, add `luciddreamapp.countinglight.com` to it, then attach
+`luciddream.countinglight.com` to `luciddream-site`. Doing it in that order avoids a routing
+conflict, at the cost of a short window in which the old address serves nothing.
 
 ## Production verification
 
-Open these URLs in a private browser window:
+Open these URLs in a private browser window.
+
+Application:
+
+- `https://luciddreamapp.countinglight.com/`
+- `https://luciddreamapp.countinglight.com/library`
+
+Website and published content:
 
 - `https://luciddream.countinglight.com/`
-- `https://luciddream.countinglight.com/library`
+- `https://luciddream.countinglight.com/scripts/`
+- `https://luciddream.countinglight.com/install/`
+- `https://luciddream.countinglight.com/privacy/`
+- `https://luciddream.countinglight.com/about/`
 - `https://luciddream.countinglight.com/content/manifest.json`
 - `https://luciddream.countinglight.com/content/scripts/example.yaml`
 
 Also verify headers from a terminal:
 
 ```bash
+curl -I https://luciddreamapp.countinglight.com/
 curl -I https://luciddream.countinglight.com/
 curl -I https://luciddream.countinglight.com/content/scripts/example.yaml
 ```
 
 The content response must include `access-control-allow-origin: *`. Exercise the app by adding the
 example script from its full URL, running its Test action, and reloading the browser to confirm the
-library and selected phase persist.
+library and selected phase persist. On the website, confirm the download button resolves to the
+current GitHub release and that the script library on `/scripts/` lists the published entries.
 
 ## Web lock-screen demo
 
 The testing controls are available only at this exact production URL:
 
 ```text
-https://luciddream.countinglight.com/?demo=lock
+https://luciddreamapp.countinglight.com/?demo=lock
 ```
 
 Start a run before using the controls. **Simulate Lock** replaces the normal page with a dark
@@ -158,10 +209,10 @@ not prove that a browser run survives real screen-off/background execution.
 
 ## Publishing customer scripts and signals
 
-Public customer files live here:
+Public customer files live here, served by the **site** Worker:
 
 ```text
-public/content/
+site/content/
   manifest.json
   scripts/
   signals/
@@ -173,19 +224,20 @@ Cloudflare Workers Static Assets' 25 MiB limit.
 
 To publish content:
 
-1. Add the YAML file under `public/content/scripts/` or audio under `public/content/signals/` on the
+1. Add the YAML file under `site/content/scripts/` or audio under `site/content/signals/` on the
    active release branch.
-2. Add its display name and absolute production URL to `public/content/manifest.json`.
-3. Run `npm run build:web` and confirm the file exists at the same relative path under `dist/`.
+2. Add its display name and absolute production URL to `site/content/manifest.json`. The website's
+   `/scripts/` page renders this manifest, so an entry omitted here is published but invisible.
+3. Run `npm run preview:site` and fetch the file from the local preview.
 4. Commit and push the release branch.
 5. Test the Cloudflare preview version if branch previews are enabled.
 6. Merge the release branch into `deploy`. Cloudflare publishes it automatically.
 7. Fetch the production URL directly and test adding it in LucidDream's Library.
 
 Content is intentionally public and receives `Access-Control-Allow-Origin: *`. The checked-in
-`public/_headers` uses browser revalidation for `/content/*`, so keeping a stable URL is safe: after
+`site/_headers` uses browser revalidation for `/content/*`, so keeping a stable URL is safe: after
 a deployment clients revalidate it instead of retaining stale content indefinitely. Expo's hashed
-application bundles receive a one-year immutable cache policy.
+application bundles receive a one-year immutable cache policy from `public/_headers`.
 
 Static hosting has no directory listing. `manifest.json` is the discoverable catalog and must be
 updated alongside files. Removing a file breaks customers who still reference its URL; prefer
@@ -199,31 +251,39 @@ can publish the checked-out commit locally:
 ```bash
 npx wrangler@4.129.0 login
 npm run deploy:web
+npm run deploy:site
 ```
 
 Wrangler opens a browser for Cloudflare authorization. Confirm the selected account owns
-`countinglight.com` before deploying.
+`countinglight.com` before deploying. The two commands are independent — publishing only the website
+does not require rebuilding or redeploying the application.
 
 ## Rollback and troubleshooting
 
-To roll back immediately, open **Workers & Pages > luciddream-web > Deployments**, select the last
-known-good deployment/version, and choose **Rollback**. Then revert the bad commit in Git; otherwise
+To roll back immediately, open **Workers & Pages**, select the affected Worker (`luciddream-web` for
+the application, `luciddream-site` for the website), open **Deployments**, choose the last
+known-good deployment/version, and select **Rollback**. Then revert the bad commit in Git; otherwise
 the next push to `deploy` will publish it again.
 
 Common failures:
 
-- **Worker name mismatch:** the dashboard application and `wrangler.jsonc` must both say
-  `luciddream-web`.
-- **Custom domain conflict:** remove an existing DNS record for `luciddream` before adding the
-  Worker Custom Domain.
+- **Worker name mismatch:** the dashboard application and the Wrangler configuration must agree —
+  `luciddream-web` with `wrangler.jsonc`, `luciddream-site` with `wrangler.site.jsonc`.
+- **Custom domain conflict:** a hostname can belong to only one Worker. Remove it from the previous
+  Worker before attaching it to another, and remove any conflicting DNS record first.
 - **Build uses the wrong code:** confirm the production branch is `deploy` and root directory is
   empty.
 - **`dist` missing:** the build command must be `npm run build:web` and complete before deploy.
+- **Only one surface updated:** the deploy command must run both `wrangler deploy` invocations; see
+  step 10 of the setup.
 - **A customer URL works directly but not in a browser app:** check that the response contains the
-  CORS header from `public/_headers`.
+  CORS header from `site/_headers`.
 - **Audio deployment is rejected:** verify that every individual file is below 25 MiB; larger files
   require a different store such as Cloudflare R2.
 
 ## Android install APK via USB
 
-start %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install android\app\build\outputs\apk\release\luciddream-v1.0.0-release.apk
+start %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install android\app\build\outputs\apk\release\luciddream-v0.5.0-release.apk
+
+The APK filename tracks `version` in `package.json` through
+`plugins/withCanonicalVersion.js`, so it changes with each version bump.

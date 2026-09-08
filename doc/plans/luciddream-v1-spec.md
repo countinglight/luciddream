@@ -418,11 +418,14 @@ because **releases are built on version tags only** — never on every push — 
 ### 5.4 Web — Cloudflare Workers Static Assets
 
 The Expo static export (`npx expo export --platform web`) is deployed from the repository's `deploy`
-branch to the `luciddream-web` Worker and served from `luciddream.countinglight.com`. The same static
-deployment publishes public, cross-origin-readable customer content under `/content/scripts/` and
-`/content/signals/`, catalogued by `/content/manifest.json`. Individual assets remain below the
-Workers Static Assets 25 MiB limit. The exact setup, release, verification and rollback procedure is
-maintained in `BUILD.md` at repository root.
+branch to the `luciddream-web` Worker and served from `luciddreamapp.countinglight.com`. A second
+Worker, `luciddream-site`, is published from the same branch by the same build and serves the
+marketing website from `site/` on `luciddream.countinglight.com`; it also publishes the public,
+cross-origin-readable customer content under `/content/scripts/` and `/content/signals/`, catalogued
+by `/content/manifest.json`. Content is served from the website's hostname so that URLs already
+distributed to users remain valid. Individual assets remain below the Workers Static Assets 25 MiB
+limit. The exact setup, release, verification and rollback procedure is maintained in `BUILD.md` at
+repository root; the website itself is specified in `doc/plans/luciddream-website-plan.md`.
 
 The hosted build matches the browser behavior of `npm run web`; it does not claim the native mobile
 foreground service's reliability when a browser throttles or suspends an inactive tab.
@@ -491,8 +494,8 @@ approved release branch into the protected `deploy` branch; Cloudflare watches o
 | **M2 — Audio & library**   | AudioPort over expo-audio, signal resolution/caching, save-offline persistence (§4.5), Library screen.                                                                        | A script can be loaded from a URL, saved offline, and played end to end in the foreground with the network off.                                        |
 | **M3 — Run & session**     | Run screen, foreground service, wake lock, master volume, Stop, voice/sound interrupt (§4.6) — Android first; iOS background-audio equivalent follows once Android is proven. | An 8-hour script runs on a physical Android device with the screen off; a loud sound near the device audibly quiets playback without stopping the run. |
 | **M4 — Logging & context** | JSONL event log, Log screen, export, mock/scripted context providers, conditionals wired.                                                                                     | A conditional script branches on simulated REM; log exports and reads correctly.                                                                       |
-| **M5 — Android release**   | `release-android.yml`, versioning, README install instructions, overnight checklist run.                                                                                      | A `v1.0.0` tag produces a GitHub Release with an installable APK.                                                                                      |
-| **M6 — iOS release**       | Apple Developer Program enrollment, App Store Connect app record + API key, `ios-testflight` EAS profile, `release-ios.yml` + `eas-build-ios.yml`, scheduled re-submit.       | The same `v1.0.0` tag (or the next tag once Android is stable) produces a TestFlight build installable by an external tester.                          |
+| **M5 — Android release**   | `release-android.yml`, versioning, README install instructions, overnight checklist run.                                                                                      | A version tag produces a GitHub Release with an installable APK.                                                                                       |
+| **M6 — iOS release**       | Apple Developer Program enrollment, App Store Connect app record + API key, `ios-testflight` EAS profile, `release-ios.yml` + `eas-build-ios.yml`, scheduled re-submit.       | The same version tag (or the next tag once Android is stable) produces a TestFlight build installable by an external tester.                           |
 
 M1 through M4 each end with something demonstrable and are platform-agnostic where the code allows
 it. M1 deliberately has no UI at all — the engine is the risky part and it is fully testable without

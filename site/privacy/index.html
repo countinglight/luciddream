@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy — LucidDream</title>
+    <meta
+      name="description"
+      content="LucidDream has no accounts, no server and no tracking. What stays on your device, and the only things that ever leave it."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LucidDream privacy" />
+    <meta
+      property="og:description"
+      content="No accounts, no server, no tracking. Everything stays on your device."
+    />
+    <meta
+      property="og:image"
+      content="https://luciddream.countinglight.com/assets/img/owl-512.png"
+    />
+    <meta
+      property="og:url"
+      content="https://luciddream.countinglight.com/privacy/"
+    />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/assets/css/site.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="/">
+          <img src="/assets/img/owl-mark.svg" alt="" width="28" height="28" />
+          LucidDream
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="/#what">What it does</a>
+          <a href="/scripts/">Scripts</a>
+          <a href="/install/">Install</a>
+          <a class="site-nav__more" href="/about/">About</a>
+          <a
+            class="btn btn--primary"
+            href="https://luciddreamapp.countinglight.com/"
+            >Open the web app</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="band" style="border-top: 0">
+        <div class="container">
+          <p class="eyebrow">Privacy</p>
+          <h1>Everything stays on your device</h1>
+          <p class="band__lede">
+            LucidDream has no accounts, no server of its own, and no analytics.
+            There is nowhere for your data to go, because there is nothing on
+            the other end.
+          </p>
+        </div>
+      </section>
+
+      <section class="band band--alt">
+        <div class="container">
+          <h2>What the app stores, and where</h2>
+          <div class="prose">
+            <p>
+              Your signals, your scripts, your settings and your run logs live
+              in the app's own storage on the device — in app storage on
+              Android, and in the browser's own storage in the web version.
+              Uninstalling the app, or clearing the site's data in your browser,
+              deletes them.
+            </p>
+            <p>
+              A run log leaves the device only when you export it yourself,
+              through the share sheet, and then it goes wherever you send it.
+            </p>
+          </div>
+
+          <h2>What ever leaves the device</h2>
+          <ul class="notes">
+            <li>
+              <strong>Files you ask for.</strong> When you add a script or a
+              signal from a URL, the app fetches that URL. That is a request to
+              whoever hosts it — this site, if the file came from here.
+            </li>
+            <li>
+              <strong>Nothing else.</strong> No account, no sync, no crash
+              reporting, no usage statistics, no advertising identifiers, no
+              third-party SDKs of any kind.
+            </li>
+          </ul>
+
+          <h2>The microphone</h2>
+          <div class="prose">
+            <p>
+              The optional gentle interrupt uses the microphone to answer one
+              question: how loud is the room right now. It reads a level in
+              decibels and nothing else. There is no speech recognition — the
+              app cannot tell a spoken word from a snore, and does not try.
+            </p>
+            <p>
+              While that setting is on, the system audio recorder writes to a
+              temporary file in the app's own private storage as a side effect
+              of measuring. LucidDream never reads that file, never puts it in
+              your log, and never sends it anywhere. Leave the setting off and
+              the app never asks for the microphone at all.
+            </p>
+          </div>
+
+          <h2>This website</h2>
+          <div class="prose">
+            <p>
+              These pages set no cookies, load no fonts or scripts from other
+              companies, and carry no analytics. The site is served by
+              Cloudflare, which — like any web host — sees ordinary request
+              information such as IP addresses in its own logs.
+            </p>
+            <p>
+              Two pages make a request while you read them: the download button
+              asks GitHub's public API for the current release, and the script
+              library asks this site for its own catalogue. Neither sends
+              anything about you.
+            </p>
+          </div>
+
+          <h2>Children, and health data</h2>
+          <div class="prose">
+            <p>
+              LucidDream is not directed at children, collects nothing from
+              anyone, and is not a medical device. It is an experimental
+              self-study tool. Nothing it records is health information held by
+              us, because we hold nothing.
+            </p>
+          </div>
+
+          <h2>Questions</h2>
+          <div class="prose">
+            <p>
+              The application is open source — if a claim on this page matters
+              to you, you can read the code that backs it in
+              <a href="https://github.com/countinglight/luciddream"
+                >the repository</a
+              >. A contact address is <span class="pending">coming soon</span>;
+              until then, please raise anything through
+              <a href="https://github.com/countinglight/luciddream/issues"
+                >GitHub issues</a
+              >.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="site-footer__grid">
+          <div>
+            <h2>The app</h2>
+            <ul>
+              <li>
+                <a href="https://luciddreamapp.countinglight.com/"
+                  >Open the web app</a
+                >
+              </li>
+              <li>
+                <a
+                  data-release="download"
+                  href="https://github.com/countinglight/luciddream/releases/latest"
+                  >Download for Android</a
+                >
+              </li>
+              <li><a href="/install/">Install guide</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Reference</h2>
+            <ul>
+              <li><a href="/scripts/">Script format &amp; library</a></li>
+              <li><a href="/privacy/">Privacy</a></li>
+              <li><a href="/about/">About the project</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Source</h2>
+            <ul>
+              <li>
+                <a href="https://github.com/countinglight/luciddream"
+                  >GitHub repository</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/countinglight/luciddream/blob/master/LICENSE"
+                  >Licence</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/countinglight/luciddream/issues"
+                  >Report a problem</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Contact</h2>
+            <ul>
+              <li><span class="pending">Email address coming soon</span></li>
+              <li>
+                Until then, please use
+                <a href="https://github.com/countinglight/luciddream/issues"
+                  >GitHub issues</a
+                >.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <p class="site-footer__base">
+          <span>Owl painting by Galina Landes.</span>
+          <span
+            >LucidDream Beta 1 ·
+            <span data-release="version">v0.5.0</span></span
+          >
+        </p>
+      </div>
+    </footer>
+
+    <script src="/assets/js/release.js" defer></script>
+  </body>
+</html>

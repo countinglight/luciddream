@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LucidDream — audio experiments for the night</title>
+    <meta
+      name="description"
+      content="LucidDream plays sounds you choose, at times you choose, through the night, and writes down exactly what it did. An experimental self-study app for Android and the browser."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LucidDream" />
+    <meta
+      property="og:description"
+      content="Plan a night of audio in plain text, let your phone run it while you sleep, and read what happened in the morning."
+    />
+    <meta
+      property="og:image"
+      content="https://luciddream.countinglight.com/assets/img/owl-512.png"
+    />
+    <meta property="og:url" content="https://luciddream.countinglight.com/" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/assets/css/site.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="/">
+          <img src="/assets/img/owl-mark.svg" alt="" width="28" height="28" />
+          LucidDream
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="#what">What it does</a>
+          <a href="/scripts/">Scripts</a>
+          <a href="/install/">Install</a>
+          <a class="site-nav__more" href="/about/">About</a>
+          <a
+            class="btn btn--primary"
+            href="https://luciddreamapp.countinglight.com/"
+            >Open the web app</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="container hero__grid">
+          <div>
+            <p class="badge">
+              Beta 1 · <span data-release="version">v0.5.0</span>
+            </p>
+            <h1>Sounds you chose, at the times you chose, all night.</h1>
+            <p class="hero__lede">
+              LucidDream runs a plan you write yourself — which sounds play, how
+              loud, how often, and when — while your phone sits beside the bed.
+              In the morning it hands you a log of everything it actually did.
+            </p>
+            <div class="btn-row">
+              <a
+                class="btn btn--primary"
+                href="https://luciddreamapp.countinglight.com/"
+                >Open the web app</a
+              >
+              <a
+                class="btn btn--ghost"
+                data-release="download"
+                href="https://github.com/countinglight/luciddream/releases/latest"
+              >
+                Download for Android
+              </a>
+            </div>
+            <p class="btn-note">
+              Android <span data-release="version">v0.5.0</span>,
+              <span data-release="size">62.7 MB</span> —
+              <a href="/install/">how to install it</a>. The browser version
+              runs the same app, with the limits described
+              <a href="#limits">below</a>.
+            </p>
+          </div>
+          <figure class="frame">
+            <img
+              src="/assets/img/owl-painting.png"
+              width="1024"
+              height="1024"
+              alt="Painting of a blue owl, its head turned slightly, looking directly at the viewer."
+            />
+            <figcaption>Owl painting by Galina Landes</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="band band--alt" id="what">
+        <div class="container">
+          <p class="eyebrow">What it does</p>
+          <h2>Three parts, and nothing else</h2>
+          <p class="band__lede">
+            LucidDream is small on purpose. It holds your sounds, runs your
+            plan, and records the result. It does not interpret anything, and it
+            does not decide anything for you.
+          </p>
+          <div class="cards">
+            <article class="card">
+              <h3>A library you assemble</h3>
+              <p>
+                <strong>Signals</strong> are short audio files — bundled with
+                the app, fetched from a URL, or picked off your device.
+                <strong>Scripts</strong> are small text documents that say what
+                to play and when. Anything you pull from a URL can be saved for
+                offline use.
+              </p>
+            </article>
+            <article class="card">
+              <h3>A night in three phases</h3>
+              <p>
+                Pre-sleep Training, Early Sleep, and Wake Up. Each phase takes
+                one script, or none. Training is optional; the two sleep phases
+                cannot both be empty. Your selections are remembered between
+                launches.
+              </p>
+            </article>
+            <article class="card">
+              <h3>A log you can actually read</h3>
+              <p>
+                Every playback, every volume change, every reading the script
+                branched on, timestamped to the second. One run produces one
+                log. You can read it in the app or export the file and keep it.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="band">
+        <div class="container">
+          <p class="eyebrow">How a night works</p>
+          <h2>Four things you do</h2>
+          <ol class="steps">
+            <li>
+              <strong>Choose your scripts</strong>
+              <p>
+                Pick a script for each phase you want to use, and leave the rest
+                empty.
+              </p>
+            </li>
+            <li>
+              <strong>Set the level by ear</strong>
+              <p>
+                Move the master volume slider and press Test. It plays the
+                script's first signal at that level, so you set it with your own
+                ears rather than guessing.
+              </p>
+            </li>
+            <li>
+              <strong>Press Start and put the phone down</strong>
+              <p>
+                The app validates the scripts, resolves every sound, takes a
+                wake lock and shows a notification with the current step and a
+                Stop action. The screen can go off.
+              </p>
+            </li>
+            <li>
+              <strong>Stop it in the morning, and read the log</strong>
+              <p>
+                Press Stop — or let the script finish on its own — and the run
+                appears in the Log tab as a timeline you can scroll through and
+                share.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="band band--alt">
+        <div class="container">
+          <p class="eyebrow">Scripts</p>
+          <h2>A script is a text file you can read out loud</h2>
+          <p class="band__lede">
+            No visual editor, no hidden state. A script is YAML — a list of
+            instructions, executed in order — which means you can write one in
+            any editor, keep it in a file, mail it to someone, and read it back
+            a year later and still know what it does.
+          </p>
+          <pre><code>name: Chime through the early hours
+version: 1
+volume: 0.4              <span class="c"># master level for this script</span>
+
+body:
+  - log: "run started"
+  - wait: 90m            <span class="c"># let the first sleep cycle pass</span>
+
+  - repeat: 6
+    body:
+      - play: chime
+      - wait: 20m</code></pre>
+          <p>
+            Loops, conditions, scoped volume changes and markers are all
+            available.
+            <a href="/scripts/">The full script format</a> — with every
+            statement, every condition, and the scripts already published here —
+            is one page away.
+          </p>
+        </div>
+      </section>
+
+      <section class="band" id="see">
+        <div class="container">
+          <p class="eyebrow">See it</p>
+          <h2>What it looks like</h2>
+          <p class="band__lede">
+            Screenshots of the current build are being captured and will appear
+            here shortly.
+          </p>
+          <div class="shots">
+            <figure class="shot shot--phone">
+              <div class="shot__media">
+                <svg
+                  class="placeholder"
+                  viewBox="0 0 270 585"
+                  role="img"
+                  aria-label="Screenshot placeholder: the Run screen at rest"
+                >
+                  <rect
+                    x="8"
+                    y="8"
+                    width="254"
+                    height="569"
+                    rx="10"
+                    fill="none"
+                    stroke="#c2bbaa"
+                    stroke-width="2"
+                    stroke-dasharray="7 6"
+                  />
+                  <text
+                    x="135"
+                    y="285"
+                    text-anchor="middle"
+                    font-family="system-ui, sans-serif"
+                    font-size="14"
+                    fill="#9c9dae"
+                  >
+                    Screenshot A
+                  </text>
+                  <text
+                    x="135"
+                    y="308"
+                    text-anchor="middle"
+                    font-family="system-ui, sans-serif"
+                    font-size="12"
+                    fill="#9c9dae"
+                  >
+                    Run screen, at rest
+                  </text>
+                </svg>
+              </div>
+              <figcaption>
+                The Run screen before a night starts, with a script chosen for
+                each phase.
+              </figcaption>
+            </figure>
+            <figure class="shot shot--phone">
+              <div class="shot__media">
+                <svg
+                  class="placeholder"
+                  viewBox="0 0 270 585"
+                  role="img"
+                  aria-label="Screenshot placeholder: a run in progress"
+                >
+                  <rect
+                    x="8"
+                    y="8"
+                    width="254"
+                    height="569"
+                    rx="10"
+                    fill="none"
+                    stroke="#c2bbaa"
+                    stroke-width="2"
+                    stroke-dasharray="7 6"
+                  />
+                  <text
+                    x="135"
+                    y="285"
+                    text-anchor="middle"
+                    font-family="system-ui, sans-serif"
+                    font-size="14"
+                    fill="#9c9dae"
+                  >
+                    Screenshot B
+                  </text>
+                  <text
+                    x="135"
+                    y="308"
+                    text-anchor="middle"
+                    font-family="system-ui, sans-serif"
+                    font-size="12"
+                    fill="#9c9dae"
+                  >
+                    A run in progress
+                  </text>
+                </svg>
+              </div>
+              <figcaption>
+                Mid-run: elapsed time, the current step, and what is scheduled
+                next.
+              </figcaption>
+            </figure>
+            <figure class="shot shot--phone">
+              <div class="shot__media">
+                <svg
+                  class="placeholder"
+                  viewBox="0 0 270 585"
+                  role="img"
+                  aria-label="Screenshot placeholder: a run log"
+                >
+                  <rect
+                    x="8"
+                    y="8"
+                    width="254"
+                    height="569"
+                    rx="10"
+                    fill="none"
+                    stroke="#c2bbaa"
+                    stroke-width="2"
+                    stroke-dasharray="7 6"
+                  />
+                  <text
+                    x="135"
+                    y="285"
+                    text-anchor="middle"
+                    font-family="system-ui, sans-serif"
+                    font-size="14"
+                    fill="#9c9dae"
+                  >
+                    Screenshot C
+                  </text>
+                  <text
+                    x="135"
+                    y="308"
+                    text-anchor="middle"
+                    font-family="system-ui, sans-serif"
+                    font-size="12"
+                    fill="#9c9dae"
+                  >
+                    A night's log
+                  </text>
+                </svg>
+              </div>
+              <figcaption>
+                The morning after: every event of one night, in order.
+              </figcaption>
+            </figure>
+          </div>
+          <p class="btn-note" style="margin-top: 1.5rem">
+            There is also a
+            <a href="https://luciddreamapp.countinglight.com/?demo=lock"
+              >lock-screen demonstration</a
+            >
+            in the browser build. It shows the interface a half-asleep person
+            meets; it does not prove how the app behaves with the screen
+            genuinely off.
+          </p>
+        </div>
+      </section>
+
+      <section class="band band--alt" id="owl">
+        <div class="container hero__grid">
+          <div>
+            <p class="eyebrow">Why an owl</p>
+            <h2>Awake while you are not</h2>
+            <p>
+              An owl is nocturnal, hears far more than it sees, and waits
+              without hurrying. That is exactly the posture this app takes:
+              awake through the night, listening, patient, doing nothing at all
+              until the moment it was asked to act.
+            </p>
+            <p>
+              The owl is also Athena's companion — the old emblem of attention
+              and good judgment rather than of magic or prophecy. That is the
+              register we want. LucidDream pays attention and keeps an honest
+              record. It does not claim to know what your night meant.
+            </p>
+            <p>
+              And this particular owl was painted by hand, by a person, which is
+              the truest thing about the project's character.
+            </p>
+          </div>
+          <figure class="frame frame--sm">
+            <img
+              src="/assets/img/owl-512.png"
+              width="512"
+              height="512"
+              alt="Detail of the blue owl painting."
+            />
+            <figcaption>Owl painting by Galina Landes</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="band" id="get">
+        <div class="container">
+          <p class="eyebrow">Get it</p>
+          <h2>Two ways to run it today</h2>
+          <div class="channels">
+            <article class="channel">
+              <h3>In your browser</h3>
+              <p>
+                The same application, nothing to install. Good for writing
+                scripts, building your library, and trying the interface.
+              </p>
+              <div class="btn-row">
+                <a
+                  class="btn btn--primary"
+                  href="https://luciddreamapp.countinglight.com/"
+                  >Open the web app</a
+                >
+              </div>
+              <p class="meta">
+                Browsers throttle inactive tabs. Use this to explore, not to run
+                a real night.
+              </p>
+            </article>
+            <article class="channel">
+              <h3>Android</h3>
+              <p>
+                The build to use for an actual night: it holds a wake lock and
+                keeps playing with the screen off, under a foreground-service
+                notification.
+              </p>
+              <div class="btn-row">
+                <a
+                  class="btn btn--primary"
+                  data-release="download"
+                  href="https://github.com/countinglight/luciddream/releases/latest"
+                >
+                  Download the APK
+                </a>
+                <a class="btn btn--ghost" href="/install/">Install guide</a>
+              </div>
+              <p class="meta">
+                <span data-release="version">v0.5.0</span> ·
+                <span data-release="size">62.7 MB</span> · published
+                <span data-release="date">7 September 2026</span>
+              </p>
+            </article>
+            <article class="channel channel--muted">
+              <h3>iOS</h3>
+              <p>
+                Not available yet. There is no build to hand out, and no date to
+                promise. When there is one, it will appear here.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="band band--alt" id="limits">
+        <div class="container">
+          <p class="eyebrow">Plainly</p>
+          <h2>What this is, and what it is not</h2>
+          <ul class="notes">
+            <li>
+              <strong>This is a beta.</strong> Version 0.5.0 is an early build,
+              handed out to a small group. Expect rough edges, and expect things
+              to change.
+            </li>
+            <li>
+              <strong>The browser build is the browser build.</strong> Browsers
+              throttle tabs that are not in front. It is not equivalent to the
+              Android foreground service and it is not a promise of unattended
+              overnight playback.
+            </li>
+            <li>
+              <strong>It is not a medical device.</strong> LucidDream is an
+              experimental self-study tool. It makes no sleep-health claims and
+              offers no clinical guidance. If sleep is causing you trouble, talk
+              to a doctor rather than to an app.
+            </li>
+            <li>
+              <strong>A night with nothing recalled is still data.</strong> The
+              log records what happened regardless of what you remember, and
+              that record is the point.
+            </li>
+            <li>
+              <strong>Nothing you do here leaves your device.</strong> No
+              account, no server, no tracking —
+              <a href="/privacy/">the details are here</a>.
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="site-footer__grid">
+          <div>
+            <h2>The app</h2>
+            <ul>
+              <li>
+                <a href="https://luciddreamapp.countinglight.com/"
+                  >Open the web app</a
+                >
+              </li>
+              <li>
+                <a
+                  data-release="download"
+                  href="https://github.com/countinglight/luciddream/releases/latest"
+                  >Download for Android</a
+                >
+              </li>
+              <li><a href="/install/">Install guide</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Reference</h2>
+            <ul>
+              <li><a href="/scripts/">Script format &amp; library</a></li>
+              <li><a href="/privacy/">Privacy</a></li>
+              <li><a href="/about/">About the project</a></li>
+            </ul>
+          </div>
+          <div>
+            <h2>Source</h2>
+            <ul>
+              <li>
+                <a href="https://github.com/countinglight/luciddream"
+                  >GitHub repository</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/countinglight/luciddream/blob/master/LICENSE"
+                  >Licence</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/countinglight/luciddream/issues"
+                  >Report a problem</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Contact</h2>
+            <ul>
+              <li><span class="pending">Email address coming soon</span></li>
+              <li>
+                Until then, please use
+                <a href="https://github.com/countinglight/luciddream/issues"
+                  >GitHub issues</a
+                >.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <p class="site-footer__base">
+          <span>Owl painting by Galina Landes.</span>
+          <span
+            >LucidDream Beta 1 ·
+            <span data-release="version">v0.5.0</span></span
+          >
+        </p>
+      </div>
+    </footer>
+
+    <script src="/assets/js/release.js" defer></script>
+  </body>
+</html>
