@@ -6,6 +6,8 @@
 **Audience:** Product owners, designers, potential research collaborators, and future contributors.  
 **Boundary:** This paper addresses research, human needs, product purpose, and long-term possibilities. Architecture, implementation, and release commitments belong in separate documents.
 
+**Companion competitive review:** [Dream Journals, Lucid-Dream Training, and Responsive Night Audio](luciddream-competitive-research.md).
+
 ## 1. Executive perspective
 
 LucidDream began with a concrete scenario: author sequences of recordings to play during the night, potentially encourage lucid dreams, and record dreams on waking. That scenario fits a real scientific direction. The broader opportunity is to develop **a personal practice and research environment for dreaming**, connecting preparation, sleep, dream recall, reflection, and experimentation.
