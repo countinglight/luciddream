@@ -3,8 +3,10 @@
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
 
+# Asset filenames are not content-hashed, so they must revalidate rather than
+# sit in a browser cache after a deployment.
 /assets/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*
   X-Content-Type-Options: nosniff

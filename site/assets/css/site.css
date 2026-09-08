@@ -284,6 +284,14 @@ pre .c {
   margin-left: 0.4rem;
 }
 
+/* `.site-nav a` would otherwise win on specificity and repaint the button's
+   label in the muted link colour, on top of the filled background. */
+.site-nav a.btn--primary,
+.site-nav a.btn--primary:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
 @media (max-width: 860px) {
   .site-nav {
     gap: 0.85rem;

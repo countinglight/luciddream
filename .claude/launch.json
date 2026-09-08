@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "web"],
       "port": 8081
+    },
+    {
+      "name": "luciddream-site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview:site"],
+      "port": 8787
     }
   ]
 }
