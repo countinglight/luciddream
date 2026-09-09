@@ -1,7 +1,7 @@
 # LucidDream Website — Plan and Content Specification
 
 **Status:** Signed off, implemented, and live on both hostnames since 2026-09-09. Outstanding: the
-real screenshots (§8), the development credit names (§6.5), and the contact address (§6.6).
+real screenshots (§8) and the contact address (§6.6).
 **Decision date:** 2026-09-08.
 **Scope:** The public marketing website for LucidDream v1, its hosting topology, and the
 repository and deployment changes required to run it alongside the existing web application.
@@ -225,22 +225,30 @@ painting credit, privacy link, version badge.
 
 ### 6.1 Home
 
-A single scrolling page in eight bands.
+A single scrolling page in nine bands.
 
-1. **Hero.** Product name, one plain sentence describing what v1 does, two actions — _Open the web
-   app_ and _Download for Android_ — a version badge reading **Beta 1 · v0.5.0**, and the owl.
-2. **What it does.** Three cards: a library of signals and scripts; a night composed of three
+1. **Hero.** Product name, the purpose in one sentence — whether sound at the right moment helps a
+   person realise they are dreaming — two actions, _Open the web app_ and _Download for Android_, a
+   version badge reading **Beta 1 · v0.5.0**, and the owl.
+2. **Why it exists.** Added 2026-09-09, after the first draft described the mechanism without ever
+   naming its subject. States the question the project investigates: lucid dreaming, and whether
+   audio can support it. Frames v1 as supplying one half of the comparison — an exactly specified
+   stimulus and a faithful record — with the dreamer's own account as the other half, and says
+   plainly that putting the two together is **entirely manual** in this version. It names the
+   project's direction without describing unreleased work: doing that comparison well is the point,
+   and a trustworthy record had to come first. See §7.4.
+3. **What it does.** Three cards: a library of signals and scripts; a night composed of three
    phases — Pre-sleep Training, Early Sleep, Wake Up; a run log that records what actually played.
-3. **How a night works.** Four steps, in the app's own vocabulary: choose a script for each phase;
+4. **How a night works.** Four steps, in the app's own vocabulary: choose a script for each phase;
    set master volume and use Test to set the level by ear; press Start and put the phone down;
    in the morning press Stop and read the log.
-4. **What a script looks like.** A short annotated YAML example, with a link through to `/scripts`.
-5. **See it.** Three screenshot placeholders (§8) plus a link to the lock-screen demonstration on
+5. **What a script looks like.** A short annotated YAML example, with a link through to `/scripts`.
+6. **See it.** Three screenshot placeholders (§8) plus a link to the lock-screen demonstration on
    the application domain, labelled as a UI demonstration rather than proof of overnight behaviour.
-6. **Why an owl.** The story band (§7.2), with the painting and its credit.
-7. **Get it.** Web application, with the browser caveat stated beside the button; Android APK with
+7. **Why an owl.** The story band (§7.2), with the painting and its credit.
+8. **Get it.** Web application, with the browser caveat stated beside the button; Android APK with
    version, size and a link to the install instructions; iOS stated plainly as not yet available.
-8. **What this is, and is not.** The honesty band (§7.3).
+9. **What this is, and is not.** The honesty band (§7.3).
 
 ### 6.2 `/scripts`
 
@@ -287,11 +295,13 @@ and the licence. **No roadmap, no future features, no market framing.**
 1. _Artwork_ — its own block, given visual weight: the painting reproduced at size, with **Owl
    painting by Galina Landes** beneath it. The artwork is the project's identity and is credited as
    a work, not as a line item.
-2. _Development_ — a plain list of the people who built the application, below the artwork block and
-   typographically quieter.
+2. _The people_ — below the artwork block and typographically quieter: Misha Bukatin (Buka), concept
+   and direction; Vlad Sadovsky, all engineering; Galina Landes, inspiration, discipline and the
+   painted art.
 
-_Open:_ the names and roles for the development list are still needed before this page can be
-written.
+Galina appears in both blocks deliberately. The painting is credited as a work in its own right,
+and her contribution to the project is credited alongside the others. Supplied and published
+2026-09-09.
 
 ### 6.6 Contact
 
@@ -394,5 +404,4 @@ introduced.
 - **Higher-resolution owl artwork**, if the original scan exists.
 - **Contact address** — the footer and `/about` carry a placeholder (§6.6) until the project's email
   domain is created; swapping it in is a one-line change.
-- **Development credit names** — required before `/about` can be finished (§6.5).
 - **Store links** replace the APK section when Play Store and App Store distribution begins.
