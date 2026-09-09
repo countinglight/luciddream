@@ -1,22 +1,31 @@
-import { Slider } from '@expo/ui/community/slider';
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Slider } from "@expo/ui/community/slider";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Button } from '@/components/button';
-import { ScriptPickerModal } from '@/components/script-picker-modal';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useLibrary } from '@/context/library-context';
-import { useSessionContext } from '@/context/session-context';
-import { useSettings } from '@/context/settings-context';
-import { formatDuration } from '@/engine';
-import { useTheme } from '@/hooks/use-theme';
-import { isLockDemo } from '@/lib/demo-mode';
-import { RUN_PHASES, type RunPhaseKey, validateRunPhaseScriptIds } from '@/lib/run-phases';
-import type { LibraryScript } from '@/storage/library-types';
+import { Button } from "@/components/button";
+import { ScriptPickerModal } from "@/components/script-picker-modal";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import {
+  BottomTabInset,
+  MaxContentWidth,
+  Spacing,
+  TopTabInset,
+} from "@/constants/theme";
+import { useLibrary } from "@/context/library-context";
+import { useSessionContext } from "@/context/session-context";
+import { useSettings } from "@/context/settings-context";
+import { formatDuration } from "@/engine";
+import { useTheme } from "@/hooks/use-theme";
+import { isLockDemo } from "@/lib/demo-mode";
+import {
+  RUN_PHASES,
+  type RunPhaseKey,
+  validateRunPhaseScriptIds,
+} from "@/lib/run-phases";
+import type { LibraryScript } from "@/storage/library-types";
 
 /**
  * Setup only — choosing the three phases' scripts and the master volume,
@@ -34,23 +43,30 @@ export default function HomeScreen() {
   const [testingPhase, setTestingPhase] = useState<RunPhaseKey | null>(null);
   const [simulatedLocked, setSimulatedLocked] = useState(false);
   const [simulatedNoiseActive, setSimulatedNoiseActive] = useState(false);
-  const noiseResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noiseResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [pickerPhase, setPickerPhase] = useState<RunPhaseKey | null>(null);
-  const isBusy = session.status === 'starting' || session.status === 'running';
+  const isBusy = session.status === "starting" || session.status === "running";
   const lockDemoEnabled =
-    Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
     isLockDemo(window.location.search, process.env.EXPO_PUBLIC_DEMO);
 
   const selectedScripts = Object.fromEntries(
     RUN_PHASES.map((phase) => [
       phase.key,
-      scripts.find((script) => script.id === settings.runPhaseScriptIds[phase.key]) ?? null,
+      scripts.find(
+        (script) => script.id === settings.runPhaseScriptIds[phase.key],
+      ) ?? null,
     ]),
   ) as Record<RunPhaseKey, LibraryScript | null>;
 
   const effectiveIds = Object.fromEntries(
-    RUN_PHASES.map((phase) => [phase.key, selectedScripts[phase.key]?.id ?? null]),
+    RUN_PHASES.map((phase) => [
+      phase.key,
+      selectedScripts[phase.key]?.id ?? null,
+    ]),
   ) as typeof settings.runPhaseScriptIds;
   const selectionError = validateRunPhaseScriptIds(effectiveIds);
   const selectedPhases = RUN_PHASES.map((phase, index) => ({
@@ -60,24 +76,25 @@ export default function HomeScreen() {
   }));
 
   useEffect(() => {
-    if (session.status === 'running') return;
+    if (session.status === "running") return;
     if (noiseResumeTimerRef.current) clearTimeout(noiseResumeTimerRef.current);
     noiseResumeTimerRef.current = null;
   }, [session.status]);
 
   useEffect(
     () => () => {
-      if (noiseResumeTimerRef.current) clearTimeout(noiseResumeTimerRef.current);
+      if (noiseResumeTimerRef.current)
+        clearTimeout(noiseResumeTimerRef.current);
     },
     [],
   );
 
   const simulateLoudNoise = () => {
-    if (session.status !== 'running' || simulatedNoiseActive) return;
-    session.handleVoiceInterrupt('trigger');
+    if (session.status !== "running" || simulatedNoiseActive) return;
+    session.handleVoiceInterrupt("trigger");
     setSimulatedNoiseActive(true);
     noiseResumeTimerRef.current = setTimeout(() => {
-      session.handleVoiceInterrupt('resume');
+      session.handleVoiceInterrupt("resume");
       setSimulatedNoiseActive(false);
       noiseResumeTimerRef.current = null;
     }, 15_000);
@@ -104,7 +121,10 @@ export default function HomeScreen() {
     });
   };
 
-  const handleTest = async (phase: RunPhaseKey, script: LibraryScript | null) => {
+  const handleTest = async (
+    phase: RunPhaseKey,
+    script: LibraryScript | null,
+  ) => {
     if (!script || testingPhase || isBusy) return;
     setTestingPhase(phase);
     try {
@@ -114,34 +134,60 @@ export default function HomeScreen() {
     }
   };
 
-  if (lockDemoEnabled && simulatedLocked && session.status === 'running') {
+  if (lockDemoEnabled && simulatedLocked && session.status === "running") {
     return (
       <ThemedView style={styles.lockScreen}>
         <ThemedView style={styles.lockContent}>
-          <ThemedText type="code" style={styles.lockEyebrow}>SIMULATED LOCK SCREEN</ThemedText>
-          <ThemedText type="title" style={styles.lockTitle}>LucidDream is running</ThemedText>
-          <ThemedText type="smallBold">{session.activePhaseLabel ?? 'Preparing phases'}</ThemedText>
+          <ThemedText type="code" style={styles.lockEyebrow}>
+            SIMULATED LOCK SCREEN
+          </ThemedText>
+          <ThemedText type="title" style={styles.lockTitle}>
+            LucidDream is running
+          </ThemedText>
+          <ThemedText type="smallBold">
+            {session.activePhaseLabel ?? "Preparing phases"}
+          </ThemedText>
           <ThemedText themeColor="textSecondary">
             {session.activeScriptName ?? session.scriptName}
           </ThemedText>
-          <ThemedText type="code">Total {formatDuration(session.elapsedMs)}</ThemedText>
+          <ThemedText type="code">
+            Total {formatDuration(session.elapsedMs)}
+          </ThemedText>
           {session.currentStepText && (
             <ThemedText type="small" themeColor="textSecondary">
               {session.currentStepText}
             </ThemedText>
           )}
           <ThemedView style={styles.lockActions}>
-            <Button label="Stop run" onPress={stopRun} variant="danger" style={styles.demoButton} />
-            <Button label="Wake / Unlock" onPress={() => setSimulatedLocked(false)} style={styles.demoButton} />
             <Button
-              label={simulatedNoiseActive ? 'Noise detected — resuming soon…' : 'Simulate loud noise'}
+              label="Stop run"
+              onPress={stopRun}
+              variant="danger"
+              style={styles.demoButton}
+            />
+            <Button
+              label="Wake / Unlock"
+              onPress={() => setSimulatedLocked(false)}
+              style={styles.demoButton}
+            />
+            <Button
+              label={
+                simulatedNoiseActive
+                  ? "Noise detected — resuming soon…"
+                  : "Simulate loud noise"
+              }
               onPress={simulateLoudNoise}
               disabled={simulatedNoiseActive}
               style={styles.demoButton}
             />
           </ThemedView>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.demoDisclaimer}>
-            Demo simulation only. It does not put this browser or device to sleep.
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+            style={styles.demoDisclaimer}
+          >
+            Demo simulation only. It does not put this browser or device to
+            sleep.
           </ThemedText>
         </ThemedView>
       </ThemedView>
@@ -150,10 +196,12 @@ export default function HomeScreen() {
   const handleStart = () => {
     resetDemoState();
     session.start(selectedPhases, volume);
-    router.push('/run');
+    router.push("/run");
   };
 
-  const pickerPhaseConfig = pickerPhase ? RUN_PHASES.find((phase) => phase.key === pickerPhase) : null;
+  const pickerPhaseConfig = pickerPhase
+    ? RUN_PHASES.find((phase) => phase.key === pickerPhase)
+    : null;
 
   return (
     <ThemedView style={styles.container}>
@@ -161,41 +209,49 @@ export default function HomeScreen() {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}>
-          <ThemedText type="title" style={styles.title}>
-            LucidDream
-          </ThemedText>
-
-          <ThemedText type="small" themeColor="textSecondary" style={styles.intro}>
-            Choose the scripts that will run in order. Empty phases are skipped.
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedText
+            type="small"
+            themeColor="textSecondary"
+            style={styles.intro}
+          >
+            Choose the scripts that will run in order.
           </ThemedText>
 
           {lockDemoEnabled && (
             <ThemedView type="backgroundElement" style={styles.demoCard}>
               <ThemedText type="smallBold">Web lock-screen demo</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                These controls simulate the user experience. They do not test real phone background execution.
+                These controls simulate the user experience. They do not test
+                real phone background execution.
               </ThemedText>
               <ThemedView style={styles.demoControls}>
                 <Button
                   label="Simulate Lock"
                   onPress={() => setSimulatedLocked(true)}
-                  disabled={session.status !== 'running'}
+                  disabled={session.status !== "running"}
                   style={styles.demoButton}
                 />
                 <Button
-                  label={simulatedNoiseActive ? 'Noise detected — resuming soon…' : 'Simulate loud noise'}
+                  label={
+                    simulatedNoiseActive
+                      ? "Noise detected — resuming soon…"
+                      : "Simulate loud noise"
+                  }
                   onPress={simulateLoudNoise}
-                  disabled={session.status !== 'running' || simulatedNoiseActive}
+                  disabled={
+                    session.status !== "running" || simulatedNoiseActive
+                  }
                   style={styles.demoButton}
                 />
               </ThemedView>
               <ThemedText type="code" themeColor="textSecondary">
-                {settings.voiceInterrupt !== 'gentle'
-                  ? 'Live mic: enable Voice interrupt → Gentle in Settings'
-                  : session.status === 'running'
-                    ? 'Live mic: monitoring for sustained loud noise'
-                    : 'Live mic: starts when a run begins'}
+                {settings.voiceInterrupt !== "gentle"
+                  ? "Live mic: enable Voice interrupt → Gentle in Settings"
+                  : session.status === "running"
+                    ? "Live mic: monitoring for sustained loud noise"
+                    : "Live mic: starts when a run begins"}
               </ThemedText>
             </ThemedView>
           )}
@@ -203,7 +259,11 @@ export default function HomeScreen() {
           {isBusy && (
             <ThemedView type="backgroundSelected" style={styles.resumeBanner}>
               <ThemedText type="small">A run is in progress.</ThemedText>
-              <Button label="View progress" onPress={() => router.push('/run')} size="small" />
+              <Button
+                label="View progress"
+                onPress={() => router.push("/run")}
+                size="small"
+              />
             </ThemedView>
           )}
 
@@ -211,7 +271,11 @@ export default function HomeScreen() {
             const selected = selectedScripts[phase.key];
             const isTesting = testingPhase === phase.key;
             return (
-              <ThemedView key={phase.key} type="backgroundElement" style={styles.card}>
+              <ThemedView
+                key={phase.key}
+                type="backgroundElement"
+                style={styles.card}
+              >
                 <ThemedView style={styles.phaseTitleGroup}>
                   <ThemedText type="code" themeColor="textSecondary">
                     PHASE {index + 1}
@@ -221,16 +285,20 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => !isBusy && setPickerPhase(phase.key)}
                   disabled={isBusy}
-                  style={({ pressed }) => [styles.phaseRow, pressed && !isBusy && styles.pressed]}>
+                  style={({ pressed }) => [
+                    styles.phaseRow,
+                    pressed && !isBusy && styles.pressed,
+                  ]}
+                >
                   <ThemedView type="background" style={styles.phaseRowInner}>
                     <ThemedText numberOfLines={1} style={styles.phaseRowLabel}>
-                      {selected ? selected.name : 'Empty'}
+                      {selected ? selected.name : "Empty"}
                     </ThemedText>
                     <ThemedText themeColor="textSecondary">›</ThemedText>
                   </ThemedView>
                 </Pressable>
                 <Button
-                  label={isTesting ? 'Playing…' : 'Test'}
+                  label={isTesting ? "Playing…" : "Test"}
                   onPress={() => handleTest(phase.key, selected)}
                   loading={isTesting}
                   disabled={!selected || isBusy || testingPhase !== null}
@@ -261,11 +329,13 @@ export default function HomeScreen() {
           )}
 
           <Button
-            label={isBusy ? 'Run in progress' : 'Start all phases'}
+            label={isBusy ? "Run in progress" : "Start all phases"}
             onPress={handleStart}
             variant="primary"
-            loading={session.status === 'starting'}
-            disabled={isBusy || selectionError !== null || testingPhase !== null}
+            loading={session.status === "starting"}
+            disabled={
+              isBusy || selectionError !== null || testingPhase !== null
+            }
             style={styles.startButton}
           />
         </ScrollView>
@@ -273,10 +343,14 @@ export default function HomeScreen() {
 
       <ScriptPickerModal
         visible={pickerPhase !== null}
-        title={pickerPhaseConfig?.label ?? ''}
+        title={pickerPhaseConfig?.label ?? ""}
         scripts={scripts}
-        selectedId={pickerPhase ? selectedScripts[pickerPhase]?.id ?? null : null}
-        onSelect={(scriptId) => pickerPhase && selectScript(pickerPhase, scriptId)}
+        selectedId={
+          pickerPhase ? (selectedScripts[pickerPhase]?.id ?? null) : null
+        }
+        onSelect={(scriptId) =>
+          pickerPhase && selectScript(pickerPhase, scriptId)
+        }
         onClose={() => setPickerPhase(null)}
       />
     </ThemedView>
@@ -286,35 +360,32 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    justifyContent: "center",
+    flexDirection: "row",
   },
   safeArea: {
     flex: 1,
-    alignItems: 'stretch',
-    width: '100%',
+    alignItems: "stretch",
+    width: "100%",
     maxWidth: MaxContentWidth,
   },
   scroll: {
     flex: 1,
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
-    paddingTop: Spacing.six,
+    paddingTop: TopTabInset + Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
   },
-  title: {
-    textAlign: 'center',
-  },
   intro: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   resumeBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
@@ -322,22 +393,22 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: Spacing.two,
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     borderRadius: Spacing.four,
   },
   phaseTitleGroup: {
     gap: 2,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   phaseRow: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
   phaseRowInner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Spacing.two,
@@ -350,62 +421,62 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
   slider: {
-    width: '100%',
+    width: "100%",
   },
   startButton: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     paddingVertical: Spacing.three,
   },
   demoCard: {
     gap: Spacing.two,
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     padding: Spacing.three,
     borderRadius: Spacing.four,
   },
   demoControls: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.two,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   demoButton: {
     minWidth: 180,
   },
   lockScreen: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: Spacing.four,
-    backgroundColor: '#080b12',
+    backgroundColor: "#080b12",
   },
   lockContent: {
-    width: '100%',
+    width: "100%",
     maxWidth: 520,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.three,
     padding: Spacing.four,
     borderRadius: Spacing.four,
-    backgroundColor: '#151a24',
+    backgroundColor: "#151a24",
   },
   lockEyebrow: {
-    color: '#8ca7d8',
-    textAlign: 'center',
+    color: "#8ca7d8",
+    textAlign: "center",
   },
   lockTitle: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   lockActions: {
-    width: '100%',
+    width: "100%",
     gap: Spacing.two,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   demoDisclaimer: {
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

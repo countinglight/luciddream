@@ -5,16 +5,17 @@ import {
   TabSlot,
   TabTriggerSlotProps,
   TabListProps,
-} from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+} from "expo-router/ui";
+import { SymbolView } from "expo-symbols";
+import { Pressable, useColorScheme, View, StyleSheet } from "react-native";
 
-import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+import { ExternalLink } from "./external-link";
+import { ThemedText } from "./themed-text";
+import { ThemedView } from "./themed-view";
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useViewportSize } from '@/context/simulated-viewport-context';
+import { Colors, MaxContentWidth, Spacing } from "@/constants/theme";
+import { useViewportSize } from "@/context/simulated-viewport-context";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function AppTabs() {
   const { width } = useViewportSize();
@@ -22,7 +23,7 @@ export default function AppTabs() {
 
   return (
     <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+      <TabSlot style={{ height: "100%" }} />
       <TabList asChild>
         <CustomTabList compact={compact}>
           <TabTrigger name="home" href="/" asChild>
@@ -49,12 +50,18 @@ export function TabButton({
   compact,
   ...props
 }: TabTriggerSlotProps & { compact?: boolean }) {
+  const theme = useTheme();
+
   return (
     <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={[styles.tabButtonView, compact && styles.tabButtonViewCompact]}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+        style={[
+          styles.tabButtonView,
+          { backgroundColor: isFocused ? theme.tint : "transparent" },
+          compact && styles.tabButtonViewCompact,
+        ]}
+      >
+        <ThemedText type="small" themeColor={isFocused ? "tintText" : "text"}>
           {children}
         </ThemedText>
       </ThemedView>
@@ -62,15 +69,22 @@ export function TabButton({
   );
 }
 
-export function CustomTabList({ compact, ...props }: TabListProps & { compact?: boolean }) {
+export function CustomTabList({
+  compact,
+  ...props
+}: TabListProps & { compact?: boolean }) {
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
 
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView
-        type="backgroundElement"
-        style={[styles.innerContainer, compact && styles.innerContainerCompact]}>
+        style={[
+          styles.innerContainer,
+          { backgroundColor: colors.navigation, borderColor: colors.tint },
+          compact && styles.innerContainerCompact,
+        ]}
+      >
         {!compact && (
           <ThemedText type="smallBold" style={styles.brandText}>
             LucidDream
@@ -85,7 +99,7 @@ export function CustomTabList({ compact, ...props }: TabListProps & { compact?: 
               <ThemedText type="link">Docs</ThemedText>
               <SymbolView
                 tintColor={colors.text}
-                name={{ ios: 'arrow.up.right.square', web: 'link' }}
+                name={{ ios: "arrow.up.right.square", web: "link" }}
                 size={12}
               />
             </Pressable>
@@ -98,19 +112,20 @@ export function CustomTabList({ compact, ...props }: TabListProps & { compact?: 
 
 const styles = StyleSheet.create({
   tabListContainer: {
-    position: 'absolute',
-    width: '100%',
+    position: "absolute",
+    width: "100%",
     padding: Spacing.three,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
   },
   innerContainer: {
+    borderWidth: 1,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.five,
     borderRadius: Spacing.five,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
@@ -118,10 +133,10 @@ const styles = StyleSheet.create({
   innerContainerCompact: {
     paddingHorizontal: Spacing.two,
     gap: Spacing.one,
-    justifyContent: 'space-around',
+    justifyContent: "space-around",
   },
   brandText: {
-    marginRight: 'auto',
+    marginRight: "auto",
   },
   pressed: {
     opacity: 0.7,
@@ -135,9 +150,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: Spacing.one,
     marginLeft: Spacing.three,
   },

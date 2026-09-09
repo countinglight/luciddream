@@ -13,7 +13,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Chip } from "@/components/chip";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import {
+  BottomTabInset,
+  MaxContentWidth,
+  Spacing,
+  TopTabInset,
+} from "@/constants/theme";
 import { useSettings } from "@/context/settings-context";
 import { formatDuration, parseDuration, type SleepStage } from "@/engine";
 import { useTheme } from "@/hooks/use-theme";
@@ -85,7 +90,7 @@ function PeriodPresetInput({
 
   return (
     <ThemedView style={styles.row}>
-      <ThemedText>{label}</ThemedText>
+      <ThemedText numberOfLines={1}>{label}</ThemedText>
       <TextInput
         value={draft ?? formatDuration(value)}
         onChangeText={setDraft}
@@ -141,10 +146,6 @@ export default function SettingsScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <ThemedText type="title" style={styles.title}>
-              Settings
-            </ThemedText>
-
             {!isLoaded ? (
               <ThemedText themeColor="textSecondary">Loading…</ThemedText>
             ) : (
@@ -197,9 +198,9 @@ export default function SettingsScreen() {
                 <ThemedView type="backgroundElement" style={styles.card}>
                   <ThemedText type="smallBold">Audio focus</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Lower Others turns other apps&apos; audio down while
-                    alarms still cut through. Exclusive silences other
-                    apps&apos; audio entirely.
+                    Lower Others turns other apps&apos; audio down while alarms
+                    still cut through. Exclusive silences other apps&apos; audio
+                    entirely.
                   </ThemedText>
                   <ThemedView style={styles.chipRow}>
                     <Chip
@@ -358,11 +359,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     alignItems: "stretch",
     gap: Spacing.three,
-    paddingTop: Spacing.six,
+    paddingTop: TopTabInset + Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
-  },
-  title: {
-    textAlign: "center",
   },
   card: {
     gap: Spacing.two,
@@ -388,7 +386,8 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
-    minWidth: 80,
+    width: 72,
+    flexShrink: 0,
     textAlign: "right",
   },
 });
