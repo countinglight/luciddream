@@ -9,7 +9,8 @@ two Cloudflare Workers that serve the project.
 | `luciddream-web`  | `luciddreamapp.countinglight.com` | `dist/` | The Expo static web application                      |
 | `luciddream-site` | `luciddream.countinglight.com`    | `site/` | The marketing website and published customer content |
 
-Both are deployed from the same `deploy` branch by the same Cloudflare build. Published customer
+Both are deployed from the same `deploy` branch, but by **two separate Cloudflare Workers Builds** —
+one project per Worker, for the reason given under "One-time Cloudflare setup". Published customer
 content lives on the site domain so that `/content/*` URLs already handed out keep working; see
 [doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md) for the reasoning.
 
@@ -27,6 +28,24 @@ Requirements: Node.js 22 and npm.
 The repository pins Node 22/npm 10 through `.nvmrc`, `package.json`, and `.npmrc`. With nvm, run
 `nvm use` before installing dependencies. The strict engine check prevents a newer npm release from
 silently rewriting lockfile metadata.
+
+Four places state a version, and they must agree:
+
+| Where            | Value                        | Read by                                      |
+| ---------------- | ---------------------------- | -------------------------------------------- |
+| `.nvmrc`         | `22`                         | nvm                                          |
+| `engines`        | `node 22.x`, `npm 10.x`      | npm, enforced by `engine-strict` in `.npmrc` |
+| `packageManager` | `npm@10.9.8`                 | corepack, and Cloudflare's tool detection    |
+| `volta`          | `node 22.20.0`, `npm 10.9.8` | Volta, and Cloudflare's tool detection       |
+
+Cloudflare Workers Builds reads `volta.node` in preference to `.nvmrc` and the `NODE_VERSION` build
+variable, so that pin decides which Node its image tries to install. Keep it on a long-established
+release: a build failed on 2026-09-09 at `Installing nodejs 22.23.2`, a version six weeks old at the
+time and evidently not yet in Cloudflare's image, even though every pin was valid.
+
+If `npm ci` fails locally with `EBADENGINE` reporting npm 11, a globally installed npm is shadowing
+the one Node ships. No Node 22 release bundles npm 11 — 22.23.2 bundles 10.9.8 — so the fix is
+`npm i -g npm@10.9.8`, matching `packageManager`.
 
 ```bash
 npm ci
