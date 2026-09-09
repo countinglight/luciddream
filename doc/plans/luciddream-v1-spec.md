@@ -94,7 +94,7 @@ event timeline. Actions per run: share, delete. Global action: delete all. Loggi
 nothing leaves the device except a log the user explicitly shares.
 
 **Settings** — theme (system/light/dark), master default volume, per-category logging toggles
-(playback / context / engine / errors), audio focus behaviour (duck vs. exclusive), **Period
+(playback / context / engine / errors), audio focus behaviour (lowered vs. exclusive), **Period
 presets** (T-shirt-sized `short` / `medium` / `long` period values that scripts reference as
 `$short` / `$medium` / `$long` — §3.2), a
 **Simulated context** panel (§4.3) for testing conditionals without a wearable, and a
@@ -287,7 +287,7 @@ action; `expo-keep-awake` holds a partial wake lock. `enableBackgroundPlayback` 
 `app.json`. Battery-optimisation exemption is requested once, with an explanation screen, because
 OEM power management is the single biggest threat to an 8-hour run.
 
-Audio focus defaults to **duck** rather than exclusive so alarms still cut through.
+Audio focus defaults to **lowered** rather than exclusive so alarms still cut through.
 
 ### 4.5 Local persistence of remote signals and scripts
 

@@ -633,3 +633,13 @@ Use: model-requested operations with application-controlled execution and return
 
 **[35] Official API documentation.** OpenAI, *Agents SDK*. https://developers.openai.com/api/docs/guides/agents  
 Use: agent orchestration and tracing as learning opportunities. Recheck current documentation before implementation.
+
+
+Wilder ideas: 
+
+"DeepDream" like raw audio generation https://research.google/pubs/audio-deepdream-optimizing-raw-audio-with-convolutional-networks/ 
+
+2017	Rhys, P., 2017. Granular Synthesis as Fractal Micropolyphony. Proceedings of the 2017 International Computer Music Conference, Shanghai, pp.20-23.2016	Rhys, P., 2016. Smart Interfaces for Granular Synthesis of Sound by Fractal Organization. Computer Music Journal, 40(3), 58-67
+
+https://vimeo.com/13541969
+
