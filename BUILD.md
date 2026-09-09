@@ -29,19 +29,25 @@ The repository pins Node 22/npm 10 through `.nvmrc`, `package.json`, and `.npmrc
 `nvm use` before installing dependencies. The strict engine check prevents a newer npm release from
 silently rewriting lockfile metadata.
 
-Four places state a version, and they must agree:
+Five places state a version, and they must agree:
 
-| Where            | Value                        | Read by                                      |
-| ---------------- | ---------------------------- | -------------------------------------------- |
-| `.nvmrc`         | `22`                         | nvm                                          |
-| `engines`        | `node 22.x`, `npm 10.x`      | npm, enforced by `engine-strict` in `.npmrc` |
-| `packageManager` | `npm@10.9.8`                 | corepack, and Cloudflare's tool detection    |
-| `volta`          | `node 22.20.0`, `npm 10.9.8` | Volta, and Cloudflare's tool detection       |
+| Where                         | Value                        | Read by                                      |
+| ----------------------------- | ---------------------------- | -------------------------------------------- |
+| `.nvmrc`                      | `22.20.0`                    | nvm, and Cloudflare's tool detection         |
+| `engines`                     | `node 22.x`, `npm 10.x`      | npm, enforced by `engine-strict` in `.npmrc` |
+| `packageManager`              | `npm@10.9.8`                 | corepack, and Cloudflare's tool detection    |
+| `volta`                       | `node 22.20.0`, `npm 10.9.8` | Volta                                        |
+| `NODE_VERSION` build variable | `22.20.0`                    | Cloudflare only, set per Workers Build       |
 
-Cloudflare Workers Builds reads `volta.node` in preference to `.nvmrc` and the `NODE_VERSION` build
-variable, so that pin decides which Node its image tries to install. Keep it on a long-established
-release: a build failed on 2026-09-09 at `Installing nodejs 22.23.2`, a version six weeks old at the
-time and evidently not yet in Cloudflare's image, even though every pin was valid.
+**Every Node pin must name an exact version, never a bare major.** Cloudflare Workers Builds
+resolves `22` to the newest release in that line and then installs it, and its image lags the Node
+release feed. Two application builds failed on 2026-09-09 at `Installing nodejs 22.23.2` — a valid
+release from 2026-07-28 that the image did not have — while `.nvmrc` and the `NODE_VERSION` variable
+both said `22`. Changing `volta.node` alone did not fix it, which is how we learned Volta's pin is
+not what Cloudflare reads.
+
+If a build fails at `Installing nodejs <version>` for a version written nowhere in the repository,
+it is the resolved newest of a major-only spec. Pin the exact version instead.
 
 If `npm ci` fails locally with `EBADENGINE` reporting npm 11, a globally installed npm is shadowing
 the one Node ships. No Node 22 release bundles npm 11 — 22.23.2 bundles 10.9.8 — so the fix is
@@ -157,7 +163,8 @@ Configure the application's build:
 10. Set **Deploy command** to `npx wrangler@4.129.0 deploy`. Nothing more — no second deploy.
 11. Leave non-production branch builds disabled. If preview URLs are wanted, set their deploy
     command to `npx wrangler@4.129.0 versions upload`.
-12. Add build variable `NODE_VERSION` with value `22`.
+12. Add build variable `NODE_VERSION` with the **exact** value `22.20.0`. A bare major resolves to
+    the newest release in that line, which the build image may not have.
 13. Accept Cloudflare's generated build API token. No application runtime secrets are required.
 14. Select **Save and Deploy**.
 
