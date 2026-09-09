@@ -95,3 +95,29 @@ Android build is published as an APK on the repository's
 
 The hosted web app matches normal browser behavior, but browsers may throttle inactive tabs. Native
 mobile builds remain the target for reliable unattended overnight execution.
+
+## Library extensions
+
+A **library extension** is a public JSON manifest that adds a collection of custom signals and
+scripts to LucidDream in one import. In **Library > Library Extensions**, choose **Import
+extension** and enter the manifest URL. For example:
+
+```text
+https://luciddream.countinglight.com/content/manifest.json
+```
+
+A version 1 manifest lists named signal and script URLs. `baseUrl` is optional; when present,
+relative item URLs are resolved against it:
+
+```json
+{
+  "version": 1,
+  "baseUrl": "https://example.com/luciddream/",
+  "signals": [{ "name": "soft chime", "url": "signals/soft-chime.mp3" }],
+  "scripts": [{ "name": "MILD practice", "url": "scripts/mild.yaml" }]
+}
+```
+
+The manifest and every referenced file must be available over HTTP or HTTPS. Browser imports also
+require the hosting server to permit cross-origin access. Re-importing or refreshing an extension
+updates its items from the same manifest rather than creating duplicates.

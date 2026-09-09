@@ -1,33 +1,34 @@
 import {
-    createContext,
-    PropsWithChildren,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 import { Platform } from "react-native";
 
 import { ExpoFileSystemStore } from "@/storage/expo-file-store";
 import { extensionFromUrl, idForFile, idForUrl } from "@/storage/id";
 import {
-    importExternalFile,
-    isSavedOffline,
-    removeOfflineCopy,
-    saveOffline,
+  importExternalFile,
+  isSavedOffline,
+  removeOfflineCopy,
+  saveOffline,
 } from "@/storage/library-content";
 import { BUNDLED_SCRIPTS, BUNDLED_SIGNALS } from "@/storage/library-registry";
 import {
-    loadLibraryItems,
-    removeItem as removeFromIndex,
-    saveLibraryItems,
-    upsertItem,
+  loadLibraryItems,
+  removeItem as removeFromIndex,
+  saveLibraryItems,
+  upsertItem,
 } from "@/storage/library-store";
+import type { LibraryManifest } from "@/storage/library-manifest";
 import type {
-    LibraryItem,
-    LibraryScript,
-    LibrarySignal,
+  LibraryItem,
+  LibraryScript,
+  LibrarySignal,
 } from "@/storage/library-types";
 import { WebFileStore } from "@/storage/web-file-store";
 
@@ -52,6 +53,7 @@ type LibraryContextValue = {
     fileName: string,
     name: string,
   ) => Promise<void>;
+  importManifest: (manifest: LibraryManifest) => Promise<void>;
   removeItem: (item: LibraryItem) => Promise<void>;
   setSavedOffline: (item: LibraryItem, saved: boolean) => Promise<void>;
 };
@@ -175,6 +177,58 @@ export function LibraryProvider({ children }: PropsWithChildren) {
     [persist, persisted],
   );
 
+  const importManifest = useCallback(
+    async (manifest: LibraryManifest) => {
+      const importedAt = Date.now();
+      const incomingIds = new Set(
+        [...manifest.signals, ...manifest.scripts].map((entry) =>
+          idForUrl(entry.url),
+        ),
+      );
+      const staleItems = persisted.filter(
+        (item) =>
+          item.manifestUrl === manifest.url && !incomingIds.has(item.id),
+      );
+      await Promise.all(
+        staleItems.map((item) => {
+          if (item.source.type === "bundled") return Promise.resolve();
+          return removeOfflineCopy(
+            item.kind === "signal" ? "signals" : "scripts",
+            item.id,
+            item.source,
+            fileStore,
+            item.kind === "signal" ? "audio" : "yaml",
+          );
+        }),
+      );
+
+      let next = persisted.filter(
+        (item) => item.manifestUrl !== manifest.url || incomingIds.has(item.id),
+      );
+      const importEntry = (
+        kind: "signal" | "script",
+        entry: LibraryManifest["signals"][number],
+      ) => {
+        const id = idForUrl(entry.url);
+        const existing = next.find((item) => item.id === id);
+        const item: LibraryItem = {
+          id,
+          kind,
+          name: entry.name,
+          source: { type: "url", url: entry.url },
+          savedOffline: existing?.savedOffline ?? false,
+          addedAt: existing?.addedAt ?? importedAt,
+          manifestUrl: manifest.url,
+        };
+        next = upsertItem(next, item);
+      };
+      manifest.signals.forEach((entry) => importEntry("signal", entry));
+      manifest.scripts.forEach((entry) => importEntry("script", entry));
+      persist(next);
+    },
+    [persist, persisted],
+  );
+
   const removeItem = useCallback(
     async (item: LibraryItem) => {
       const kind = item.kind === "signal" ? "signals" : "scripts";
@@ -236,6 +290,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
         addScriptFromUrl,
         addSignalFromFile,
         addScriptFromFile,
+        importManifest,
         removeItem,
         setSavedOffline,
       }}

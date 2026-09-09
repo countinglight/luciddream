@@ -1,6 +1,6 @@
 import * as DocumentPicker from "expo-document-picker";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, TextInput } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Modal, ScrollView, StyleSheet, TextInput } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -8,18 +8,35 @@ import { previewSignal } from "@/audio";
 import { Button } from "@/components/button";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import {
+  BottomTabInset,
+  MaxContentWidth,
+  Spacing,
+  TopTabInset,
+} from "@/constants/theme";
 import { getLibraryFileStore, useLibrary } from "@/context/library-context";
 import { useTheme } from "@/hooks/use-theme";
+import {
+  loadLibraryManifest,
+  type LibraryManifest,
+} from "@/storage/library-manifest";
 import type {
-    LibraryItem,
-    LibraryScript,
-    LibrarySignal,
+  LibraryItem,
+  LibraryScript,
+  LibrarySignal,
 } from "@/storage/library-types";
 import { resolveScriptText } from "@/storage/scripts";
 
 function sourceBadge(item: LibraryItem): string {
-  return item.source.type;
+  return item.manifestUrl ? "manifest" : item.source.type;
+}
+
+function manifestHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
 }
 
 function SignalRow({ item }: { item: LibrarySignal }) {
@@ -203,30 +220,47 @@ function ScriptViewer({
   );
 }
 
-function AddFromUrlForm({
+function ImportItemPrompt({
+  kind,
   name,
   onNameChange,
-  placeholder,
-  onAdd,
+  onAddFromUrl,
+  onAddFromFile,
+  onClose,
 }: {
+  kind: "signal" | "script";
   name: string;
   onNameChange: (name: string) => void;
-  placeholder: string;
-  onAdd: (url: string, name: string) => Promise<void>;
+  onAddFromUrl: (url: string, name: string) => Promise<void>;
+  onAddFromFile: () => Promise<boolean>;
+  onClose: () => void;
 }) {
   const theme = useTheme();
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submit = async () => {
+  const importFromUrl = async () => {
     if (!name.trim() || !url.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      await onAdd(url.trim(), name.trim());
+      await onAddFromUrl(url.trim(), name.trim());
       onNameChange("");
       setUrl("");
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const importFromFile = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (await onAddFromFile()) onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -235,46 +269,273 @@ function AddFromUrlForm({
   };
 
   return (
-    <ThemedView style={styles.addForm}>
-      <TextInput
-        value={name}
-        onChangeText={onNameChange}
-        placeholder="Name"
-        placeholderTextColor={theme.textSecondary}
-        style={[
-          styles.input,
-          { color: theme.text, borderColor: theme.backgroundSelected },
-        ]}
-      />
-      <TextInput
-        value={url}
-        onChangeText={setUrl}
-        placeholder={placeholder}
-        placeholderTextColor={theme.textSecondary}
-        autoCapitalize="none"
-        autoCorrect={false}
-        style={[
-          styles.input,
-          { color: theme.text, borderColor: theme.backgroundSelected },
-        ]}
-      />
-      <Button
-        label="Add from URL"
-        onPress={submit}
-        disabled={busy}
-        loading={busy}
-        style={styles.addButton}
-      />
-      {error && (
-        <ThemedText type="small" themeColor="danger">
-          {error}
-        </ThemedText>
-      )}
-    </ThemedView>
+    <Modal
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <ThemedView
+        style={[styles.overlay, styles.manifestPromptOverlay]}
+        onStartShouldSetResponder={(event) =>
+          event.target === event.currentTarget
+        }
+        onResponderRelease={onClose}
+      >
+        <SafeAreaView style={styles.manifestReviewSafeArea}>
+          <ThemedView
+            type="backgroundElement"
+            style={[
+              styles.manifestReview,
+              styles.itemImportSurface,
+              { borderColor: theme.backgroundSelected },
+            ]}
+          >
+            <ThemedText type="subtitle">Import new {kind}</ThemedText>
+            <TextInput
+              value={name}
+              onChangeText={onNameChange}
+              placeholder="Name"
+              placeholderTextColor={theme.textSecondary}
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  borderColor: theme.backgroundSelected,
+                  backgroundColor: theme.background,
+                },
+              ]}
+            />
+            <TextInput
+              value={url}
+              onChangeText={setUrl}
+              placeholder={
+                kind === "signal"
+                  ? "https://…/signal.mp3"
+                  : "https://…/script.yaml"
+              }
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  borderColor: theme.backgroundSelected,
+                  backgroundColor: theme.background,
+                },
+              ]}
+            />
+            {error && (
+              <ThemedText type="small" themeColor="danger">
+                {error}
+              </ThemedText>
+            )}
+            <ThemedView style={styles.manifestReviewActions}>
+              <Button
+                label="Import from file"
+                onPress={importFromFile}
+                disabled={busy}
+                style={styles.promptAction}
+              />
+              <Button
+                label="Import from URL"
+                onPress={importFromUrl}
+                variant="primary"
+                disabled={!name.trim() || !url.trim()}
+                loading={busy}
+                style={styles.promptAction}
+              />
+            </ThemedView>
+          </ThemedView>
+        </SafeAreaView>
+      </ThemedView>
+    </Modal>
+  );
+}
+
+function ManifestReview({
+  manifest,
+  conflicts,
+  busy,
+  error,
+  onImport,
+  onClose,
+}: {
+  manifest: LibraryManifest;
+  conflicts: number;
+  busy: boolean;
+  error: string | null;
+  onImport: () => void;
+  onClose: () => void;
+}) {
+  const theme = useTheme();
+  const itemCount = manifest.signals.length + manifest.scripts.length;
+  return (
+    <Modal
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <ThemedView style={styles.overlay}>
+        <SafeAreaView style={styles.manifestReviewSafeArea}>
+          <ThemedView
+            type="backgroundElement"
+            style={[
+              styles.manifestReview,
+              styles.itemImportSurface,
+              { borderColor: theme.backgroundSelected },
+            ]}
+          >
+            <ThemedText type="subtitle">Import this library?</ThemedText>
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              numberOfLines={1}
+            >
+              {manifest.url}
+            </ThemedText>
+            <ThemedView style={styles.manifestSummary}>
+              <ThemedView
+                type="backgroundSelected"
+                style={styles.manifestSummaryCell}
+              >
+                <ThemedText type="subtitle">
+                  {manifest.signals.length}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  signals
+                </ThemedText>
+              </ThemedView>
+              <ThemedView
+                type="backgroundSelected"
+                style={styles.manifestSummaryCell}
+              >
+                <ThemedText type="subtitle">
+                  {manifest.scripts.length}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  scripts
+                </ThemedText>
+              </ThemedView>
+            </ThemedView>
+            {conflicts > 0 ? (
+              <ThemedText type="small" themeColor="danger">
+                {conflicts} item name
+                {conflicts === 1 ? " conflicts" : "s conflict"}
+                {
+                  " with your current library. Remove or rename the existing item first."
+                }
+              </ThemedText>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                Existing items with the same source URL will be updated, not
+                duplicated.
+              </ThemedText>
+            )}
+            {error && (
+              <ThemedText type="small" themeColor="danger">
+                {error}
+              </ThemedText>
+            )}
+            <ThemedView style={styles.manifestReviewActions}>
+              <Button label="Cancel" onPress={onClose} />
+              <Button
+                label={`Import ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+                onPress={onImport}
+                variant="primary"
+                disabled={conflicts > 0 || itemCount === 0}
+                loading={busy}
+              />
+            </ThemedView>
+          </ThemedView>
+        </SafeAreaView>
+      </ThemedView>
+    </Modal>
+  );
+}
+
+function ManifestUrlPrompt({
+  url,
+  busy,
+  error,
+  onUrlChange,
+  onReview,
+  onClose,
+}: {
+  url: string;
+  busy: boolean;
+  error: string | null;
+  onUrlChange: (url: string) => void;
+  onReview: () => void;
+  onClose: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Modal
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <ThemedView
+        style={styles.overlay}
+        onStartShouldSetResponder={(event) =>
+          event.target === event.currentTarget
+        }
+        onResponderRelease={onClose}
+      >
+        <SafeAreaView style={styles.manifestReviewSafeArea}>
+          <ThemedView
+            type="backgroundElement"
+            style={[
+              styles.manifestReview,
+              styles.itemImportSurface,
+              { borderColor: theme.backgroundSelected },
+            ]}
+          >
+            <ThemedText type="subtitle">Import extension</ThemedText>
+            <TextInput
+              value={url}
+              onChangeText={onUrlChange}
+              placeholder="https://…/manifest.json"
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  borderColor: theme.backgroundSelected,
+                  backgroundColor: theme.background,
+                },
+              ]}
+            />
+            {error && (
+              <ThemedText type="small" themeColor="danger">
+                {error}
+              </ThemedText>
+            )}
+            <ThemedView style={styles.manifestReviewActions}>
+              <Button label="Cancel" onPress={onClose} />
+              <Button
+                label="Review"
+                onPress={onReview}
+                variant="primary"
+                disabled={!url.trim()}
+                loading={busy}
+              />
+            </ThemedView>
+          </ThemedView>
+        </SafeAreaView>
+      </ThemedView>
+    </Modal>
   );
 }
 
 export default function LibraryScreen() {
+  const theme = useTheme();
   const {
     isLoaded,
     signals,
@@ -283,16 +544,86 @@ export default function LibraryScreen() {
     addScriptFromUrl,
     addSignalFromFile,
     addScriptFromFile,
+    importManifest,
   } = useLibrary();
   const [viewingScript, setViewingScript] = useState<LibraryScript | null>(
     null,
   );
   const [signalName, setSignalName] = useState("");
   const [scriptName, setScriptName] = useState("");
+  const [manifestUrl, setManifestUrl] = useState("");
+  const [manifestPreview, setManifestPreview] =
+    useState<LibraryManifest | null>(null);
+  const [manifestBusy, setManifestBusy] = useState(false);
+  const [manifestError, setManifestError] = useState<string | null>(null);
+  const [showManifestUrlPrompt, setShowManifestUrlPrompt] = useState(false);
+  const [showSignalImport, setShowSignalImport] = useState(false);
+  const [showScriptImport, setShowScriptImport] = useState(false);
 
-  const pickSignalFile = async () => {
+  const manifestSources = useMemo(() => {
+    const sources = new Map<string, number>();
+    for (const item of [...signals, ...scripts]) {
+      if (item.manifestUrl) {
+        sources.set(item.manifestUrl, (sources.get(item.manifestUrl) ?? 0) + 1);
+      }
+    }
+    return [...sources].map(([url, count]) => ({ url, count }));
+  }, [scripts, signals]);
+
+  const manifestConflicts = useMemo(() => {
+    if (!manifestPreview) return 0;
+    const conflictsWith = (
+      entry: LibraryManifest["signals"][number],
+      items: LibraryItem[],
+    ) =>
+      items.some(
+        (item) =>
+          item.name === entry.name &&
+          item.manifestUrl !== manifestPreview.url &&
+          (item.source.type !== "url" || item.source.url !== entry.url),
+      );
+    return (
+      manifestPreview.signals.filter((entry) => conflictsWith(entry, signals))
+        .length +
+      manifestPreview.scripts.filter((entry) => conflictsWith(entry, scripts))
+        .length
+    );
+  }, [manifestPreview, scripts, signals]);
+
+  const reviewManifest = async (url = manifestUrl) => {
+    if (!url.trim()) return;
+    setManifestBusy(true);
+    setManifestError(null);
+    try {
+      const manifest = await loadLibraryManifest(url);
+      setManifestUrl(manifest.url);
+      setShowManifestUrlPrompt(false);
+      setManifestPreview(manifest);
+    } catch (err) {
+      setManifestError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setManifestBusy(false);
+    }
+  };
+
+  const confirmManifestImport = async () => {
+    if (!manifestPreview || manifestConflicts > 0) return;
+    setManifestBusy(true);
+    setManifestError(null);
+    try {
+      await importManifest(manifestPreview);
+      setManifestPreview(null);
+      setManifestUrl("");
+    } catch (err) {
+      setManifestError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setManifestBusy(false);
+    }
+  };
+
+  const pickSignalFile = async (): Promise<boolean> => {
     const result = await DocumentPicker.getDocumentAsync({ type: "audio/*" });
-    if (result.canceled || !result.assets[0]) return;
+    if (result.canceled || !result.assets[0]) return false;
     const asset = result.assets[0];
     await addSignalFromFile(
       asset.uri,
@@ -300,9 +631,10 @@ export default function LibraryScreen() {
       signalName.trim() || asset.name,
     );
     setSignalName("");
+    return true;
   };
 
-  const pickScriptFile = async () => {
+  const pickScriptFile = async (): Promise<boolean> => {
     const result = await DocumentPicker.getDocumentAsync({
       // Windows' file-open dialog filters by extension, not MIME type, and
       // .yaml/.yml aren't registered to any of these MIME types there — so
@@ -317,7 +649,7 @@ export default function LibraryScreen() {
         "*/*",
       ],
     });
-    if (result.canceled || !result.assets[0]) return;
+    if (result.canceled || !result.assets[0]) return false;
     const asset = result.assets[0];
     await addScriptFromFile(
       asset.uri,
@@ -325,6 +657,7 @@ export default function LibraryScreen() {
       scriptName.trim() || asset.name,
     );
     setScriptName("");
+    return true;
   };
 
   return (
@@ -335,38 +668,69 @@ export default function LibraryScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <ThemedText type="title" style={styles.title}>
-            Library
-          </ThemedText>
-
           {!isLoaded ? (
             <ThemedText themeColor="textSecondary">Loading…</ThemedText>
           ) : (
             <>
-              <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText type="subtitle" style={styles.sectionHeading}>
-                  Signals
+              <ThemedView
+                type="backgroundElement"
+                style={[styles.card, styles.extensionsCard]}
+              >
+                <ThemedText style={styles.sectionHeading}>
+                  Library Extensions
                 </ThemedText>
-                {signals.map((item) => (
-                  <SignalRow key={item.id} item={item} />
+                {manifestSources.map((source) => (
+                  <ThemedView
+                    key={source.url}
+                    style={[
+                      styles.manifestSourceRow,
+                      { borderColor: theme.backgroundSelected },
+                    ]}
+                  >
+                    <ThemedView style={styles.rowMain}>
+                      <ThemedText type="smallBold">
+                        {manifestHost(source.url)}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {source.count} item{source.count === 1 ? "" : "s"}
+                      </ThemedText>
+                    </ThemedView>
+                    <Button
+                      label="Refresh"
+                      onPress={() => {
+                        setManifestUrl(source.url);
+                        setShowManifestUrlPrompt(true);
+                        void reviewManifest(source.url);
+                      }}
+                      size="small"
+                    />
+                  </ThemedView>
                 ))}
-                <AddFromUrlForm
-                  name={signalName}
-                  onNameChange={setSignalName}
-                  placeholder="https://…/signal.mp3"
-                  onAdd={addSignalFromUrl}
-                />
                 <Button
-                  label="Add from file"
-                  onPress={pickSignalFile}
+                  label="Import extension"
+                  onPress={() => {
+                    setManifestError(null);
+                    setManifestUrl("");
+                    setShowManifestUrlPrompt(true);
+                  }}
                   style={styles.addButton}
                 />
               </ThemedView>
 
               <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText type="subtitle" style={styles.sectionHeading}>
-                  Scripts
-                </ThemedText>
+                <ThemedText style={styles.sectionHeading}>Signals</ThemedText>
+                {signals.map((item) => (
+                  <SignalRow key={item.id} item={item} />
+                ))}
+                <Button
+                  label="Import new signal"
+                  onPress={() => setShowSignalImport(true)}
+                  style={styles.addButton}
+                />
+              </ThemedView>
+
+              <ThemedView type="backgroundElement" style={styles.card}>
+                <ThemedText style={styles.sectionHeading}>Scripts</ThemedText>
                 {scripts.map((item) => (
                   <ScriptRow
                     key={item.id}
@@ -374,15 +738,9 @@ export default function LibraryScreen() {
                     onView={setViewingScript}
                   />
                 ))}
-                <AddFromUrlForm
-                  name={scriptName}
-                  onNameChange={setScriptName}
-                  placeholder="https://…/script.yaml"
-                  onAdd={addScriptFromUrl}
-                />
                 <Button
-                  label="Add from file"
-                  onPress={pickScriptFile}
+                  label="Import new script"
+                  onPress={() => setShowScriptImport(true)}
                   style={styles.addButton}
                 />
               </ThemedView>
@@ -395,6 +753,46 @@ export default function LibraryScreen() {
         <ScriptViewer
           item={viewingScript}
           onClose={() => setViewingScript(null)}
+        />
+      )}
+      {manifestPreview && (
+        <ManifestReview
+          manifest={manifestPreview}
+          conflicts={manifestConflicts}
+          busy={manifestBusy}
+          error={manifestError}
+          onImport={confirmManifestImport}
+          onClose={() => setManifestPreview(null)}
+        />
+      )}
+      {showManifestUrlPrompt && (
+        <ManifestUrlPrompt
+          url={manifestUrl}
+          busy={manifestBusy}
+          error={manifestError}
+          onUrlChange={setManifestUrl}
+          onReview={() => reviewManifest()}
+          onClose={() => setShowManifestUrlPrompt(false)}
+        />
+      )}
+      {showSignalImport && (
+        <ImportItemPrompt
+          kind="signal"
+          name={signalName}
+          onNameChange={setSignalName}
+          onAddFromUrl={addSignalFromUrl}
+          onAddFromFile={pickSignalFile}
+          onClose={() => setShowSignalImport(false)}
+        />
+      )}
+      {showScriptImport && (
+        <ImportItemPrompt
+          kind="script"
+          name={scriptName}
+          onNameChange={setScriptName}
+          onAddFromUrl={addScriptFromUrl}
+          onAddFromFile={pickScriptFile}
+          onClose={() => setShowScriptImport(false)}
         />
       )}
     </ThemedView>
@@ -420,13 +818,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
-    paddingTop: Spacing.six,
+    paddingTop: TopTabInset + Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
   },
 
-  title: {
-    textAlign: "center",
-  },
   card: {
     gap: Spacing.two,
     alignSelf: "stretch",
@@ -435,7 +830,13 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.four,
   },
   sectionHeading: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: "600",
     marginBottom: Spacing.one,
+  },
+  extensionsCard: {
+    paddingVertical: Spacing.three,
   },
   row: {
     flexDirection: "row",
@@ -454,9 +855,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: Spacing.two,
   },
-  addForm: {
+  manifestSourceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: Spacing.two,
-    marginTop: Spacing.two,
+    borderTopWidth: 1,
+    paddingTop: Spacing.two,
   },
   input: {
     borderWidth: 1,
@@ -481,6 +886,46 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
+  },
+  manifestReviewSafeArea: {
+    width: "100%",
+    maxWidth: MaxContentWidth,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.four,
+  },
+  manifestPromptOverlay: {
+    justifyContent: "flex-start",
+  },
+  manifestReview: {
+    borderRadius: Spacing.four,
+    padding: Spacing.three,
+    gap: Spacing.two,
+  },
+  manifestSummary: {
+    flexDirection: "row",
+    gap: Spacing.two,
+  },
+  manifestSummaryCell: {
+    flex: 1,
+    borderRadius: Spacing.two,
+    padding: Spacing.three,
+  },
+  manifestReviewActions: {
+    flexDirection: "row",
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+    backgroundColor: "transparent",
+  },
+  promptAction: {
+    flex: 1,
+  },
+  itemImportSurface: {
+    borderWidth: 1,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
   },
   overlayCard: {
     borderRadius: Spacing.four,

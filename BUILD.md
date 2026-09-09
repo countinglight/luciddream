@@ -274,6 +274,19 @@ site/content/
   signals/
 ```
 
+This `manifest.json` is a **library extension**: customers can paste its public URL into **Library
+
+> Library Extensions > Import extension** to add every listed signal and script at once. The
+> checked-in production example is:
+
+```text
+https://luciddream.countinglight.com/content/manifest.json
+```
+
+The manifest uses schema version 1, with optional `baseUrl` and `signals`/`scripts` arrays. Each
+entry requires a display `name` and an HTTP(S) `url`; URLs may be relative when `baseUrl` is set.
+See `site/content/manifest.json` for a complete working example.
+
 Use lowercase URL-safe filenames and avoid spaces. Script files should use `.yaml`; audio may use a
 format supported by Expo Audio, normally `.wav` or `.mp3`. Every individual file must remain below
 Cloudflare Workers Static Assets' 25 MiB limit.
