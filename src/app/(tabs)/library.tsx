@@ -204,14 +204,17 @@ function ScriptViewer({
 }
 
 function AddFromUrlForm({
+  name,
+  onNameChange,
   placeholder,
   onAdd,
 }: {
+  name: string;
+  onNameChange: (name: string) => void;
   placeholder: string;
   onAdd: (url: string, name: string) => Promise<void>;
 }) {
   const theme = useTheme();
-  const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,7 +225,7 @@ function AddFromUrlForm({
     setError(null);
     try {
       await onAdd(url.trim(), name.trim());
-      setName("");
+      onNameChange("");
       setUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -235,7 +238,7 @@ function AddFromUrlForm({
     <ThemedView style={styles.addForm}>
       <TextInput
         value={name}
-        onChangeText={setName}
+        onChangeText={onNameChange}
         placeholder="Name"
         placeholderTextColor={theme.textSecondary}
         style={[
@@ -284,12 +287,19 @@ export default function LibraryScreen() {
   const [viewingScript, setViewingScript] = useState<LibraryScript | null>(
     null,
   );
+  const [signalName, setSignalName] = useState("");
+  const [scriptName, setScriptName] = useState("");
 
   const pickSignalFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: "audio/*" });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    await addSignalFromFile(asset.uri, asset.name, asset.name);
+    await addSignalFromFile(
+      asset.uri,
+      asset.name,
+      signalName.trim() || asset.name,
+    );
+    setSignalName("");
   };
 
   const pickScriptFile = async () => {
@@ -309,7 +319,12 @@ export default function LibraryScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    await addScriptFromFile(asset.uri, asset.name, asset.name);
+    await addScriptFromFile(
+      asset.uri,
+      asset.name,
+      scriptName.trim() || asset.name,
+    );
+    setScriptName("");
   };
 
   return (
@@ -336,6 +351,8 @@ export default function LibraryScreen() {
                   <SignalRow key={item.id} item={item} />
                 ))}
                 <AddFromUrlForm
+                  name={signalName}
+                  onNameChange={setSignalName}
                   placeholder="https://…/signal.mp3"
                   onAdd={addSignalFromUrl}
                 />
@@ -358,6 +375,8 @@ export default function LibraryScreen() {
                   />
                 ))}
                 <AddFromUrlForm
+                  name={scriptName}
+                  onNameChange={setScriptName}
                   placeholder="https://…/script.yaml"
                   onAdd={addScriptFromUrl}
                 />
