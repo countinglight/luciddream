@@ -3,9 +3,30 @@
   "baseUrl": "https://luciddream.countinglight.com/content/",
   "scripts": [
     {
-      "name": "Customer Content Example",
+      "name": "clusters",
+      "url": "https://luciddream.countinglight.com/content/scripts/clusters.yaml"
+    },
+    {
+      "name": "example",
       "url": "https://luciddream.countinglight.com/content/scripts/example.yaml"
+    },
+    {
+      "name": "pre_sleep_clusters",
+      "url": "https://luciddream.countinglight.com/content/scripts/pre_sleep_clusters.yaml"
+    },
+    {
+        "name": "post_sleep_clusters",
+        "url": "https://luciddream.countinglight.com/content/scripts/post_sleep_clusters.yaml"
     }
   ],
-  "signals": []
+  "signals": [
+    {
+      "name": "galchirp",
+      "url": "https://luciddream.countinglight.com/content/signals/galya_chirp.mp3"
+    },
+    {
+       "name": "sleepbreath",
+       "url": "https://luciddream.countinglight.com/content/signals/sleeping_man_breathing.mp3"
+    }
+  ]
 }

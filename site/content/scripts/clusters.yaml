@@ -1,7 +1,16 @@
-name: Customer Content Example
+name: Customer Breathing Cluster 
 version: 1
-volume: 0.4
+volume: 0.6
 
 body:
   - log: "customer-hosted script started"
-  - play: { signal: chime, wait: true }
+  - wait: 5s
+  - with: { gain: 0.2 }
+    body:
+      - repeat: 16
+        body:
+          - play: chime
+          - wait: $short
+          - play: sleepbreath
+          - wait: $short
+
