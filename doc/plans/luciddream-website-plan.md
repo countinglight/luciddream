@@ -1,7 +1,7 @@
 # LucidDream Website — Plan and Content Specification
 
-**Status:** Signed off and implemented, except for the Cloudflare dashboard work (§4.5) and the real
-screenshots (§8), both of which require the project owner.
+**Status:** Signed off, implemented, and live on both hostnames since 2026-09-09. Outstanding: the
+real screenshots (§8), the development credit names (§6.5), and the contact address (§6.6).
 **Decision date:** 2026-09-08.
 **Scope:** The public marketing website for LucidDream v1, its hosting topology, and the
 repository and deployment changes required to run it alongside the existing web application.
@@ -122,15 +122,24 @@ The site has no build step, so `preview:site` serves `site/` directly and starts
 ### 4.4 Promotion flow
 
 `deploy` remains the single production branch and remains deployment-only, per AGENTS.md and
-BUILD.md. A push to it publishes both Workers from one Cloudflare Workers Build:
+BUILD.md. A push to it triggers **two** Cloudflare Workers Builds, one per Worker, both watching the
+same repository and branch:
 
-- Build command: `npm run build:web`
-- Deploy command: `npx wrangler@4.129.0 deploy && npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`
+| Project           | Build command       | Deploy command                                       |
+| ----------------- | ------------------- | ---------------------------------------------------- |
+| `luciddream-web`  | `npm run build:web` | `npx wrangler@4.129.0 deploy`                        |
+| `luciddream-site` | _(none)_            | `npx wrangler@4.129.0 deploy -c wrangler.site.jsonc` |
 
-One pipeline, one branch, two Workers. Each Worker keeps its own version history, so rollback stays
-per-surface. If chaining deploy commands proves awkward in the Cloudflare build environment, the
-fallback is a second Workers Build project on the same repository and branch whose build command is
-a no-op and whose deploy command is the site deploy alone. This is verified during setup.
+**Corrected 2026-09-09.** This section previously specified one build project running both deploys
+chained with `&&`. That does not work: a Workers Build deploys to the Worker its project is
+connected to, regardless of the `name` in the configuration passed to `-c`. The flag changes which
+assets are uploaded, not the destination. In practice the second command published the website's
+files onto `luciddream-web`, so the application's hostname served the marketing site and every
+application route returned 404. Recovery was a rollback to the version deployed moments earlier by
+the first command. One project per Worker is the only correct arrangement.
+
+Each Worker keeps its own version history, so rollback remains per-surface, and a website change no
+longer rebuilds the application.
 
 The accepted cost of a single branch: a website copy change is promoted together with whatever
 application commits are pending on the release branch. This is acceptable while the two move at
@@ -138,14 +147,21 @@ similar cadence.
 
 ### 4.5 One-time Cloudflare work
 
-1. Add Custom Domain `luciddreamapp.countinglight.com` to `luciddream-web`; confirm no conflicting
-   DNS record exists first.
-2. Create Worker `luciddream-site` and add Custom Domain `luciddream.countinglight.com` to it,
-   removing that domain from `luciddream-web` in the same session to avoid a routing conflict.
-3. Update the Workers Build deploy command as in §4.4.
-4. Verify, in a private window: site home, each secondary page, the application at its new host,
-   `/content/manifest.json` and one script URL still resolving on the site domain with
-   `access-control-allow-origin: *`.
+Completed 2026-09-09. Recorded here as the order that worked, since the sequence matters.
+
+1. Set `luciddream-web`'s deploy command to `npx wrangler@4.129.0 deploy` — one configuration only.
+2. Create the `luciddream-site` Worker with one manual deploy from a checkout of the release branch:
+   `npx wrangler@4.129.0 login`, then `npm run deploy:site`. This also claims
+   `luciddream.countinglight.com`; Wrangler prompts to move the domain off `luciddream-web` and
+   should be allowed to.
+3. Add Custom Domain `luciddreamapp.countinglight.com` to `luciddream-web`. Until this is done the
+   application has no reachable address, since its old hostname now belongs to the site.
+4. Connect `luciddream-site` to the repository (Settings > Builds > Connect), production branch
+   `deploy`, no build command, deploy command `npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`,
+   preview builds disabled.
+5. Verify both hostnames as in §4.4's table. The decisive check is that the application's host
+   serves an application route — `/library` returning 200, not 404 — and that the site's host serves
+   `/about/` and `/content/manifest.json` with `access-control-allow-origin: *`.
 
 ### 4.6 Documentation to update
 

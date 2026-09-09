@@ -115,7 +115,14 @@ existing A, AAAA, or CNAME record named `luciddream` or `luciddreamapp`. A Worke
 the origin and Cloudflare creates its DNS record and TLS certificate. If a conflicting record
 exists, decide where its current traffic should go before deleting it.
 
-Then configure Workers Builds:
+**One build project per Worker.** A Workers Build deploys to the Worker its project is connected
+to, whatever the Wrangler configuration says. Passing `-c wrangler.site.jsonc` to a second
+`wrangler deploy` inside the application's build changes which assets are uploaded but **not which
+Worker receives them**, so the website's files land on `luciddream-web` and replace the application.
+This was tried on 2026-09-08 and did exactly that. Each Worker therefore needs its own build
+project, and each deploy command names exactly one configuration.
+
+Configure the application's build:
 
 1. Sign in to Cloudflare and select the account that owns `countinglight.com`.
 2. Open **Workers & Pages** > **Create application**.
@@ -126,17 +133,40 @@ Then configure Workers Builds:
 6. Set the application/Worker name to exactly `luciddream-web`. It must match `name` in
    `wrangler.jsonc`.
 7. Set **Production branch** to `deploy`.
-8. Leave **Root directory** empty (the project is at repository root).
+8. Leave **Root directory** empty, or `/` (the project is at repository root).
 9. Set **Build command** to `npm run build:web`.
-10. Set **Deploy command** to
-    `npx wrangler@4.129.0 deploy && npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`.
-    One build publishes both Workers; each keeps its own version history, so rollback stays
-    per-surface.
-11. Enable non-production branch builds if preview URLs are wanted. Set their deploy command to
-    `npx wrangler@4.129.0 versions upload && npx wrangler@4.129.0 versions upload -c wrangler.site.jsonc`.
+10. Set **Deploy command** to `npx wrangler@4.129.0 deploy`. Nothing more — no second deploy.
+11. Leave non-production branch builds disabled. If preview URLs are wanted, set their deploy
+    command to `npx wrangler@4.129.0 versions upload`.
 12. Add build variable `NODE_VERSION` with value `22`.
 13. Accept Cloudflare's generated build API token. No application runtime secrets are required.
 14. Select **Save and Deploy**.
+
+Then configure the website's build, on its own Worker:
+
+1. Create the `luciddream-site` Worker if it does not exist. The simplest way is one manual deploy
+   from a checkout of the release branch: `npx wrangler@4.129.0 login` then `npm run deploy:site`.
+2. Open **Workers & Pages** > `luciddream-site` > **Settings** > **Builds** and **Connect** the
+   `countinglight/luciddream` repository. (Alternatively, **Create application** > **Import a
+   repository** with the Worker name set to exactly `luciddream-site`, which attaches to the
+   existing Worker rather than creating a second one.)
+3. Set **Production branch** to `deploy`.
+4. Leave **Build command** empty. The website is static HTML and compiles nothing.
+5. Set **Deploy command** to `npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`.
+6. Leave **Root directory** as `/`.
+7. Leave preview builds disabled. If they are wanted, their command must also carry the
+   configuration flag: `npx wrangler@4.129.0 versions upload -c wrangler.site.jsonc`. Without it,
+   the build falls back to `wrangler.jsonc` — the application's configuration — and fails, because
+   this project has no build command and therefore no `dist/`.
+
+**Ignore Cloudflare's "keep settings consistent" notice on `luciddream-site`.** It advises setting
+`"name": "luciddream-site"` in `wrangler.jsonc` and offers to raise a pull request doing so. That
+advice assumes the project deploys the default configuration file; this one passes
+`-c wrangler.site.jsonc`, which already carries the correct name. Merging that pull request would
+rename the **application's** configuration and make the application's build publish to the website's
+Worker. Dismiss the notice, and close the pull request if one appears.
+
+A push to `deploy` should produce **two** builds, one per project.
 
 The first production deployment reads each custom-domain route from its Wrangler configuration.
 Cloudflare creates the DNS records and provisions TLS. Open **Settings > Domains & Routes** on each
@@ -274,8 +304,11 @@ Common failures:
 - **Build uses the wrong code:** confirm the production branch is `deploy` and root directory is
   empty.
 - **`dist` missing:** the build command must be `npm run build:web` and complete before deploy.
-- **Only one surface updated:** the deploy command must run both `wrangler deploy` invocations; see
-  step 10 of the setup.
+- **Only one surface updated:** each Worker has its own build project. Check that both projects are
+  connected to the repository and that both ran for the commit in question.
+- **One surface serving the other's content:** a build project deployed a configuration belonging to
+  the other Worker. Roll the affected Worker back to its last good version, then correct that
+  project's deploy command so it names only its own configuration.
 - **A customer URL works directly but not in a browser app:** check that the response contains the
   CORS header from `site/_headers`.
 - **Audio deployment is rejected:** verify that every individual file is below 25 MiB; larger files

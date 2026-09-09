@@ -69,7 +69,8 @@ it only through port interfaces, which keeps overnight script behavior determini
 
 ## Building and publishing
 
-Two surfaces are published from the `deploy` branch, by one Cloudflare build:
+Two surfaces are published from the `deploy` branch, each by its own Cloudflare Workers Build — a
+build deploys to the Worker its project is connected to, so the two cannot share one project:
 
 | Surface                       | Address                           | Source                        |
 | ----------------------------- | --------------------------------- | ----------------------------- |

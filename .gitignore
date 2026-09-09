@@ -55,3 +55,5 @@ example
 
 expo-env.d.ts
 # @end expo-cli
+# Wrangler local state (dev server temp files)
+.wrangler/
