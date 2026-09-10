@@ -1,0 +1,114 @@
+name: Release iOS (TestFlight)
+
+# Two triggers, one job:
+#
+#  1. A `v*` tag — the normal release path, alongside release-android.yml.
+#  2. A monthly schedule — TestFlight builds EXPIRE 90 DAYS after upload, and
+#     when one expires testers silently lose a working app. Rebuilding monthly
+#     means testers are never more than one cycle from losing access, even
+#     during a quiet stretch with no code changes. See the iOS support plan
+#     §2.3 and G2.
+#
+# Unlike release-android.yml there is no GitHub Release artifact here: the
+# deliverable is a build landing in App Store Connect, visible to testers
+# through the TestFlight app. Apple has no equivalent of "APK on a release
+# page" (plan §2.3).
+#
+# Runs on ubuntu-latest — EAS builds iOS in its own macOS cloud, and the
+# signing credentials live on Expo's servers, so no macOS runner is needed.
+#
+# NOTE: GitHub disables scheduled workflows on repositories with no activity
+# for 60 days. For a POC between pushes that is a plausible silent failure —
+# check quarterly that this is still firing (plan G2).
+on:
+  push:
+    tags:
+      - 'v*'
+  schedule:
+    # 09:00 UTC on the 1st of each month.
+    - cron: '0 9 1 * *'
+  workflow_dispatch:
+
+# A tag push and a scheduled run must never build concurrently — two uploads
+# racing for the same build number would leave one rejected as a duplicate.
+concurrency:
+  group: release-ios
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # package.json is the canonical version source — app.config.js overrides
+      # app.json's `version` from it (plan §3.2). Checking app.json here would
+      # validate a value that never reaches the build.
+      #
+      # Only meaningful for a tag push; a scheduled run rebuilds whatever is on
+      # the default branch and has no tag to agree with.
+      - name: Verify tag matches package.json version
+        if: github.ref_type == 'tag'
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "Tag v$tag does not match package.json version $pkg." >&2
+            exit 1
+          fi
+          echo "Tag and package.json agree on $pkg."
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Report what this run will stamp, before building. Cheap, and it makes
+      # the build number visible in the log rather than only inside the
+      # artifact — the whole point of the computed scheme (plan §3.7).
+      - name: Report version and build number
+        env:
+          LUCIDDREAM_BUILD: ${{ github.run_number }}
+        run: npm run version:info
+
+      # --wait, unlike eas-build-ios.yml: the submit step below needs the
+      # finished artifact in hand. Budget 20-30 min, more on the free queue.
+      #
+      # LUCIDDREAM_BUILD is what makes successive builds at the same marketing
+      # version distinct. github.run_number increases monotonically per
+      # workflow, and is always >= 1, so a CI build can never collide with a
+      # local build (which is pinned to counter 0). Plan §3.6 rules 3-5.
+      - name: Build
+        env:
+          LUCIDDREAM_BUILD: ${{ github.run_number }}
+        run: eas build --platform ios --profile ios-testflight --non-interactive --wait
+
+      # Written to a runner-local file and removed below, mirroring the
+      # Play Store key handling in eas-submit-android.yml. The key never
+      # touches the repository; .gitignore covers *.p8 as a second line of
+      # defence, not the primary one.
+      - name: Write App Store Connect API key
+        run: printf '%s' "$APPLE_API_KEY" > asc-api-key.p8
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+
+      # --latest submits the build the previous step just produced. The
+      # ascAppId and appleTeamId come from eas.json's ios-testflight submit
+      # profile; only the API key is secret.
+      - name: Submit to App Store Connect
+        env:
+          EXPO_ASC_API_KEY_PATH: ./asc-api-key.p8
+          EXPO_ASC_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          EXPO_ASC_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: eas submit --platform ios --profile ios-testflight --latest --non-interactive
+
+      - name: Remove credentials from the runner
+        if: always()
+        run: rm -f asc-api-key.p8

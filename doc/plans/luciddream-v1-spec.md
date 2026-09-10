@@ -403,14 +403,22 @@ App Store Connect and puts the build in the "ready to test" state for existing t
 — no manual step in the App Store Connect UI once secrets are configured.
 
 **Versioning:** iOS build numbers must strictly increase per submission, same as Android's
-`versionCode` — `eas.json`'s `appVersionSource: "local"` (§5.3) covers both.
+`versionCode` — the computed build number of §5.3 covers both, and local builds are pinned to
+counter `0` precisely so they can never be uploaded by accident.
 
 ### 5.3 Shared distribution mechanics
 
-**Versioning:** `app.json` `version` is the single source of truth; `eas.json` switches to
-`appVersionSource: "local"` so Android `versionCode` and iOS build number both derive from it plus
-the CI run number. A release is cut by tagging `v<version>`, and the release workflow fails if the
-tag and `app.json` disagree — enforced once, shared by both platforms.
+**Versioning:** **`package.json` `version`** is the single source of truth — not `app.json`, whose
+`version` is overridden by `app.config.js` (see its comment). `eas.json` uses
+`appVersionSource: "local"` with **no** `autoIncrement`, and `app.config.js` computes Android
+`versionCode` and the iOS build number from that version plus a `LUCIDDREAM_BUILD` counter, which CI
+sets from the workflow run number. The rule lives in `scripts/build-number.js`; `npm run version:info`
+reports what the current tree will produce, offline. A release is cut by tagging `v<version>`, and
+the release workflow fails if the tag and `package.json` disagree — enforced once, shared by both
+platforms.
+
+Full treatment, including the maintainer rules this imposes:
+[`luciddream-ios-support-plan.md`](./luciddream-ios-support-plan.md) §3.
 
 **Build budget:** the EAS free plan gives 15 builds **per platform** per billing cycle. Comfortable
 because **releases are built on version tags only** — never on every push — for both platforms.

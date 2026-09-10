@@ -6,9 +6,15 @@
     "icon": "./assets/images/icon.png",
     "scheme": "luciddream",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "ios": {
       "bundleIdentifier": "com.vladsadovsky.luciddream",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.vladsadovsky.luciddream",
@@ -57,6 +63,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b0338986-f20e-42d8-b3f0-e23fe65e6fca"
+      }
+    },
+    "owner": "counting-light-team"
   }
 }

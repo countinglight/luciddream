@@ -1,0 +1,55 @@
+name: EAS Build (iOS)
+
+# Manual trigger only — building consumes your EAS free-tier build allowance
+# (15 iOS builds per billing cycle), so this shouldn't fire on every push.
+# Run it from the Actions tab when you actually want a new build
+# (Actions → EAS Build (iOS) → Run workflow).
+#
+# Two distinct uses, matching the two flows in
+# doc/plans/luciddream-ios-support-plan.md §2:
+#  - profile `development` → a dev client for YOUR iPhone. Requires the device
+#    to be registered first (`eas device:create`, plan step A9), because
+#    internal distribution on iOS is Ad Hoc and compiles the UDID list in.
+#  - profile `ios-testflight` → a store-signed build for TestFlight. Submit it
+#    afterwards with `eas submit`, or let release-ios.yml do both on a tag.
+#
+# No macOS runner: EAS builds iOS in its own cloud, and the signing
+# credentials live on Expo's servers (plan step A7), so ubuntu is enough.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'eas.json build profile'
+        required: true
+        default: ios-testflight
+        type: choice
+        options:
+          - development
+          - preview
+          - ios-testflight
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # --no-wait: kicks off the cloud build and returns immediately instead
+      # of tying up the runner for the build's duration (longer on iOS than
+      # Android, and longer still on the free-tier queue). Watch progress at
+      # https://expo.dev. release-ios.yml uses --wait instead, because its
+      # submit step needs the finished artifact.
+      - name: Build
+        run: eas build --platform ios --profile ${{ inputs.profile }} --non-interactive --no-wait

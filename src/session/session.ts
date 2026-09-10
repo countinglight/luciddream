@@ -44,6 +44,11 @@ export async function startSession(options: StartSessionOptions): Promise<Sessio
   const { name, phases, sourceMap, context, log, audioFocus } = options;
 
   await setAudioModeAsync({
+    // Explicit rather than relying on expo-audio's default: a run is expected to
+    // happen overnight with the ringer switch on silent, so playback surviving
+    // silent mode is load-bearing, not incidental. Leaving it implicit means a
+    // future default change silences every run, invisibly and only on device.
+    playsInSilentMode: true,
     interruptionMode: audioFocus === 'exclusive' ? 'doNotMix' : 'duckOthers',
     shouldPlayInBackground: true,
   });

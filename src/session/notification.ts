@@ -8,6 +8,30 @@ import { Platform } from 'react-native';
  * service" the way a bespoke native service would; verify swipe-dismiss
  * behavior against a real device during the spec §4.7 manual overnight
  * checklist rather than assuming it here. */
+/** Opts the run notification into being presented while the app is in the
+ * foreground. Without a handler iOS suppresses foreground notifications
+ * entirely — Android shows them regardless, which is why this was never
+ * missed before iOS was a target.
+ *
+ * `shouldPlaySound: false` is deliberate and matches the channel's `sound:
+ * null` below: this notification reports run status during sleep, and a
+ * system chime would both wake the user and collide with the script's own
+ * audio. Badging is off for the same reason it is elsewhere — a run is not
+ * an unread item.
+ *
+ * Called at module scope from the root layout so it is installed before any
+ * notification can arrive. */
+export function configureNotificationHandler(): void {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
+
 const CHANNEL_ID = 'luciddream-run';
 const NOTIFICATION_ID = 'luciddream-run-status';
 const CATEGORY_ID = 'run-controls';

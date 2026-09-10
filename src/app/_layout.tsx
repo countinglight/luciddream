@@ -7,8 +7,10 @@ import { DeviceFrame } from '@/components/device-frame';
 import { LibraryProvider } from '@/context/library-context';
 import { SessionProvider } from '@/context/session-context';
 import { SettingsProvider } from '@/context/settings-context';
+import { configureNotificationHandler } from '@/session/notification';
 
 SplashScreen.preventAutoHideAsync();
+configureNotificationHandler();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
