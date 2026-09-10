@@ -6,13 +6,13 @@
     <title>LucidDream — audio experiments for the night</title>
     <meta
       name="description"
-      content="An experimental self-study app for lucid dreaming. LucidDream plays sounds you choose, at times you choose, through the night, and writes down exactly what it did, so you can compare it against what you remember."
+      content="An experimental self-study app for lucid dreaming on Android, iOS and the web. LucidDream plays sounds you choose through the night and records exactly what it did."
     />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="LucidDream" />
     <meta
       property="og:description"
-      content="Can a sound at the right moment help you realise you are dreaming? Plan a night of audio in plain text, let your phone run it while you sleep, and read what happened in the morning."
+      content="Can a sound at the right moment help you realise you are dreaming? Plan a night of audio on Android or iOS, let your phone run it while you sleep, and read what happened in the morning."
     />
     <meta
       property="og:image"
@@ -74,12 +74,20 @@
               >
                 Download for Android
               </a>
+              <a
+                class="btn btn--ghost"
+                data-testflight="download"
+                href="https://testflight.apple.com/join/PLACEHOLDER"
+              >
+                Get the iOS beta
+              </a>
             </div>
             <p class="btn-note">
               Android <span data-release="version">v0.5.0</span>,
               <span data-release="size">59.8 MB</span> —
-              <a href="/install/">how to install it</a>. The browser version
-              runs the same app, with the limits described
+              <a href="/install/">installation instructions</a>. iOS builds
+              are distributed through TestFlight. The browser version runs the
+              same app, with the limits described
               <a href="#limits">below</a>.
             </p>
           </div>
@@ -191,9 +199,9 @@
             <li>
               <strong>Press Start and put the phone down</strong>
               <p>
-                The app validates the scripts, resolves every sound, takes a
-                wake lock and shows a notification with the current step and a
-                Stop action. The screen can go off.
+                The app validates the scripts, resolves every sound, prepares
+                background playback and shows a notification with the current
+                step and a Stop action. The screen can go off.
               </p>
             </li>
             <li>
@@ -245,50 +253,21 @@ body:
           <p class="eyebrow">See it</p>
           <h2>What it looks like</h2>
           <p class="band__lede">
-            Screenshots of the current build are being captured and will appear
-            here shortly.
+            Three views from the current build: setting up a night, following a
+            run, and reviewing its log.
           </p>
           <div class="shots">
             <figure class="shot shot--phone">
               <div class="shot__media">
-                <svg
-                  class="placeholder"
-                  viewBox="0 0 270 585"
-                  role="img"
-                  aria-label="Screenshot placeholder: the Run screen at rest"
-                >
-                  <rect
-                    x="8"
-                    y="8"
-                    width="254"
-                    height="569"
-                    rx="10"
-                    fill="none"
-                    stroke="#c2bbaa"
-                    stroke-width="2"
-                    stroke-dasharray="7 6"
-                  />
-                  <text
-                    x="135"
-                    y="285"
-                    text-anchor="middle"
-                    font-family="system-ui, sans-serif"
-                    font-size="14"
-                    fill="#9c9dae"
-                  >
-                    Screenshot A
-                  </text>
-                  <text
-                    x="135"
-                    y="308"
-                    text-anchor="middle"
-                    font-family="system-ui, sans-serif"
-                    font-size="12"
-                    fill="#9c9dae"
-                  >
-                    Run screen, at rest
-                  </text>
-                </svg>
+                <img
+                  class="shot__image"
+                  src="/assets/img/screenshot-home.webp"
+                  width="540"
+                  height="1170"
+                  alt="LucidDream Home screen with a night ready to run"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <figcaption>
                 The Run screen before a night starts, with a script chosen for
@@ -297,44 +276,15 @@ body:
             </figure>
             <figure class="shot shot--phone">
               <div class="shot__media">
-                <svg
-                  class="placeholder"
-                  viewBox="0 0 270 585"
-                  role="img"
-                  aria-label="Screenshot placeholder: a run in progress"
-                >
-                  <rect
-                    x="8"
-                    y="8"
-                    width="254"
-                    height="569"
-                    rx="10"
-                    fill="none"
-                    stroke="#c2bbaa"
-                    stroke-width="2"
-                    stroke-dasharray="7 6"
-                  />
-                  <text
-                    x="135"
-                    y="285"
-                    text-anchor="middle"
-                    font-family="system-ui, sans-serif"
-                    font-size="14"
-                    fill="#9c9dae"
-                  >
-                    Screenshot B
-                  </text>
-                  <text
-                    x="135"
-                    y="308"
-                    text-anchor="middle"
-                    font-family="system-ui, sans-serif"
-                    font-size="12"
-                    fill="#9c9dae"
-                  >
-                    A run in progress
-                  </text>
-                </svg>
+                <img
+                  class="shot__image"
+                  src="/assets/img/screenshot-running.webp"
+                  width="540"
+                  height="1170"
+                  alt="LucidDream run in progress with timing and recent events"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <figcaption>
                 Mid-run: elapsed time, the current step, and what is scheduled
@@ -343,44 +293,15 @@ body:
             </figure>
             <figure class="shot shot--phone">
               <div class="shot__media">
-                <svg
-                  class="placeholder"
-                  viewBox="0 0 270 585"
-                  role="img"
-                  aria-label="Screenshot placeholder: a run log"
-                >
-                  <rect
-                    x="8"
-                    y="8"
-                    width="254"
-                    height="569"
-                    rx="10"
-                    fill="none"
-                    stroke="#c2bbaa"
-                    stroke-width="2"
-                    stroke-dasharray="7 6"
-                  />
-                  <text
-                    x="135"
-                    y="285"
-                    text-anchor="middle"
-                    font-family="system-ui, sans-serif"
-                    font-size="14"
-                    fill="#9c9dae"
-                  >
-                    Screenshot C
-                  </text>
-                  <text
-                    x="135"
-                    y="308"
-                    text-anchor="middle"
-                    font-family="system-ui, sans-serif"
-                    font-size="12"
-                    fill="#9c9dae"
-                  >
-                    A night's log
-                  </text>
-                </svg>
+                <img
+                  class="shot__image"
+                  src="/assets/img/screenshot-log.webp"
+                  width="540"
+                  height="1170"
+                  alt="LucidDream log showing the events from a completed night"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <figcaption>
                 The morning after: every event of one night, in order.
@@ -436,7 +357,7 @@ body:
       <section class="band" id="get">
         <div class="container">
           <p class="eyebrow">Get it</p>
-          <h2>Two ways to run it today</h2>
+          <h2>Three ways to run it today</h2>
           <div class="channels">
             <article class="channel">
               <h3>In your browser</h3>
@@ -459,9 +380,9 @@ body:
             <article class="channel">
               <h3>Android</h3>
               <p>
-                The build to use for an actual night: it holds a wake lock and
-                keeps playing with the screen off, under a foreground-service
-                notification.
+                Built for a real night: a foreground service and wake lock keep
+                the run active with the screen off, with its progress available
+                from a notification.
               </p>
               <div class="btn-row">
                 <a
@@ -479,12 +400,25 @@ body:
                 <span data-release="date">7 September 2026</span>
               </p>
             </article>
-            <article class="channel channel--muted">
+            <article class="channel">
               <h3>iOS</h3>
               <p>
-                Not available yet. There is no build to hand out, and no date to
-                promise. When there is one, it will appear here.
+                The same scripts, three-phase runs and logs on iPhone. iOS uses
+                background audio to continue a run while the screen is locked
+                and reports progress through a notification.
               </p>
+              <div class="btn-row">
+                <a
+                  class="btn btn--primary"
+                  data-testflight="download"
+                  href="https://testflight.apple.com/join/PLACEHOLDER"
+                  >Open in TestFlight</a
+                >
+                <a class="btn btn--ghost" href="/install/#ios"
+                  >Install guide</a
+                >
+              </div>
+              <p class="meta">Beta builds are distributed through TestFlight.</p>
             </article>
           </div>
         </div>
@@ -510,8 +444,8 @@ body:
             <li>
               <strong>The browser build is the browser build.</strong> Browsers
               throttle tabs that are not in front. It is not equivalent to the
-              Android foreground service and it is not a promise of unattended
-              overnight playback.
+              native Android or iOS builds and it is not a promise of
+              unattended overnight playback.
             </li>
             <li>
               <strong>It is not a medical device.</strong> LucidDream is an
@@ -550,6 +484,13 @@ body:
                   data-release="download"
                   href="https://github.com/countinglight/luciddream/releases/latest"
                   >Download for Android</a
+                >
+              </li>
+              <li>
+                <a
+                  data-testflight="download"
+                  href="https://testflight.apple.com/join/PLACEHOLDER"
+                  >Get the iOS beta</a
                 >
               </li>
               <li><a href="/install/">Install guide</a></li>

@@ -6,13 +6,13 @@
     <title>Install LucidDream</title>
     <meta
       name="description"
-      content="How to install the LucidDream Android build, and how to run the same app in a browser."
+      content="How to install LucidDream on Android or iOS, and how to run the same app in a browser."
     />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Install LucidDream" />
     <meta
       property="og:description"
-      content="Getting the Android build onto your phone, step by step."
+      content="Getting the Android or iOS build onto your phone, step by step."
     />
     <meta
       property="og:image"
@@ -55,10 +55,9 @@
           <p class="eyebrow">Install</p>
           <h1>Getting LucidDream onto your phone</h1>
           <p class="band__lede">
-            The Android build is the one to use for a real night. It is handed
-            out directly as an APK file rather than through the Play Store, so
-            the installation takes two more taps than usual and your phone will
-            say so.
+            Use a native Android or iOS build for a real night. Android is
+            distributed directly as an APK; iOS beta builds arrive through
+            Apple's TestFlight app.
           </p>
           <div class="btn-row">
             <a
@@ -68,6 +67,13 @@
             >
               Download the APK
             </a>
+            <a
+              class="btn btn--ghost"
+              data-testflight="download"
+              href="https://testflight.apple.com/join/PLACEHOLDER"
+            >
+              Open the iOS beta in TestFlight
+            </a>
           </div>
           <p class="btn-note">
             <span data-release="version">v0.5.0</span> ·
@@ -76,6 +82,7 @@
             <a href="https://github.com/countinglight/luciddream/releases"
               >all releases</a
             >
+            · iOS beta via TestFlight
           </p>
         </div>
       </section>
@@ -158,24 +165,55 @@
             <li>
               <strong>Do not rely on it overnight.</strong> Browsers throttle
               tabs that are not in front, and a sleeping laptop or a locked
-              phone will not keep a tab running the way the Android build keeps
-              a foreground service running. Use the browser to explore and the
-              Android build to sleep.
+              phone will not keep a tab running like a native mobile app. Use
+              the browser to explore and the Android or iOS build to sleep.
             </li>
           </ul>
         </div>
       </section>
 
-      <section class="band band--alt">
+      <section class="band band--alt" id="ios">
         <div class="container">
-          <h2>iOS</h2>
-          <div class="prose">
-            <p>
-              There is no iOS build to hand out yet, and no date worth
-              promising. When one exists it will be listed here and on the home
-              page.
-            </p>
-          </div>
+          <h2>iOS, step by step</h2>
+          <ol class="steps">
+            <li>
+              <strong>Install TestFlight</strong>
+              <p>
+                Get Apple's TestFlight app from the App Store if it is not
+                already on your iPhone.
+              </p>
+            </li>
+            <li>
+              <strong>Open the LucidDream invitation</strong>
+              <p>
+                <a
+                  data-testflight="download"
+                  href="https://testflight.apple.com/join/PLACEHOLDER"
+                  >Open the TestFlight link</a
+                >
+                on the iPhone, accept the invitation, and tap Install.
+              </p>
+            </li>
+            <li>
+              <strong>Open LucidDream and allow notifications</strong>
+              <p>
+                Notifications show the current step and provide the Stop action
+                while a run continues with the screen locked.
+              </p>
+            </li>
+          </ol>
+          <ul class="notes">
+            <li>
+              <strong>Overnight operation.</strong> The iOS build uses the
+              system's background-audio mode so playback and the run can
+              continue while the screen is locked.
+            </li>
+            <li>
+              <strong>Updating.</strong> TestFlight announces newer builds in
+              the TestFlight app. Beta builds expire after 90 days, so install
+              an update when one is offered.
+            </li>
+          </ul>
         </div>
       </section>
     </main>
@@ -196,6 +234,13 @@
                   data-release="download"
                   href="https://github.com/countinglight/luciddream/releases/latest"
                   >Download for Android</a
+                >
+              </li>
+              <li>
+                <a
+                  data-testflight="download"
+                  href="https://testflight.apple.com/join/PLACEHOLDER"
+                  >Get the iOS beta</a
                 >
               </li>
               <li><a href="/install/">Install guide</a></li>

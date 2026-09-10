@@ -587,10 +587,11 @@ pre .c {
   max-width: 640px;
 }
 
-.placeholder {
+.shot__image {
   width: 100%;
   height: 100%;
   display: block;
+  object-fit: cover;
 }
 
 /* ---------- notes / honesty ---------- */

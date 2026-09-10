@@ -5,6 +5,7 @@
   "use strict";
 
   var REPO = "countinglight/luciddream";
+  var TESTFLIGHT_URL = "https://testflight.apple.com/join/PLACEHOLDER";
   var FALLBACK = {
     tag: "0.5.0",
     url: "https://github.com/countinglight/luciddream/releases/download/0.5.0/luciddream-v1.0.0-release.apk",
@@ -27,6 +28,11 @@
   }
 
   function apply(info) {
+    document
+      .querySelectorAll("[data-testflight=download]")
+      .forEach(function (el) {
+        el.href = TESTFLIGHT_URL;
+      });
     document.querySelectorAll("[data-release=version]").forEach(function (el) {
       el.textContent = "v" + info.tag;
     });
