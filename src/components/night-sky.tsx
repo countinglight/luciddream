@@ -24,10 +24,13 @@ export function NightSky() {
   const theme = useTheme();
   return (
     <View
-      pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[StyleSheet.absoluteFill, radialGlow(theme.glow)]}
+      style={[
+        StyleSheet.absoluteFill,
+        radialGlow(theme.glow),
+        { pointerEvents: "none" },
+      ]}
     >
       {STARS.map((star, index) => (
         <View

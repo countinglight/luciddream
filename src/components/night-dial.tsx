@@ -92,8 +92,7 @@ export function NightDial({
   return (
     <View style={{ width: size, height: size }}>
       <View
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
@@ -111,7 +110,7 @@ export function NightDial({
         />
         {dots}
       </View>
-      <View style={styles.center} pointerEvents="box-none">
+      <View style={[styles.center, { pointerEvents: "box-none" }]}>
         {children}
       </View>
     </View>

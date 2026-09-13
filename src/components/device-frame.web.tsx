@@ -180,11 +180,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#ffffff",
     // A physical-phone drop shadow so the frame reads as a device, not a box.
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.45,
-    shadowRadius: 40,
-    elevation: 12,
+    boxShadow: "0 20px 40px rgba(0,0,0,0.45)",
   },
   fullWidth: {
     flexGrow: 1,

@@ -1022,11 +1022,7 @@ const styles = StyleSheet.create({
   },
   itemImportSurface: {
     borderWidth: 1,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
   },
   overlayCard: {
     borderRadius: Spacing.four,

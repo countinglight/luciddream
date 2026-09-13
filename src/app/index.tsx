@@ -320,21 +320,28 @@ function PhaseRow({
   onTest,
 }: PhaseRowProps) {
   const theme = useTheme();
+  // The row's tappable area and its ▶/+ button are siblings, not nested:
+  // on web each Pressable button renders a <button>, which can't nest.
   return (
-    <Pressable
-      onPress={onPick}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={`${label}: ${script?.name ?? "no script"}. Change script`}
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.row,
         !isLast && {
           borderBottomWidth: StyleSheet.hairlineWidth,
           borderBottomColor: theme.border,
         },
-        pressed && !disabled && styles.pressed,
       ]}
     >
+      <Pressable
+        onPress={onPick}
+        disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${script?.name ?? "no script"}. Change script`}
+        style={({ pressed }) => [
+          styles.rowPick,
+          pressed && !disabled && styles.pressed,
+        ]}
+      >
       <View style={styles.nodeWrap}>
         <View
           style={[
@@ -368,6 +375,7 @@ function PhaseRow({
           </ThemedText>
         )}
       </View>
+      </Pressable>
       {script ? (
         <IconButton
           label={`Test ${script.name}`}
@@ -390,7 +398,7 @@ function PhaseRow({
           <Icon name="plus" color={color} size={18} />
         </IconButton>
       )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -465,6 +473,13 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  rowPick: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    minHeight: 48,
   },
   nodeWrap: {
     width: 22,

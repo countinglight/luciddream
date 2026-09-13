@@ -37,7 +37,6 @@ type IconProps = {
 export function Icon({ name, color, size = 20, style }: IconProps) {
   return (
     <View
-      pointerEvents="none"
       accessible={false}
       importantForAccessibility="no-hide-descendants"
       style={[

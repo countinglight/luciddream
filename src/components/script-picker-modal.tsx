@@ -109,28 +109,32 @@ export function ScriptPickerModal({
 
               {scripts.map((script) => {
                 const selected = script.id === selectedId;
+                // Select area and preview button are siblings — nested
+                // Pressable buttons render <button> inside <button> on web.
                 return (
-                  <Pressable
+                  <View
                     key={script.id}
-                    onPress={() => choose(script.id)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    style={({ pressed }) => [
+                    style={[
                       styles.option,
                       selected
                         ? { borderColor: accent, backgroundColor: withAlpha(accent, 0.14) }
                         : { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                      pressed && styles.pressed,
                     ]}>
-                    {radio(selected)}
-                    <View style={styles.optionText}>
-                      <ThemedText type={selected ? 'defaultSemiBold' : 'default'} numberOfLines={1}>
-                        {script.name}
-                      </ThemedText>
-                      <ThemedText type="eyebrow" themeColor="textSecondary">
-                        {sourceLabel(script)}
-                      </ThemedText>
-                    </View>
+                    <Pressable
+                      onPress={() => choose(script.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      style={({ pressed }) => [styles.optionPick, pressed && styles.pressed]}>
+                      {radio(selected)}
+                      <View style={styles.optionText}>
+                        <ThemedText type={selected ? 'defaultSemiBold' : 'default'} numberOfLines={1}>
+                          {script.name}
+                        </ThemedText>
+                        <ThemedText type="eyebrow" themeColor="textSecondary">
+                          {sourceLabel(script)}
+                        </ThemedText>
+                      </View>
+                    </Pressable>
                     {onPreview && (
                       <IconButton
                         label={`Preview ${script.name}`}
@@ -142,7 +146,7 @@ export function ScriptPickerModal({
                         <Icon name="play" color={selected ? accent : theme.text} size={14} />
                       </IconButton>
                     )}
-                  </Pressable>
+                  </View>
                 );
               })}
             </ScrollView>
@@ -219,6 +223,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: Radius.row,
     borderWidth: 1,
+  },
+  optionPick: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    minHeight: 48,
   },
   emptyOption: {
     borderStyle: 'dashed',
