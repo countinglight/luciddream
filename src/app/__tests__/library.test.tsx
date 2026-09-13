@@ -6,7 +6,7 @@ import {
 } from "@testing-library/react-native";
 import * as DocumentPicker from "expo-document-picker";
 
-import LibraryScreen from "../(tabs)/library";
+import LibraryScreen from "../library";
 import { useLibrary } from "@/context/library-context";
 import { loadLibraryManifest } from "@/storage/library-manifest";
 
@@ -67,6 +67,7 @@ describe("LibraryScreen", () => {
     });
 
     await render(<LibraryScreen />);
+    await fireEvent.press(screen.getByText("Signals"));
     await fireEvent.press(screen.getByText("Import new signal"));
     await fireEvent.changeText(
       screen.getAllByPlaceholderText("Name")[0],

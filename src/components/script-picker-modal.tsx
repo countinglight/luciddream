@@ -1,60 +1,165 @@
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Chip } from '@/components/chip';
+import { IconButton } from '@/components/icon-button';
+import { Icon } from '@/components/icons';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, withAlpha } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import type { LibraryScript } from '@/storage/library-types';
 
 type ScriptPickerModalProps = {
   visible: boolean;
   title: string;
+  eyebrow?: string;
+  accentColor?: string;
   scripts: LibraryScript[];
   selectedId: string | null;
   onSelect: (scriptId: string | null) => void;
   onClose: () => void;
+  emptyLabel?: string;
+  emptyHint?: string;
+  onPreview?: (script: LibraryScript) => void;
+  previewingId?: string | null;
+  onManageLibrary?: () => void;
 };
 
-/** Bottom-sheet picker for a phase's script — keeps the Home screen's phase
- * rows to one line each instead of an inline chip list per phase, which is
- * what forced 4+ lines per phase (and a forced scroll past Start) on narrow
- * phones. */
+function sourceLabel(script: LibraryScript): string {
+  const origin = script.manifestUrl ? 'extension' : script.source.type;
+  return script.source.type === 'url' && !script.savedOffline ? `${origin} · not saved offline` : origin;
+}
+
+/** Bottom sheet for choosing one phase's script: a radio list with a ▶ preview
+ * per script, a "skip this phase" option, and a way into the Library. */
 export function ScriptPickerModal({
   visible,
   title,
+  eyebrow,
+  accentColor,
   scripts,
   selectedId,
   onSelect,
   onClose,
+  emptyLabel = 'Empty',
+  emptyHint,
+  onPreview,
+  previewingId,
+  onManageLibrary,
 }: ScriptPickerModalProps) {
+  const theme = useTheme();
+  const accent = accentColor ?? theme.tint;
+
+  const choose = (scriptId: string | null) => {
+    onSelect(scriptId);
+    onClose();
+  };
+
+  const radio = (selected: boolean) => (
+    <View
+      style={[
+        styles.radio,
+        selected ? { backgroundColor: accent, borderColor: accent } : { borderColor: theme.textMuted },
+      ]}>
+      {selected && <Icon name="check" color={theme.sheet} size={12} />}
+    </View>
+  );
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <ThemedView type="backgroundElement" style={styles.sheet}>
-          <ThemedText type="smallBold">{title}</ThemedText>
-          <ScrollView contentContainerStyle={styles.chipRow} style={styles.chipScroll}>
-            <Chip
-              label="Empty"
-              selected={selectedId === null}
-              onPress={() => {
-                onSelect(null);
-                onClose();
-              }}
-            />
-            {scripts.map((script) => (
-              <Chip
-                key={script.id}
-                label={script.name}
-                selected={script.id === selectedId}
-                onPress={() => {
-                  onSelect(script.id);
-                  onClose();
-                }}
-              />
-            ))}
-          </ScrollView>
-        </ThemedView>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close script picker" />
+        <View style={[styles.sheet, { backgroundColor: theme.sheet, borderColor: theme.border }]}>
+          <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+            <View style={[styles.grabber, { backgroundColor: theme.border }]} />
+            <View style={styles.header}>
+              <View style={styles.titles}>
+                {eyebrow ? (
+                  <ThemedText type="eyebrow" style={{ color: accent }}>
+                    {eyebrow}
+                  </ThemedText>
+                ) : null}
+                <ThemedText type="display">{title}</ThemedText>
+              </View>
+              <IconButton label="Close" onPress={onClose}>
+                <Icon name="close" color={theme.text} size={18} />
+              </IconButton>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.list} style={styles.scroll}>
+              <Pressable
+                onPress={() => choose(null)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedId === null }}
+                style={({ pressed }) => [
+                  styles.option,
+                  styles.emptyOption,
+                  { borderColor: selectedId === null ? accent : theme.border },
+                  pressed && styles.pressed,
+                ]}>
+                {radio(selectedId === null)}
+                <View style={styles.optionText}>
+                  <ThemedText themeColor={selectedId === null ? 'text' : 'textSecondary'}>{emptyLabel}</ThemedText>
+                  {emptyHint ? (
+                    <ThemedText type="eyebrow" themeColor="textMuted">
+                      {emptyHint}
+                    </ThemedText>
+                  ) : null}
+                </View>
+              </Pressable>
+
+              {scripts.map((script) => {
+                const selected = script.id === selectedId;
+                return (
+                  <Pressable
+                    key={script.id}
+                    onPress={() => choose(script.id)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    style={({ pressed }) => [
+                      styles.option,
+                      selected
+                        ? { borderColor: accent, backgroundColor: withAlpha(accent, 0.14) }
+                        : { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                      pressed && styles.pressed,
+                    ]}>
+                    {radio(selected)}
+                    <View style={styles.optionText}>
+                      <ThemedText type={selected ? 'defaultSemiBold' : 'default'} numberOfLines={1}>
+                        {script.name}
+                      </ThemedText>
+                      <ThemedText type="eyebrow" themeColor="textSecondary">
+                        {sourceLabel(script)}
+                      </ThemedText>
+                    </View>
+                    {onPreview && (
+                      <IconButton
+                        label={`Preview ${script.name}`}
+                        tone={selected ? 'tinted' : 'soft'}
+                        color={accent}
+                        onPress={() => onPreview(script)}
+                        loading={previewingId === script.id}
+                        disabled={previewingId != null && previewingId !== script.id}>
+                        <Icon name="play" color={selected ? accent : theme.text} size={14} />
+                      </IconButton>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {onManageLibrary && (
+              <Pressable
+                onPress={onManageLibrary}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.manage, pressed && styles.pressed]}>
+                <ThemedText type="defaultSemiBold" themeColor="tint">
+                  Manage library
+                </ThemedText>
+                <Icon name="chevron-right" color={theme.tint} size={14} />
+              </Pressable>
+            )}
+          </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );
@@ -64,23 +169,80 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(5,6,15,0.55)',
   },
   sheet: {
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
-    paddingBottom: Spacing.six,
-    borderTopLeftRadius: Spacing.four,
-    borderTopRightRadius: Spacing.four,
-    maxHeight: '70%',
+    maxHeight: '84%',
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    borderTopLeftRadius: Radius.sheet,
+    borderTopRightRadius: Radius.sheet,
+    borderTopWidth: 1,
   },
-  chipScroll: {
+  safeArea: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+    gap: 14,
+    flexShrink: 1,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  titles: {
+    flexShrink: 1,
+    gap: 2,
+  },
+  scroll: {
     flexGrow: 0,
   },
-  chipRow: {
+  list: {
+    gap: 8,
+  },
+  option: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
+    alignItems: 'center',
+    gap: 14,
+    minHeight: 64,
+    paddingLeft: 14,
+    paddingRight: 10,
+    paddingVertical: 8,
+    borderRadius: Radius.row,
+    borderWidth: 1,
+  },
+  emptyOption: {
+    borderStyle: 'dashed',
+  },
+  optionText: {
+    flex: 1,
+    gap: 2,
+  },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  manage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
   },
 });

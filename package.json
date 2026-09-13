@@ -80,6 +80,7 @@
     "build:web": "expo export --platform web",
     "preview:web": "npm run build:web && npx wrangler@4.129.0 dev",
     "deploy:web": "npm run build:web && npx wrangler@4.129.0 deploy",
+    "deploy:prototype": "npm run build:web && node ./scripts/mark-prototype-headers.js && npx wrangler@4.129.0 deploy -c wrangler.prototype.jsonc",
     "preview:site": "npx wrangler@4.129.0 dev -c wrangler.site.jsonc",
     "deploy:site": "npx wrangler@4.129.0 deploy -c wrangler.site.jsonc",
     "lint": "expo lint",

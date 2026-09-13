@@ -1,20 +1,47 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 
 import { DeviceFrame } from '@/components/device-frame';
+import { Colors } from '@/constants/theme';
 import { LibraryProvider } from '@/context/library-context';
 import { SessionProvider } from '@/context/session-context';
 import { SettingsProvider } from '@/context/settings-context';
+import { useResolvedColorScheme } from '@/hooks/use-theme';
 import { configureNotificationHandler } from '@/session/notification';
 
 SplashScreen.preventAutoHideAsync();
 configureNotificationHandler();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+/** No tab bar: Tonight is the console, Library / Nights / Settings present as
+ * sheets over it, and /run takes the whole screen while a night runs. */
+function AppStack() {
+  const scheme = useResolvedColorScheme();
+  const theme = Colors[scheme];
+  const navigationTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
 
+  return (
+    <ThemeProvider
+      value={{
+        ...navigationTheme,
+        colors: { ...navigationTheme.colors, background: theme.background, card: theme.sheet, primary: theme.tint },
+      }}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <DeviceFrame>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background } }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="run" options={{ gestureEnabled: false, animation: 'fade' }} />
+          <Stack.Screen name="library" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="nights" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+        </Stack>
+      </DeviceFrame>
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
@@ -23,14 +50,7 @@ export default function RootLayout() {
     <SettingsProvider>
       <LibraryProvider>
         <SessionProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <DeviceFrame>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="run" />
-              </Stack>
-            </DeviceFrame>
-          </ThemeProvider>
+          <AppStack />
         </SessionProvider>
       </LibraryProvider>
     </SettingsProvider>

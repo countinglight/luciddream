@@ -1,11 +1,11 @@
-import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { linearGradient, phaseColors, Radius, withAlpha } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'hero';
 export type ButtonSize = 'default' | 'small';
 
 type ButtonProps = {
@@ -15,63 +15,88 @@ type ButtonProps = {
   size?: ButtonSize;
   disabled?: boolean;
   loading?: boolean;
+  icon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
-/** A real tappable button — solid background, rounded corners, a touch
- * target that meets the ~44pt minimum — used everywhere the app used to
- * rely on a bare Pressable around plain text. */
-export function Button({ label, onPress, variant = 'secondary', size = 'default', disabled, loading, style }: ButtonProps) {
+/** Pill button. `hero` is the one big dusk→dawn gradient action per screen
+ * (Begin the night); the rest are quieter so it stays the obvious next step. */
+export function Button({ label, onPress, variant = 'secondary', size = 'default', disabled, loading, icon, style }: ButtonProps) {
   const theme = useTheme();
   const isDisabled = disabled || loading;
 
-  const backgroundColor = variant === 'primary' ? theme.tint : variant === 'danger' ? 'transparent' : theme.backgroundSelected;
-  const textColor = variant === 'primary' ? theme.tintText : variant === 'danger' ? theme.danger : theme.text;
+  const surface: ViewStyle =
+    variant === 'hero'
+      ? { backgroundColor: theme.phase2, ...linearGradient(phaseColors(theme)) }
+      : variant === 'primary'
+        ? { backgroundColor: theme.tint }
+        : variant === 'danger'
+          ? { backgroundColor: 'transparent', borderWidth: 1, borderColor: withAlpha(theme.danger, 0.7) ?? theme.danger }
+          : { backgroundColor: withAlpha(theme.text, 0.07), borderWidth: 1, borderColor: theme.border };
+  const textColor =
+    variant === 'hero' ? '#ffffff' : variant === 'primary' ? theme.tintText : variant === 'danger' ? theme.danger : theme.text;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityState={{ disabled: isDisabled }}
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [pressed && !isDisabled && styles.pressed, style]}>
-      <ThemedView
+      <View
         style={[
           styles.button,
           size === 'small' && styles.buttonSmall,
-          { backgroundColor, borderColor: theme.danger, borderWidth: variant === 'danger' ? 1 : 0 },
+          variant === 'hero' && styles.buttonHero,
+          surface,
           isDisabled && styles.disabled,
         ]}>
         {loading ? (
           <ActivityIndicator size="small" color={textColor} />
         ) : (
-          <ThemedText type="smallBold" style={{ color: textColor }}>
-            {label}
-          </ThemedText>
+          <>
+            {icon}
+            <ThemedText
+              type={size === 'small' ? 'smallBold' : 'defaultSemiBold'}
+              style={[{ color: textColor }, variant === 'hero' && styles.heroLabel]}>
+              {label}
+            </ThemedText>
+          </>
         )}
-      </ThemedView>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.two,
-    minHeight: 44,
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: Radius.pill,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonSmall: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.two,
-    minHeight: 36,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    minHeight: 40,
+    gap: 6,
+  },
+  buttonHero: {
+    minHeight: 58,
+    boxShadow: '0 10px 28px rgba(80,100,190,0.35)',
+  },
+  heroLabel: {
+    fontSize: 17,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
 });

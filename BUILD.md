@@ -2,12 +2,13 @@
 
 This file is the operational guide for producing and publishing LucidDream. Native Android/iOS
 release work remains described in the v1 specification; this guide covers local web builds and the
-two Cloudflare Workers that serve the project.
+Cloudflare Workers that serve the project.
 
-| Worker            | Domain                            | Assets  | Serves                                               |
-| ----------------- | --------------------------------- | ------- | ---------------------------------------------------- |
-| `luciddream-web`  | `luciddreamapp.countinglight.com` | `dist/` | The Expo static web application                      |
-| `luciddream-site` | `luciddream.countinglight.com`    | `site/` | The marketing website and published customer content |
+| Worker                 | Domain                                   | Assets  | Serves                                               |
+| ---------------------- | ---------------------------------------- | ------- | ---------------------------------------------------- |
+| `luciddream-web`       | `luciddreamapp.countinglight.com`        | `dist/` | The Expo static web application                      |
+| `luciddream-site`      | `luciddream.countinglight.com`           | `site/` | The marketing website and published customer content |
+| `luciddream-prototype` | `luciddream-prototype.countinglight.com` | `dist/` | Customer preview of an unreleased branch (manual)    |
 
 Both are deployed from the same `deploy` branch, but by **two separate Cloudflare Workers Builds** —
 one project per Worker, for the reason given under "One-time Cloudflare setup". Published customer
@@ -312,6 +313,40 @@ Static hosting has no directory listing. `manifest.json` is the discoverable cat
 updated alongside files. Removing a file breaks customers who still reference its URL; prefer
 adding a versioned replacement and retaining the old file unless removal is deliberate.
 
+## Prototype deployment (customer preview)
+
+`luciddream-prototype` lets customers try an unreleased branch (currently `v1-redesign`) without
+touching production. It is a **separate Worker with no Git build project**: nothing publishes it
+except the command below, and pushes to `deploy` never affect it.
+
+One-time setup:
+
+1. Confirm there is no DNS record named `luciddream-prototype` in `countinglight.com`. Use a
+   one-level subdomain — Universal SSL covers `*.countinglight.com` only, so a deeper name such as
+   `prototype.luciddreamapp.countinglight.com` would need an Advanced Certificate.
+2. Create the Worker named exactly `luciddream-prototype` (or let the first deploy create it). Do
+   **not** connect it to the repository.
+3. Optional: protect the domain with Cloudflare Access (Zero Trust > Access > Applications) if only
+   invited customers should reach it.
+
+Publish from a clean checkout of the branch being previewed:
+
+```bash
+npx wrangler@4.129.0 login
+git switch v1-redesign
+npm run deploy:prototype
+```
+
+`deploy:prototype` runs the normal `build:web`, adds an `X-Robots-Tag: noindex` rule to
+`dist/_headers` (scripts/mark-prototype-headers.js), and deploys with `-c wrangler.prototype.jsonc`.
+The bundle is identical to a production build; the app recognises the prototype by hostname and
+shows a "Prototype" badge on Tonight (preview locally with `?variant=prototype`).
+
+**Never run `npx wrangler deploy` without `-c` from a prototype branch** — the default
+`wrangler.jsonc` is production. Customers' data on the prototype is browser storage for its own
+origin and is separate from production. Retire the preview by deleting the Worker once the branch
+ships.
+
 ## Manual deployment (fallback)
 
 Normal releases use Cloudflare's Git integration. If it is unavailable, an authorized maintainer
@@ -337,7 +372,11 @@ the next push to `deploy` will publish it again.
 Common failures:
 
 - **Worker name mismatch:** the dashboard application and the Wrangler configuration must agree —
-  `luciddream-web` with `wrangler.jsonc`, `luciddream-site` with `wrangler.site.jsonc`.
+  `luciddream-web` with `wrangler.jsonc`, `luciddream-site` with `wrangler.site.jsonc`,
+  `luciddream-prototype` with `wrangler.prototype.jsonc`.
+- **Prototype shown on production:** someone deployed a prototype branch without `-c`. Roll
+  `luciddream-web` back to its last good version, then redeploy the prototype with
+  `npm run deploy:prototype`.
 - **Custom domain conflict:** a hostname can belong to only one Worker. Remove it from the previous
   Worker before attaching it to another, and remove any conflicting DNS record first.
 - **Build uses the wrong code:** confirm the production branch is `deploy` and root directory is

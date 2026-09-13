@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react';
 
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, Settings } from '@/lib/settings';
+import { DEFAULT_SETTINGS, loadSettings, saveSettings, Settings, type ThemePreference } from '@/lib/settings';
 
 type SettingsContextValue = {
   settings: Settings;
@@ -39,6 +39,12 @@ export function SettingsProvider({ children }: PropsWithChildren) {
       {children}
     </SettingsContext.Provider>
   );
+}
+
+/** Safe outside a SettingsProvider (component tests render themed components
+ * bare), where it falls back to following the device. */
+export function useThemePreference(): ThemePreference {
+  return useContext(SettingsContext)?.settings.themePreference ?? 'system';
 }
 
 export function useSettings() {

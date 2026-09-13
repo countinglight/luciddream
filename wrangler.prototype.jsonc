@@ -1,0 +1,15 @@
+{
+  // Customer preview of the v1 redesign. A separate Worker from luciddream-web,
+  // deployed only by hand (npm run deploy:prototype) — never by the Git build.
+  "name": "luciddream-prototype",
+  "compatibility_date": "2026-09-05",
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    {
+      "pattern": "luciddream-prototype.countinglight.com",
+      "custom_domain": true
+    }
+  ]
+}

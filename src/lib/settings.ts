@@ -16,7 +16,11 @@ export type SimulatedContextSettings = {
   sleepStage: SleepStage | "none";
 };
 
+export type ThemePreference = "system" | "light" | "dark";
+
 export type Settings = {
+  /** Spec §2.3 theme setting; "system" follows the device. */
+  themePreference: ThemePreference;
   /** Seeds the Run screen's volume slider on first load (spec §2.3). */
   masterDefaultVolume: number;
   logCategories: Record<LogCategory, boolean>;
@@ -42,6 +46,7 @@ export type Settings = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
+  themePreference: "system",
   masterDefaultVolume: 0.6,
   logCategories: {
     playback: true,

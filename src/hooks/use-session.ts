@@ -95,6 +95,10 @@ export function useSession(signals: LibrarySignal[]) {
   const [lastEvent, setLastEvent] = useState<EngineEvent | null>(null);
   const [recentEvents, setRecentEvents] = useState<EngineEvent[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [runId, setRunId] = useState<string | null>(null);
+  const [activePhaseIndex, setActivePhaseIndex] = useState<number | null>(null);
+  const [playCount, setPlayCount] = useState(0);
+  const [endedAt, setEndedAt] = useState<number | null>(null);
 
   const sessionRef = useRef<SessionController | null>(null);
   const eventCountRef = useRef(0);
@@ -168,6 +172,9 @@ export function useSession(signals: LibrarySignal[]) {
       setPhaseElapsedMs(0);
       setLastEvent(null);
       setRecentEvents([]);
+      setActivePhaseIndex(null);
+      setPlayCount(0);
+      setEndedAt(null);
       eventCountRef.current = 0;
       let failStartedSession: ((message: string) => void) | null = null;
 
@@ -202,6 +209,7 @@ export function useSession(signals: LibrarySignal[]) {
         );
 
         const id = generateRunId();
+        setRunId(id);
         const started = Date.now();
         await persistRunStart(id, runName, started);
         let finishedBeforeStartReturned = false;
@@ -214,7 +222,9 @@ export function useSession(signals: LibrarySignal[]) {
               [...prev, event].slice(-MAX_RECENT_EVENTS),
             );
             if (event.type === "error") setErrorMessage(event.message);
+            if (event.type === "play") setPlayCount((count) => count + 1);
             if (event.type === "phase.start") {
+              setActivePhaseIndex(event.phaseIndex);
               setActivePhaseLabel(event.phase);
               setActiveScriptName(event.scriptName);
               phaseStartedAtRef.current = event.at;
@@ -222,6 +232,7 @@ export function useSession(signals: LibrarySignal[]) {
             }
             if (event.type === "run.stop") {
               finishedBeforeStartReturned = true;
+              setEndedAt(event.at);
               setStatus(
                 event.reason === "error"
                   ? "error"
@@ -326,6 +337,11 @@ export function useSession(signals: LibrarySignal[]) {
     currentStepText: lastEvent ? describeEvent(lastEvent) : null,
     recentEvents,
     errorMessage,
+    runId,
+    startedAt,
+    endedAt,
+    activePhaseIndex,
+    playCount,
     start,
     stop,
     testPlay,

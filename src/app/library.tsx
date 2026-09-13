@@ -1,19 +1,19 @@
 import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useMemo, useState } from "react";
-import { Modal, ScrollView, StyleSheet, TextInput } from "react-native";
+import { Modal, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { previewSignal } from "@/audio";
 import { Button } from "@/components/button";
+import { IconButton } from "@/components/icon-button";
+import { Icon } from "@/components/icons";
+import { SegmentedControl } from "@/components/segmented-control";
+import { SheetHeader } from "@/components/sheet-header";
+import { Surface } from "@/components/surface";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import {
-  BottomTabInset,
-  MaxContentWidth,
-  Spacing,
-  TopTabInset,
-} from "@/constants/theme";
+import { MaxContentWidth, Spacing, withAlpha } from "@/constants/theme";
 import { getLibraryFileStore, useLibrary } from "@/context/library-context";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -39,7 +39,41 @@ function manifestHost(url: string): string {
   }
 }
 
-function SignalRow({ item }: { item: LibrarySignal }) {
+function ItemTile({ kind }: { kind: "signal" | "script" }) {
+  const theme = useTheme();
+  const color = kind === "signal" ? theme.phase3 : theme.phase2;
+  return (
+    <View style={[styles.tile, { backgroundColor: withAlpha(color, 0.16) }]}>
+      <Icon name={kind === "signal" ? "wave" : "script"} color={color} size={20} />
+    </View>
+  );
+}
+
+function Badge({ label, color }: { label: string; color: string }) {
+  return (
+    <View style={[styles.badge, { backgroundColor: withAlpha(color, 0.14) }]}>
+      <ThemedText type="eyebrow" style={[styles.badgeText, { color }]}>
+        {label}
+      </ThemedText>
+    </View>
+  );
+}
+
+function Badges({ item }: { item: LibraryItem }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.badges}>
+      <Badge label={sourceBadge(item)} color={theme.textSecondary} />
+      <Badge
+        label={item.savedOffline ? "saved offline" : "not saved offline"}
+        color={item.savedOffline ? theme.lucid : theme.warn}
+      />
+    </View>
+  );
+}
+
+function SignalRow({ item, isLast }: { item: LibrarySignal; isLast: boolean }) {
+  const theme = useTheme();
   const { removeItem, setSavedOffline } = useLibrary();
   const isBundled = item.source.type === "bundled";
   const [busy, setBusy] = useState(false);
@@ -68,54 +102,66 @@ function SignalRow({ item }: { item: LibrarySignal }) {
   };
 
   return (
-    <ThemedView style={styles.row}>
-      <ThemedView style={styles.rowMain}>
-        <ThemedText type="smallBold">{item.name}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {sourceBadge(item)} ·{" "}
-          {item.savedOffline ? "saved offline" : "not saved offline"}
+    <View
+      style={[
+        styles.row,
+        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+      ]}
+    >
+      <ItemTile kind="signal" />
+      <View style={styles.rowMain}>
+        <ThemedText type="defaultSemiBold" numberOfLines={1}>
+          {item.name}
         </ThemedText>
+        <Badges item={item} />
         {playError && (
           <ThemedText type="small" themeColor="danger">
             {playError}
           </ThemedText>
         )}
-      </ThemedView>
-      <ThemedView style={styles.rowActions}>
-        <Button
-          label={playing ? "Playing…" : "Play"}
+      </View>
+      <View style={styles.rowActions}>
+        <IconButton
+          label={`Play ${item.name}`}
+          tone="tinted"
+          color={theme.phase3}
+          size={40}
           onPress={play}
           loading={playing}
-          size="small"
-        />
+        >
+          <Icon name="play" color={theme.phase3} size={14} />
+        </IconButton>
         {!isBundled && item.source.type === "url" && (
-          <Button
-            label={item.savedOffline ? "Remove offline" : "Save offline"}
+          <IconButton
+            label={item.savedOffline ? "Remove offline copy" : "Save offline"}
+            tone="plain"
+            size={40}
             onPress={toggleOffline}
             disabled={busy}
-            size="small"
-          />
+          >
+            <Icon name={item.savedOffline ? "close" : "download"} color={theme.textSecondary} size={18} />
+          </IconButton>
         )}
         {!isBundled && (
-          <Button
-            label="Remove"
-            onPress={() => removeItem(item)}
-            variant="danger"
-            size="small"
-          />
+          <IconButton label={`Remove ${item.name}`} tone="plain" size={40} onPress={() => removeItem(item)}>
+            <Icon name="trash" color={theme.danger} size={18} />
+          </IconButton>
         )}
-      </ThemedView>
-    </ThemedView>
+      </View>
+    </View>
   );
 }
 
 function ScriptRow({
   item,
   onView,
+  isLast,
 }: {
   item: LibraryScript;
   onView: (item: LibraryScript) => void;
+  isLast: boolean;
 }) {
+  const theme = useTheme();
   const { removeItem, setSavedOffline } = useLibrary();
   const isBundled = item.source.type === "bundled";
   const [busy, setBusy] = useState(false);
@@ -130,34 +176,41 @@ function ScriptRow({
   };
 
   return (
-    <ThemedView style={styles.row}>
-      <ThemedView style={styles.rowMain}>
-        <ThemedText type="smallBold">{item.name}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {sourceBadge(item)} ·{" "}
-          {item.savedOffline ? "saved offline" : "not saved offline"}
+    <View
+      style={[
+        styles.row,
+        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+      ]}
+    >
+      <ItemTile kind="script" />
+      <View style={styles.rowMain}>
+        <ThemedText type="defaultSemiBold" numberOfLines={1}>
+          {item.name}
         </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.rowActions}>
-        <Button label="View" onPress={() => onView(item)} size="small" />
+        <Badges item={item} />
+      </View>
+      <View style={styles.rowActions}>
         {!isBundled && item.source.type === "url" && (
-          <Button
-            label={item.savedOffline ? "Remove offline" : "Save offline"}
+          <IconButton
+            label={item.savedOffline ? "Remove offline copy" : "Save offline"}
+            tone="plain"
+            size={40}
             onPress={toggleOffline}
             disabled={busy}
-            size="small"
-          />
+          >
+            <Icon name={item.savedOffline ? "close" : "download"} color={theme.textSecondary} size={18} />
+          </IconButton>
         )}
         {!isBundled && (
-          <Button
-            label="Remove"
-            onPress={() => removeItem(item)}
-            variant="danger"
-            size="small"
-          />
+          <IconButton label={`Remove ${item.name}`} tone="plain" size={40} onPress={() => removeItem(item)}>
+            <Icon name="trash" color={theme.danger} size={18} />
+          </IconButton>
         )}
-      </ThemedView>
-    </ThemedView>
+        <IconButton label={`View ${item.name}`} tone="plain" size={40} onPress={() => onView(item)}>
+          <Icon name="chevron-right" color={theme.textSecondary} size={16} />
+        </IconButton>
+      </View>
+    </View>
   );
 }
 
@@ -559,6 +612,7 @@ export default function LibraryScreen() {
   const [showManifestUrlPrompt, setShowManifestUrlPrompt] = useState(false);
   const [showSignalImport, setShowSignalImport] = useState(false);
   const [showScriptImport, setShowScriptImport] = useState(false);
+  const [tab, setTab] = useState<"scripts" | "signals">("scripts");
 
   const manifestSources = useMemo(() => {
     const sources = new Map<string, number>();
@@ -661,40 +715,89 @@ export default function LibraryScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.sheet }]}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          <SheetHeader title="Library" />
           {!isLoaded ? (
             <ThemedText themeColor="textSecondary">Loading…</ThemedText>
           ) : (
             <>
-              <ThemedView
-                type="backgroundElement"
-                style={[styles.card, styles.extensionsCard]}
-              >
-                <ThemedText style={styles.sectionHeading}>
-                  Library Extensions
-                </ThemedText>
+              <SegmentedControl
+                options={[
+                  { value: "scripts", label: "Scripts" },
+                  { value: "signals", label: "Signals" },
+                ]}
+                value={tab}
+                onChange={setTab}
+              />
+
+              {tab === "scripts" ? (
+                <Surface style={styles.listCard}>
+                  {scripts.length === 0 ? (
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.emptyList}>
+                      No scripts yet.
+                    </ThemedText>
+                  ) : (
+                    scripts.map((item, index) => (
+                      <ScriptRow
+                        key={item.id}
+                        item={item}
+                        onView={setViewingScript}
+                        isLast={index === scripts.length - 1}
+                      />
+                    ))
+                  )}
+                </Surface>
+              ) : (
+                <Surface style={styles.listCard}>
+                  {signals.length === 0 ? (
+                    <ThemedText type="small" themeColor="textSecondary" style={styles.emptyList}>
+                      No signals yet.
+                    </ThemedText>
+                  ) : (
+                    signals.map((item, index) => (
+                      <SignalRow key={item.id} item={item} isLast={index === signals.length - 1} />
+                    ))
+                  )}
+                </Surface>
+              )}
+
+              {tab === "scripts" ? (
+                <Button
+                  label="Import new script"
+                  icon={<Icon name="plus" color={theme.text} size={16} />}
+                  onPress={() => setShowScriptImport(true)}
+                />
+              ) : (
+                <Button
+                  label="Import new signal"
+                  icon={<Icon name="plus" color={theme.text} size={16} />}
+                  onPress={() => setShowSignalImport(true)}
+                />
+              )}
+
+              <ThemedText type="eyebrow" themeColor="textSecondary" style={styles.sectionTitle}>
+                Library extensions
+              </ThemedText>
+              <Surface style={styles.card}>
+                {manifestSources.length === 0 && (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Add a whole collection of scripts and signals from one manifest URL.
+                  </ThemedText>
+                )}
                 {manifestSources.map((source) => (
-                  <ThemedView
-                    key={source.url}
-                    style={[
-                      styles.manifestSourceRow,
-                      { borderColor: theme.backgroundSelected },
-                    ]}
-                  >
-                    <ThemedView style={styles.rowMain}>
-                      <ThemedText type="smallBold">
-                        {manifestHost(source.url)}
-                      </ThemedText>
+                  <View key={source.url} style={[styles.manifestSourceRow, { borderColor: theme.border }]}>
+                    <View style={styles.rowMain}>
+                      <ThemedText type="smallBold">{manifestHost(source.url)}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
                         {source.count} item{source.count === 1 ? "" : "s"}
                       </ThemedText>
-                    </ThemedView>
+                    </View>
                     <Button
                       label="Refresh"
                       onPress={() => {
@@ -704,10 +807,11 @@ export default function LibraryScreen() {
                       }}
                       size="small"
                     />
-                  </ThemedView>
+                  </View>
                 ))}
                 <Button
                   label="Import extension"
+                  size="small"
                   onPress={() => {
                     setManifestError(null);
                     setManifestUrl("");
@@ -715,35 +819,7 @@ export default function LibraryScreen() {
                   }}
                   style={styles.addButton}
                 />
-              </ThemedView>
-
-              <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText style={styles.sectionHeading}>Signals</ThemedText>
-                {signals.map((item) => (
-                  <SignalRow key={item.id} item={item} />
-                ))}
-                <Button
-                  label="Import new signal"
-                  onPress={() => setShowSignalImport(true)}
-                  style={styles.addButton}
-                />
-              </ThemedView>
-
-              <ThemedView type="backgroundElement" style={styles.card}>
-                <ThemedText style={styles.sectionHeading}>Scripts</ThemedText>
-                {scripts.map((item) => (
-                  <ScriptRow
-                    key={item.id}
-                    item={item}
-                    onView={setViewingScript}
-                  />
-                ))}
-                <Button
-                  label="Import new script"
-                  onPress={() => setShowScriptImport(true)}
-                  style={styles.addButton}
-                />
-              </ThemedView>
+              </Surface>
             </>
           )}
         </ScrollView>
@@ -795,39 +871,65 @@ export default function LibraryScreen() {
           onClose={() => setShowScriptImport(false)}
         />
       )}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    flexDirection: "row",
   },
   safeArea: {
     flex: 1,
-    alignItems: "stretch",
     width: "100%",
     maxWidth: MaxContentWidth,
+    alignSelf: "center",
   },
   scroll: {
     flex: 1,
     alignSelf: "stretch",
   },
   scrollContent: {
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.three,
-    paddingTop: TopTabInset + Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 32,
+    gap: 14,
   },
-
   card: {
     gap: Spacing.two,
-    alignSelf: "stretch",
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    padding: 16,
+  },
+  listCard: {
+    paddingHorizontal: 14,
+  },
+  emptyList: {
+    paddingVertical: 18,
+  },
+  sectionTitle: {
+    marginLeft: 4,
+    marginTop: 8,
+  },
+  tile: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  badge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  badgeText: {
+    fontSize: 9.5,
+    lineHeight: 14,
+    letterSpacing: 1,
   },
   sectionHeading: {
     fontSize: 20,
@@ -840,20 +942,19 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
+    gap: 12,
+    minHeight: 72,
+    paddingVertical: 10,
   },
   rowMain: {
-    gap: 2,
-    flexShrink: 1,
+    flex: 1,
+    gap: 4,
   },
   rowActions: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.two,
+    alignItems: "center",
+    gap: 2,
   },
   manifestSourceRow: {
     flexDirection: "row",

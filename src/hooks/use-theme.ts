@@ -4,11 +4,19 @@
  */
 
 import { Colors } from '@/constants/theme';
+import { useThemePreference } from '@/context/settings-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-export function useTheme() {
-  const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
+export type ResolvedColorScheme = 'light' | 'dark';
 
-  return Colors[theme];
+/** The device scheme, unless Settings → Appearance pins one. */
+export function useResolvedColorScheme(): ResolvedColorScheme {
+  const system = useColorScheme();
+  const preference = useThemePreference();
+  if (preference !== 'system') return preference;
+  return system === 'dark' ? 'dark' : 'light';
+}
+
+export function useTheme() {
+  return Colors[useResolvedColorScheme()];
 }
