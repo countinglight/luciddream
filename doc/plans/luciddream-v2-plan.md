@@ -1,535 +1,566 @@
-# LucidDream v2 - Architecture and Planning
+# LucidDream v2 - Plan
 
-Status: **proposed architecture, under discussion**. Builds on [luciddream-v1-spec.md](luciddream-v1-spec.md).
+Status: **planning draft, 2026-09-13.** Supersedes the previous version of this file. The native
+runtime architecture that was chapter 1 now lives in [luciddream-v3-plan.md](luciddream-v3-plan.md);
+v2 runs on the existing React Native / TypeScript stack, hardened.
 
-Chapter 1 specifies the proposed architecture, its contracts, constraints and validation gates.
-Chapters 2 onward retain the feature-planning inputs; they are not complete feature specifications.
-Architecture recommendations do not imply that every wearable, DSP effect or candidate feature is
-committed to v2. Implementation has not begun and overnight device feasibility remains unverified.
-The scoping decisions in chapter 4 are confirmed; unresolved architecture choices remain provisional.
+Sources: the v1 specification ([luciddream-v1-spec.md](luciddream-v1-spec.md)), the research and
+product vision ([luciddream-research-and-product-vision.md](luciddream-research-and-product-vision.md)),
+the competitive review ([luciddream-competitive-research.md](luciddream-competitive-research.md)),
+the v1 redesign note ([luciddream-v1-redesign.md](luciddream-v1-redesign.md)), GitHub issues
+[#3](https://github.com/countinglight/luciddream/issues/3),
+[#4](https://github.com/countinglight/luciddream/issues/4),
+[#5](https://github.com/countinglight/luciddream/issues/5) and
+[#6](https://github.com/countinglight/luciddream/issues/6), customer feedback relayed by the owner,
+and the planning session of 2026-09-13.
 
 ---
 
-## 1. Architectural specification
+## 1. Vision
 
-### 1.1 Purpose, scope and decision status
+### 1.1 In one sentence
 
-LucidDream v2 should retain a shared React Native phone/web application while making mobile overnight
-execution independent of the JavaScript UI runtime. The design must support native audio processing
-and wearable integration without maintaining separate implementations of the same domain behavior.
+**v1 played and recorded. v2 listens and learns.**
 
-Among the architectural drivers presented in the scoping question, overnight-reliability hardening
-is slightly more critical than wearable integration; both motivate the native redesign. This is
-not a feature or release priority ranking. Higher-importance features will be specified later and
-will take priority in the product roadmap. Both Android and iOS are first-class v2 targets,
-with wearable/sensor feature parity as a goal and production distribution through both Google Play
-and the Apple App Store in scope. Chapter 4 records the resulting delivery requirements.
+v1 proved that an exactly specified stimulus can be delivered through the night and faithfully
+logged. v2 adds the other half of the experiment: what the sleeper did, said and felt, captured
+without effort, understood on a large screen, and turned into a better next night.
 
-The proposed baseline is:
+### 1.2 Scenario vision
 
-- React Native/TypeScript owns phone and web UI, library management, settings and ordinary networking.
-- A shared execution core owns script semantics, condition evaluation and cue policy.
-- Swift and Kotlin hosts own platform lifecycle, permissions and device integration.
-- Native audio I/O hosts shared DSP when consistent custom processing is required.
-- Historical health data and live observations use distinct interfaces and capability declarations.
-- Native watch applications provide the small device-specific UI and supported watch functionality.
+A person who wants to explore lucid dreaming sets up a night in under a minute on the phone. The
+sounds are soft by default; nothing the app plays will jolt them awake. A spare phone on the
+nightstand records the room. The LucidDream phone plays its cues, writes down everything it did and
+everything it could sense, and keeps going until morning even if the OS gets in the way.
 
-C++ is the leading candidate for the shared execution/DSP core. Kotlin Multiplatform (KMP) remains a
-credible alternative if DSP scope is modest and Kotlin simplifies maintenance. This language choice
-is provisional until a build/integration prototype is evaluated. Given the identified architectural drivers,
-compare candidates primarily on reliable session ownership and wearable integration; DSP sharing
-must not outweigh those needs. The wearable support matrix and
-live sleep-stage triggering are also provisional; they require physical-device evidence.
+On waking, they speak whatever they remember into the room, then answer three questions on the phone.
+Later, on a laptop, they open the night: the cues, the sleep data from their watch, the movement and
+sound the phone sensed, and the recording, all on one timeline. Their spoken report is transcribed
+and kept next to the original audio. The tool points at moments: *this cue was followed by movement;
+this one by nothing; here you spoke for forty seconds.*
 
-In this chapter, **must** describes a requirement of the proposed architecture, not an assertion that
-the existing app already meets it. Illustrative API names and payloads are not frozen interfaces.
+After a few weeks the tool has something to say: *your reports are longer on nights with the bowl
+cue than the hum; the third cue of the night usually wakes you.* It proposes one change, explains its
+evidence, and asks. If they agree, the adjusted script is on the phone for tonight. Nothing was
+decided for them, and nothing they recorded left their own machines unless they chose to send an
+excerpt to an AI provider for transcription.
 
-### 1.2 Drivers and evidence from v1
+### 1.3 Architectural vision
 
-The current source provides useful boundaries and tests, but does not establish all-night reliability.
+Three components, one contract between them.
 
-| Existing component | Evidence | Architectural consequence |
-| --- | --- | --- |
-| [Engine ports](../../src/engine/ports.ts) and [interpreter](../../src/engine/interpreter.ts) | Engine is independent of RN/Expo, with loops, conditions and effect scopes | Preserve concepts, semantics and deterministic fixtures |
-| [Real clock](../../src/session/clock.ts) | JS setTimeout and promises drive waits | Native audio alone leaves JS in the decision path |
-| [Session](../../src/session/session.ts) and [keep-alive track](../../src/session/keep-alive-track.ts) | JS orchestration and a low-amplitude loop span silent gaps | Replace assumed keep-alive behavior with an explicitly validated native lifecycle |
-| [Wake lock](../../src/session/wake-lock.ts) | Calls expo-keep-awake despite a comment describing a partial CPU wake lock | Screen-awake behavior is not evidence of screen-off CPU execution [R4] |
-| [Context providers](../../src/runtime/context-providers.ts) | Manual and scripted values; snapshot has one timestamp | Real observations require per-measurement age, provenance and quality |
-| [Conditions](../../src/engine/conditions.ts) | Negation can turn an unavailable comparison into true | Introduce explicit unknown semantics before wearable conditions |
-| [Audio adapter](../../src/audio/expo-audio-port.ts) | One reused player per signal; gain and playback rate | Specify voices, overlap, cancellation and effect semantics |
-| [Voice hook](../../src/hooks/use-voice-interrupt.ts) | React hooks consume metering updates | Overnight detection belongs with native session ownership |
-| [JSONL logger](../../src/logging/jsonl-log-port.ts) | Rewrites accumulated content for each event | Use append-oriented persistence for telemetry and native run events |
-
-The existing virtual-clock tests remain valuable for semantic verification. They cannot demonstrate
-battery behavior, background runtime, sensor delivery or audible latency on physical devices.
-
-### 1.3 Native execution and code sharing
-
-Native execution does not require duplicating the engine. Three decisions are independent:
-
-1. Execution ownership: JavaScript runtime or a native session host.
-2. Behavior implementation: one shared core or separate Swift/Kotlin implementations.
-3. OS integration: adapters for the frameworks available on each platform.
-
-C++ source can compile into separate iOS and Android binaries while retaining one implementation.
-KMP can share session logic through Kotlin/Native on Apple platforms and ordinarily Kotlin/JVM on
-Android ART. These execution models differ, but both can remove dependence on React Native JS.
-Swift is not literally iOS-only and Kotlin is not Android-only; framework dependencies are the
-important restriction. Language portability does not make HealthKit available on Android. [R1, R2]
-
-A freshness rule, cooldown or effect algorithm can therefore be implemented once. Swift and Kotlin
-supply observations and audio/device services through common contracts. Separate adapters and
-platform tests remain necessary. Sharing reduces duplicated behavior, not all platform engineering.
-
-| Option | Benefit | Cost | Position |
-| --- | --- | --- | --- |
-| Shared C++ execution/DSP core, Swift/Kotlin hosts | One implementation of semantics and audio math | Native builds, FFI, memory and thread discipline | Preferred prototype if DSP is substantial |
-| KMP execution core, separate audio processing | Shared interpreter and sensor policy in Kotlin | Apple integration plus a DSP solution | Strong alternative if orchestration dominates |
-| Separate Swift/Kotlin engines | Direct platform tooling | Two semantic implementations plus the existing TS web engine | Consider only for a deliberately tiny core |
-| TS interpreter with native ports | Smallest immediate migration | JS continuations still decide when and what to execute | Transitional option |
-
-Rust is another possible shared core through bindings; choose it only if expertise or dependencies
-justify it. Avoid introducing both KMP and C++ shared-core toolchains initially without a concrete
-benefit. Two hand-written engines increase drift risk, but drift is not inevitable with a shared
-conformance suite. A shared core also needs platform integration testing.
-
-### 1.4 Component topology and ownership
-
-```mermaid
-flowchart TD
-    UI["React Native / TypeScript<br/>Phone and web UI, library, settings"]
-    Plan["Validated versioned execution plan<br/>Resolved local assets"]
-    Host["Native session hosts<br/>Swift / Kotlin"]
-    Core["Shared execution core<br/>Conditions, deadlines, cue policy"]
-    Audio["Native audio I/O<br/>Shared DSP"]
-    Live["Native wearable adapters<br/>Live observations and controls"]
-    History["Historical health adapters<br/>HealthKit / Health Connect / Oura"]
-    Store["Native event journal and checkpoints"]
-    UI --> Plan --> Host --> Core
-    Live --> Core
-    Core --> Audio
-    Core --> Store
-    History --> UI
-    Store --> UI
-    Core -->|"Session snapshots"| UI
+```
++-------------------+      night bundle       +------------------------------+
+|  LucidDream phone | ----------------------> |  Host service                |
+|  night session    |   (log, observations,   |  local now, hosted later     |
+|  device           |    wearable history,    |  aligns, analyses, proposes  |
+|                   | <---------------------- |                              |
++-------------------+   script proposals      +------------------------------+
+                                                       ^
++-------------------+      audio recording              |
+|  Any recorder     | ---------------------------------+
+|  (spare phone,    |
+|   laptop, ...)    |
++-------------------+
 ```
 
-| Responsibility | Shared behavior | Platform-specific mechanism |
-| --- | --- | --- |
-| Script execution | Loops, scopes, phase transitions, cancellation and condition semantics | Runtime hosting and wakeup scheduling |
-| Cue decisions | Freshness, quality, cooldowns, gain limits and eligibility | Delivery to audio or supported haptics |
-| Audio | Mixing, envelopes, effect order and custom DSP | Audio device I/O, focus, routing and suitable decoding |
-| Wearables | Observation schema, normalization and decision rules | HealthKit, Health Services, Bluetooth, watch transport and permissions |
-| Persistence | Event/checkpoint schemas and recovery policy | Durable local storage access |
-| Phone/web | UI, YAML parsing, library, ordinary HTTP and settings | Existing platform adapters where needed |
-| Watch apps | Protocol and selected portable logic | SwiftUI/watchOS and Kotlin/Wear OS UI and lifecycle |
+- **The phone is the night session device.** It prepares, plays, senses, logs and exports. It does
+  not record the room and it does not analyse. It runs the existing TypeScript engine, hardened.
+- **The recorder is any device the user already owns.** LucidDream ships no recorder in v2.
+- **The host is a service that happens to run on the user's own machine.** Local server, browser
+  UI, no accounts. It is built so that moving to a hosted service later is a deployment decision,
+  not a rewrite. Whether that move happens is deferred to user feedback.
+- **The night bundle is the contract.** What the phone exports and what the host imports is a
+  versioned, self-describing format. It outlives both the desktop tool and any later service.
+- **AI is a capability behind an interface, used where it produces traceable value.** Transcription,
+  extraction with stated uncertainty, retrieval across the archive, drafting scripts that the engine
+  validates, and investigation of evidence. The user always sees what came from their own record and
+  what a model suggested. See §1.5.
 
-The phone is the primary full-session host. A watch should not duplicate the full phone engine by
-default. Time-sensitive watch-local behavior may reuse a bounded subset of portable policy when its
-runtime permits it. A disconnected watch must have an explicit local policy rather than assume the
-phone will respond immediately.
+### 1.4 Non-scenario goals
 
-### 1.5 Script preparation and execution-plan contract
+These apply to every feature and are the difference between a proof of concept and a release.
 
-Keep YAML parsing and author-facing validation in TypeScript. Before starting, preflight all populated
-phases and resolve required audio to local assets, preserving v1's offline-run intent. Submit the whole
-plan, including loops and conditions; do not flatten an unbounded or sensor-dependent script into a
-fixed schedule.
-
-The execution plan must identify its schema/semantic version, phase order, normalized statements,
-asset references, initial parameters, required capabilities and unavailable-data policy. Native code
-must validate the boundary representation and reject unsupported versions, invalid limits and missing
-required assets before accepting the run. This does not require another YAML parser.
-
-Preserve existing three-phase behavior and phase-local resets unless a later feature specification
-explicitly changes them. Record the exact plan/version used for each run so logs are reproducible.
-Capability requirements must distinguish mandatory inputs from optional ones with explicit fallbacks.
-
-### 1.6 Session boundary, lifecycle and concurrency
-
-Expose coarse operations such as:
-
-| Operation | Contract |
+| Goal | What it means in v2 |
 | --- | --- |
-| start(plan) | Validate and accept a session, return its run identity; distinguish acceptance from later completion |
-| stop(runId) | Idempotently cancel waits and pending cues, stop active output and release resources |
-| getSnapshot(runId) | Return authoritative state, active phase, progress and interruption/availability status |
-| subscribe(runId, afterSequence) | Observe events and recover gaps from persisted sequence numbers |
+| **Reliability** | An eight-hour screen-off run on both platforms, validated on physical devices, with honest reporting when the OS interrupts it. No run silently dies. |
+| **Privacy and security** | Nothing leaves the user's devices without an explicit action. Bedroom audio stays on the user's machines; only chosen excerpts go to an AI provider, under a visible setting. Every stored thing can be deleted. |
+| **Power** | Battery draw with screen off stays dominated by the audio session; on-device sensing is sampled at rates that keep the night under the v1 target of 8 % per night. Measured, not assumed. |
+| **Honesty and interpretability** | The record distinguishes what was scheduled, what played, what was sensed, what the user said, and what a model inferred. Low sample sizes and missing data are shown, not hidden. |
+| **Maintainability** | Each module remains workable with only its own folder in context (v1 spec §4.1). The engine stays free of React, Expo and I/O. The host's analysis core is a library with fixtures, like the engine. |
+| **Release readiness** | Store distribution on both platforms, release automation, docs and help consistent with the shipped UI. |
 
-The native host must progress without JS callbacks for waits, decisions, playback completion, sensor
-processing or Stop handling. UI subscriptions can disappear without owning or terminating a run.
-UI reconstruction uses snapshots plus journal events; the UI is not a second authority for progress.
-Commands should carry sufficient identity to reject stale operations and avoid duplicate starts.
+### 1.5 How AI is used, and how it is not
 
-The host distinguishes preparation, execution, interruption and terminal outcomes. Exact state names
-are implementation details; user Stop, normal completion, runtime failure and process-loss recovery
-must remain distinguishable. Release resources once on every terminal path.
+AI appears in v2 wherever a model does something a person would otherwise do by hand at 7 AM:
+transcribe a mumbled report, find the same place described in different words across twelve nights,
+draft a script from a sentence, or read forty nights of evidence and say what it does and does not
+support. Each such use is a feature in §4 with a scenario it serves; none exists to say "AI" on a
+store page. The marketing benefit follows from the features being real.
 
-Use separate execution/decision, audio-render and I/O responsibilities. Serialize state-changing
-commands and observations in the runtime. Audio callbacks consume prepared buffers and parameters;
-they must not parse scripts, perform file/network I/O, wait on blocking locks or invoke JS. Managed
-application logic from KMP is not placed in the real-time audio callback. [R5]
+Rules that every AI feature follows:
 
-### 1.7 Timing, background execution and recovery
+- **Provenance.** Model output is stored separately from the user's record and labelled as suggested.
+  The original audio and the user's own words are never overwritten.
+- **Uncertainty is a first-class output.** "Lucid: unclear" is a valid answer. Silence must not become
+  a dream. An investigation may conclude that the evidence is insufficient.
+- **The user confirms.** Tags, titles, patterns and proposals become part of the record only when
+  accepted.
+- **Numbers come from code, narrative from the model.** Statistics are computed by the analysis core;
+  the model explains and investigates, it does not calculate.
+- **No symbolic authority.** The tool asks what a place reminds the user of and shows their own
+  evidence; it does not assign meanings.
+- **Provider behind an adapter, cost visible.** The user chooses the provider (or a local model where
+  available) and sees what is sent.
 
-Use monotonic time for elapsed waits and cooldowns, with documented suspend behavior. Use wall-clock
-time separately for calendar/clock conditions and log correlation. Across devices, record clock
-mapping uncertainty rather than treating remote timestamps as perfectly synchronized.
+The owner's stated secondary goal, learning modern AI platforms by building, is served by the same
+features in the order the research paper recommends: transcription and structured extraction first,
+retrieval second, tool-assisted script drafting third, an investigating agent fourth, bounded
+adaptation last. That order is also the order of increasing user value per night stored, so the two
+goals do not conflict.
 
-Specify missed-deadline behavior: expire or skip stale cues, record lateness, and do not burst-play an
-accumulated backlog. The v1 eight-hour target and timing tolerance are validation inputs, not existing
-platform guarantees. Feature chapters must define tolerances for timer cues and sensor-triggered cues
-separately. Sensor measurement age, transport delay and audible output delay are distinct metrics.
+### 1.6 What v2 is not
 
-Android hosting must use the applicable service and power-management mechanisms for the declared use
-case. iOS hosting must configure its audio session and supported background behavior. Native timers
-do not grant unlimited execution. Long silent gaps, phone locking, interruptions and process death
-require explicit testing; an inaudible loop is not an assumed architectural guarantee. [R6]
+Live wearable sensing, native watch apps, a native session runtime, live DSP, keyword recognition,
+a hosted multi-user service and accounts are v3 candidates ([luciddream-v3-plan.md](luciddream-v3-plan.md)).
+Script conditionals are **kept** in the language and the engine; they simply have no live wearable
+source in v2.
 
-Persist checkpoints and terminal/interruption events. UI restart is distinct from process restart.
-Checkpointing does not guarantee OS relaunch. After process loss, report the interruption and apply
-an explicit recovery policy; never silently replay missed cues as current events.
+---
 
-### 1.8 Audio architecture
+## 2. Key user scenarios
 
-Use native device I/O with shared custom DSP where cross-platform effect consistency matters.
-AVAudioEngine/Audio Units and Android Oboe/AAudio are candidate render paths. Media3 may be useful
-for media lifecycle/playback integration; it is not by itself a guarantee of sample-accurate custom
-DSP scheduling. Choose the least complex pipeline that meets measured requirements. [R5, R6]
+Every feature in §4 names at least one of these.
 
-Define these contracts before extending the audio adapter:
-
-- Each playback has its own voice identity and completion/cancellation outcome.
-- Overlap of the same signal is explicit, rather than implicitly seeking one reused player.
-- Global Stop cancels output promptly; normal completion can intentionally drain remaining voices.
-- Gain limits, fades, ducking, resume behavior and route-change handling are consistent.
-- Effect ordering and nested scope composition are defined; gain multiplication does not imply that
-  arbitrary effects compose in the same way.
-- Playback speed and pitch are separate concepts with explicitly selected semantics.
-- Audio events distinguish requested scheduling from actual playback timing where measurable.
-
-Use established DSP components where suitable. For fixed effects on short signals, pre-rendered,
-cached clips may avoid a live processing graph. Dynamic modulation and mixing justify runtime DSP.
-Platform built-in effects can reduce implementation effort but may sound different; exact parity
-requires shared algorithms or a documented acceptance tolerance. Bluetooth output adds latency even
-when the render pipeline itself is precise.
-
-### 1.9 Historical data and live wearable observations
-
-Define separate HistoricalSleepRepository and LiveObservationSource contracts. History supports
-morning correlation, baselines and retrospective analysis. Live sources support only the metrics
-and delivery behavior actually available during a session. A history provider must not advertise a
-live-stage capability merely because its records contain sleep stages.
-
-| Integration | Intended architectural role | Constraint |
+| Id | Scenario | The user's question |
 | --- | --- | --- |
-| iPhone HealthKit | Historical health records and stored-sample observation | Delivery frequency is a maximum frequency, not a latency guarantee [R7] |
-| Android Health Connect | Cross-vendor record import and historical analysis | Background reads require permission and available records; synchronization is not a live sensor subscription [R8, R9] |
-| Native Apple Watch app | Controls, haptics and supported sensor sessions | Smart-alarm extended runtime is a 30-minute window, not evidence of all-night REM access [R10] |
-| Native Wear OS app | Health Services and device controls | Passive background service delivery is batched at unpredictable intervals [R11, R12] |
-| Oura cloud API | Sleep reports and retrospective correlation | Sleep synchronization requires opening the Oura app; webhooks do not remove upstream sync delay [R13] |
+| **S1** | **Set up tonight in a minute.** Open the app, see the three phases, adjust, press Begin. | "Is it ready, and will it be gentle?" |
+| **S2** | **Sleep undisturbed by the app.** Cues are soft, the room stays quiet, the phone keeps working all night without attention. | "Will it wake me, and will it still be running at 5 AM?" |
+| **S3** | **Record the night on a second device.** Press record on the spare phone, Begin on the main one; in the morning both are still going. | "How do I capture what happens without the app spying on me?" |
+| **S4** | **Speak on waking, then answer three questions.** Talk into the room while the memory is fresh; a short morning review on the phone. | "How do I keep the dream before it fades?" |
+| **S5** | **Bring the night to the host.** Export from the phone, drop the recording next to it, see one aligned timeline. | "What actually happened last night?" |
+| **S6** | **Read the night.** Transcript beside audio, cue-by-cue reactions, wearable stages, the phone's sensing, all navigable. | "Did the cue do anything? What did I say?" |
+| **S7** | **Learn across nights.** Recurring places and themes, outcomes by cue and by timing, sleep-data baselines, uncertainty shown. | "What is working for me, if anything?" |
+| **S8** | **Adjust the practice with consent.** The host proposes one change with its evidence; the user accepts; the phone has the new script for tonight. | "What should I try next, and why?" |
+| **S9** | **Author and share.** Build a simple script on the phone, describe a script in a sentence on the host, use a personal cue, share via a library extension. | "Can I make this mine?" |
+| **S10** | **Install, update and trust.** Get the app from a store or beta channel, understand what is stored where, delete anything. | "Can I rely on this, and who sees my data?" |
 
-Use health stores and direct integrations together where they serve different purposes. Ordinary
-Oura HTTP integration does not inherently require Swift/Kotlin; a native ring adapter would require
-a separately verified supported device API. Do not assume an undocumented direct stream exists.
+---
 
-Watch Connectivity immediate messages require reachability; queued background transfer is not a
-bounded-latency cue channel. Commands/observations require timestamps and expiry so delayed delivery
-cannot execute a stale cue. [R14]
+## 3. Goals that features attach to
 
-Wear OS passive services and active callbacks differ: the service batches data, while callbacks can
-receive generated observations while the app remains alive. Neither establishes a universal
-high-frequency overnight stream. A permitted lifecycle must be demonstrated for the selected device.
-Choose watch runtime categories by intended use, not to circumvent their limits. [R10, R12]
+| Id | Goal | Why it is a v2 goal |
+| --- | --- | --- |
+| **G1** | **Sleep-friendly by default** | The first customer feedback on v1: sounds must be very soft; beeps and chirps are unacceptable. |
+| **G2** | **A faithful record of the night** | The loop needs the sleeper's side of the story: the room, the body, the words, alongside what played. |
+| **G3** | **Understanding on a large screen** | Phones are for the night; analysis needs space, time and compute. |
+| **G4** | **Self-improvement across nights** | The differentiator no competitor has: preparation, execution, report and adaptation connected. |
+| **G5** | **Reliability, privacy and power** | The non-scenario goals of §1.4; v2 is a release, not a proof of concept. |
+| **G6** | **Release readiness** | Stores, docs, usability fixes, and the redesign landing on the trunk. |
 
-A smart-alarm window is a plausible initial fit for the Wake Up phase. Responsive all-night stage
-triggering remains an experimental capability. Fresh HR/motion does not automatically provide REM.
-A custom estimator is a separate research effort requiring validation; vendor retrospective stages
-are useful comparison data, not definitive ground truth.
+---
 
-### 1.10 Observation and condition contracts
+## 4. Features
 
-Each observation must carry enough information to determine what was measured and whether it is
-usable now. The conceptual schema includes:
+Grouped by component. Each row names the goals and scenarios it serves. Ids are stable for later
+specifications and issues.
 
-| Field group | Required meaning |
+### 4.1 Phone: sleep-friendly audio (issue #6)
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F1.1 | **Fade-in and fade-out on every play.** Volume ramp on the player over about one second at start and end; no DSP dependency. | G1 | S2 |
+| F1.2 | **Softening presets `gentle` and `strong`**, pre-rendered on the phone at import or preflight: low-pass, pitch down, light reverb tail, peak normalisation with a cap. Deterministic and unit-tested. Cached by (signal hash, preset, renderer version). | G1 | S2 |
+| F1.3 | **Global "Soft sounds" setting** (Off / Gentle / Strong, default Gentle) applied to every play; scripts may ask for more via `soften:` on `play` or `with`, never less. | G1 | S1, S2 |
+| F1.4 | **Purpose-made soft bundled signals** generated by the build script: singing bowl, breath swell, warm two-note hum. Retire `alert`; Wake Up default no longer a beep. | G1 | S1, S2 |
+| F1.5 | **WAV-only user signals.** Import filters and URL import reject other formats with a clear message; bundled `chirp.mp3` converted at build time; one-time notice for previously imported MP3s. | G1, G5 | S9 |
+| F1.6 | **Library warning on import**: measure brightness and attack; flag "may wake you, soften recommended". | G1 | S9 |
+| F1.7 | **Test plays the softened version.** What the user hears when testing is what plays at night. | G1 | S1 |
+| F1.8 | **Softening recorded in the log** on every `play` event, so the host knows which variant sounded. | G2, G4 | S6 |
+| F1.9 | **Personal cue from the user's own words.** The user types or speaks an intention phrase; a calm synthetic voice renders it as a signal at import time, softened like any other. Grounded in targeted lucidity reactivation, where the trained cue matters more than the sound itself. Text-to-speech is the first AI capability on the phone, and it is optional. | G1, G4 | S9 |
+
+### 4.2 Phone: night session reliability (the hardening package)
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F2.1 | **Checkpoint and resume.** Interpreter state written to disk at statement boundaries; on relaunch the run resumes from the checkpoint with an `interrupted` event and no burst of missed cues. | G5 | S2 |
+| F2.2 | **Append-only run log.** The JSONL port appends instead of rewriting the file per event. | G5 | S2, S6 |
+| F2.3 | **Android alarm module.** A small Expo native module using exact alarms that survive doze to relaunch the foreground service at the next cue time and resume from checkpoint. Android only; on iOS the audio session is the mechanism. | G5 | S2 |
+| F2.4 | **Night ambience.** The keep-alive track becomes a real, very quiet, band-limited brown/pink noise: user-adjustable, can be turned off, default barely audible. Keeps the audio session honest for store review, keeps Bluetooth routes awake, and gives the host a constant alignment reference in the recording. | G1, G5, G6 | S2, S3 |
+| F2.5 | **Cue-time local notifications** scheduled at run start; if the app has died, the user still sees when it stopped, and the morning report says so. | G5 | S2, S4 |
+| F2.6 | **Audio route handling.** Earbuds disconnected or Bluetooth speaker gone: log it, keep playing on the new route, never stall. | G5 | S2 |
+| F2.7 | **Eight-hour physical-device validation gate** on Android and iOS: locked screen, silent gaps, Sleep Focus / Do Not Disturb, low battery, audio interruptions. Recorded per release. | G5 | S2 |
+| F2.8 | **Battery measurement per night** written into the bundle (start/end level), so power cost is observed, not assumed. | G5 | S6 |
+| F2.9 | **Honest morning report of interruptions**: process loss, resume, missed cues, route changes, shown on Good morning and in Nights. | G2, G5 | S4 |
+
+### 4.3 Phone: context and conditions
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F3.1 | **True/false/unknown condition semantics.** Negating unknown stays unknown; a cue gate requires true; an explicit unavailable policy governs branching. Recorded as an intentional change from v1 with migration fixtures. Lands before any real context source. | G5, G4 | S2 |
+| F3.2 | **On-device context sources**, sampled at low rate all night: movement (accelerometer) and sound level (existing metering). Available to scripts as conditions (`movement`, `soundLevel`) and written to the log as observations. | G2, G4 | S2, S6 |
+| F3.3 | **Further phone sources as cheap additions**: ambient light, audio route, charger state, sunrise for the location. Candidates, not committed. | G2 | S6 |
+| F3.4 | **Conditionals and the simulated-context panel are retained** as the v3 on-ramp; they are no longer advertised as a wearable feature. | G4 | S9 |
+| F3.5 | **Observation schema** shared with the bundle: source, time, value, availability, provenance. Same shape the v3 live sources will use. | G2 | S6 |
+
+### 4.4 Phone: morning and export
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F4.1 | **Morning review** on Good morning: lucid? (built in the redesign), noticed the cue inside the dream / on waking / not at all, woke more than wanted, rested. Three taps, skippable. | G2 | S4 |
+| F4.2 | **Report marker.** One large button on the Sleeping screen writes a `report` event so the host finds the speech that follows it in the recording. | G2 | S4 |
+| F4.3 | **Night bundle export**: versioned, self-describing archive of the run log, observations, settings and script versions used, morning review, lucid answer, battery figures. Shared via the OS share sheet, a folder, or a local URL the host can fetch on the same network. | G2, G3 | S5 |
+| F4.4 | **Historical wearable import into the bundle**: HealthKit on iOS, Health Connect on Android, read at morning-review time for last night, with a note that the watch's app may need to sync first. The v2 platform-parity path for wearables. | G2, G4 | S5, S7 |
+| F4.5 | **Nights sheet shows bundle status** (exported, imported by host, proposal pending) so the phone side of the loop is visible. | G4 | S8 |
+
+### 4.5 Phone: authoring, library and usability
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F5.1 | **Linear script editor** on the phone: a sequence of play / wait / repeat-N steps with soften and gain, saved as YAML the text editor can still open. No nesting. | G6 | S9 |
+| F5.2 | **Import a proposed script** from the host by URL, file or QR, landing in the Library with its provenance (which night's evidence, which proposal). | G4 | S8 |
+| F5.3 | **Import fixes**: URL import works with a name alone (#3), last-used URL remembered, clearer errors. | G6 | S9 |
+| F5.4 | **Library extension improvements**: refresh in place, show what changed, WAV rule enforced in manifests. | G6 | S9 |
+| F5.5 | **Script view explains itself.** The read-only viewer shows a plain-language timeline of what a script will do tonight ("wait 90 min, then six quiet cycles"). Generated by the engine, not a model. | G6 | S1, S9 |
+
+### 4.6 Phone: interface and documentation
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F6.1 | **Redesign to the trunk** (#4): the v1-redesign branch after review, hardening of its console and sheets. | G6 | S1 |
+| F6.2 | **Docs and help consistent with the shipped UI**: README, spec §2, website pages and screenshots, in-app help. Part of every push. | G6 | S10 |
+| F6.3 | **Privacy screen in the app**: what is stored, where, what leaves the device and when; delete everything. | G5 | S10 |
+
+### 4.7 Recorder
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F7.1 | **Second-device recording guidance**: which apps work (any that produce a common audio file), placement, charging, the one-minute nightly ritual. Documentation and a help page, not code. | G2 | S3 |
+| F7.2 | **Sync tone at run start** (a short, soft, distinctive signal) so alignment is trivial even if the recorder starts late. | G2, G3 | S3, S5 |
+| F7.3 | **Optional LucidDream recorder app**: deferred to v3 unless third-party recorders prove unworkable. | - | S3 |
+
+### 4.8 Host service
+
+Detailed in §5. Summary rows for the feature map:
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F8.1 | Import night bundles and recordings; align them by cue matching. | G3 | S5 |
+| F8.2 | Night view: one timeline with cues, observations, wearable stages, audio waveform, speech segments. | G3 | S6 |
+| F8.3 | Transcription of speech segments; original audio kept; editable transcript. | G3 | S6 |
+| F8.4 | Structured extraction with uncertainty: title, places, people, emotions, lucidity unclear/reported. | G3, G4 | S6, S7 |
+| F8.5 | Cue-reaction detection: movement, sound, speech within a window after each cue. | G3, G4 | S6, S7 |
+| F8.6 | Archive and retrieval: search across nights by meaning, not only words. | G3 | S7 |
+| F8.7 | Patterns and baselines with sample sizes shown. | G4 | S7 |
+| F8.8 | Experiments: compare two conditions across nights, honest about what the data can support. | G4 | S7 |
+| F8.9 | Proposals: one change at a time, with evidence, producing a validated script for the phone. | G4 | S8 |
+| F8.10 | Script author: a sentence becomes a draft script, validated by the engine's own parser. | G4 | S9 |
+| F8.11 | Profiles, privacy controls, deletion, export. | G5 | S10 |
+
+### 4.9 Distribution and release
+
+| Id | Feature | Goals | Scenarios |
+| --- | --- | --- | --- |
+| F9.1 | **Store distribution, both platforms, at a v2.x** after the night-audio story has been through beta: Play and App Store listings, privacy and health-data declarations, review readiness for background audio (see F2.4). | G6 | S10 |
+| F9.2 | **Release automation**: tag-driven Android and iOS builds (the iOS plan's remaining steps), OTA updates via `expo-updates` for JS-only fixes. | G6 | S10 |
+| F9.3 | **Beta channels stay**: APK on GitHub Releases and TestFlight for v2.0 and v2.1. | G6 | S10 |
+| F9.4 | **Host distribution**: one command to run locally (`npx`-style or a single download), no installer. See §5.7. | G6 | S5, S10 |
+| F9.5 | **Marketing surface**: the website gains a v2 page once v2.0 ships, showing the loop with real screenshots of the night view; claims limited to what ships. | G6 | S10 |
+
+---
+
+## 5. The host service
+
+### 5.1 Purpose and positioning
+
+The host is where a night becomes understanding. It runs on the user's own computer as a small
+server with a browser interface, holds the user's nights, aligns recordings to logs, transcribes and
+extracts, finds patterns, and proposes changes that the phone can import.
+
+It is deliberately built as a **service that happens to run locally**, so that if user feedback
+justifies a hosted version, the move is a deployment with authentication and storage adapters
+added, not a rewrite. Whether that move happens is an open decision (§9). Until then, the host has
+the minimum possible desktop dependency: a runtime and a browser.
+
+### 5.2 User scenarios on the host
+
+**S5, bringing the night in.** The user opens the host in a browser. A night appears as soon as its
+bundle arrives (dropped into a watched folder, uploaded through the page, or fetched from the phone's
+local URL). They drop the recording file next to it. The host finds LucidDream's cues in the
+recording by matching the known signal waveforms and the sync tone, reports the alignment confidence,
+and shows one timeline.
+
+**S6, reading the night.** The timeline shows phases, cues, the phone's movement and sound-level
+traces, wearable sleep stages if they were imported, and the recording's waveform with detected
+speech segments. Clicking a cue shows what followed it within a chosen window. Clicking a speech
+segment plays the audio and shows the transcript beside it. The user corrects the transcript; the
+original stays. A structured summary is offered, with "lucid: unclear" when the words do not settle
+it, and becomes part of the record only when accepted.
+
+**S7, learning across nights.** The archive lists nights with outcomes side by side: recall, reported
+lucidity, cue incorporation, awakenings, rest. A question box answers "have I dreamed of that station
+before?" by retrieving the user's own reports, with citations to the nights. Pattern pages show
+outcomes by cue, by phase timing and by sleep-stage context, always with the number of nights behind
+each figure.
+
+**S8, adjusting with consent.** When there is enough evidence, the host proposes one change: a later
+first cue, a softer signal, fewer repetitions. The proposal shows the nights it rests on, the
+alternative explanations it considered, and the script diff. Accepting it produces a validated script
+and a link or QR code for the phone. Declining records why.
+
+**S9, authoring.** "A gentle session using my own cue, nothing after 6 AM" becomes a draft script,
+validated by the same parser the phone uses, with errors fed back to the drafting step until it
+passes. The user reads the plain-language timeline (F5.5 logic reused) before sending it to the phone.
+
+**S10, trust.** A privacy page lists what the host stores, which excerpts were sent to which AI
+provider and when, and offers deletion per night and in full.
+
+### 5.3 Functionality
+
+| Area | Functions |
 | --- | --- |
-| Identity | Source, device, metric and observation identity for deduplication |
-| Time | Measurement instant or interval, receipt time, and relevant clock uncertainty |
-| Value | Typed value, units, aggregation window and metric definition, especially for HRV |
-| Availability | Available, missing, stale, disconnected or unsupported; distinguish these where known |
-| Quality | Quality indicators and optional confidence when a source actually provides it |
-| Provenance | Vendor-reported measurement/stage versus application-derived estimate and model version |
-| Eligibility | Expiry/freshness policy and whether the observation is usable for live decisions |
+| **Ingest** | Watch folder, page upload, fetch from phone URL; bundle version validation; recording formats decoded on the host (the WAV-only rule applies to phone signals, not recordings). |
+| **Alignment** | Cross-correlate known signal files and the sync tone against the recording; report offset and confidence; fall back to clock offsets with a warning; manual nudge. |
+| **Segmentation** | Speech segments, movement/noise events, silence spans in the recording; the phone's own cues and ambience excluded from "room" events. |
+| **Transcription** | Per speech segment, through the provider adapter; original audio kept; transcript editable; uncertainty markers preserved. |
+| **Extraction** | Title, places, people, emotions, lucidity (reported / unclear / not indicated), cue mention, with the source words quoted; user confirms. |
+| **Night view** | Timeline, cue windows, reaction summary, wearable stages, morning review answers, interruptions. |
+| **Archive** | Nights list, outcomes table, full-text and semantic search with citations. |
+| **Patterns** | Outcomes by cue, timing, phase, sleep-stage context, day of week; baselines; sample sizes and missing-report counts always shown. |
+| **Experiments** | Define two conditions, assign nights (alternating by default), compare with a plain-language summary of what the data can and cannot support. |
+| **Proposals** | One change per proposal, evidence, alternatives considered, script diff, accept/decline with reason; produces a validated script. |
+| **Script author** | Natural-language draft to YAML, validated by the engine parser in a loop; plain-language preview. |
+| **Profiles and privacy** | One profile per person even on a single machine; per-night and full deletion; provider log; export of everything as files. |
 
-Freshness is based on measurement time, not the moment a snapshot is requested. Preserve historical
-intervals and handle duplicate/out-of-order data without making old data current. Provider capability
-discovery and authorization state must be separate from whether any observations happened to arrive.
-Do not invent confidence values or assume HRV metrics from different providers are interchangeable.
+### 5.4 Architecture
 
-Conditions require true/false/unknown semantics. Negating unknown must remain unknown. A cue gate
-requires true; unknown must not silently choose a physiological interpretation. For compound rules,
-false can decide AND and true can decide OR; otherwise propagate unknown. An explicit unavailable
-policy governs branching, waiting, skipping or a preselected time-based fallback. Migration tests
-must record this as an intentional change from v1 rather than preserve its missing-value negation.
+```
+browser UI (React, same design language as the phone)
+        |
+   HTTP / WebSocket, localhost
+        |
++------------------------------------------------------------------+
+|  host server (Node / TypeScript)                                 |
+|                                                                  |
+|  API layer        ingest, nights, search, proposals, settings    |
+|  analysis core    alignment, segmentation, correlation, stats,   |
+|                   proposal generation  (library + fixtures)      |
+|  engine package   the phone's engine: parser, validator,         |
+|                   plain-language timeline  (shared code)         |
+|  AI adapter       transcribe, extract, embed, draft, investigate |
+|                   -> provider X | provider Y | local model       |
+|  storage          profile -> nights -> bundle, recordings,       |
+|                   alignment, segments, transcripts, annotations, |
+|                   proposals   (filesystem now, DB later)         |
++------------------------------------------------------------------+
+```
 
-Reactive conditions need observation subscriptions or an explicit await-condition operation with
-timeout/cancellation. The current interpreter evaluates only when it reaches an if/until statement;
-a live update must not be assumed to interrupt an ordinary long wait. Final DSL syntax belongs in a
-later language/feature chapter.
+Decisions that keep the migration to a hosted service cheap:
 
-### 1.11 Microphone and cue policy
+- **Server plus browser UI, not a desktop application.** No Electron, no native windows. The UI is a
+  web app served by the local server; the same UI works against a hosted server later.
+- **Node / TypeScript**, so the phone's engine package is imported, not reimplemented: one parser,
+  one validator, one plain-language timeline for both surfaces.
+- **The analysis core is a library** with fixture-based tests (recorded bundles, synthetic
+  recordings), following the engine's discipline.
+- **Storage behind an interface, per-profile from day one.** Filesystem layout now; a database and
+  object store later, same code above it.
+- **The AI adapter is the only place provider APIs are called.** It records what was sent, to whom,
+  when, and the cost. Swapping providers or adding a local model is an adapter change.
+- **The bundle and proposal formats are versioned public contracts.** They are the API between the
+  phone and any host, local or hosted.
+- **Authentication is absent, not disabled.** The local host binds to localhost; the hosted version
+  adds accounts in front of the same API. Consent and retention exist from the first version because
+  retrofitting them onto a service holding other people's bedroom audio would be painful.
 
-Move sustained-level detection or selected offline keyword processing into the native session when
-included. Capture, detection and immediate attenuation must continue without React hooks. Permission
-is requested when the user enables the capability. Continuous capture needs platform validation.
-Cloud transcription is not required by this architecture.
+### 5.5 AI inside the host, and the learning path through it
 
-Share detector policy, cue cooldowns, maximum gain, minimum cue spacing and stale-input suppression
-where practical. Platform code handles audio input and lifecycle. Decide whether voice interruption
-pauses audio only or also script time, and specify resume behavior; v1 currently leaves script timing
-running. True keyword differentiation and its SDK/license choice remain feature decisions.
+Each capability below is a feature from §4.8 with a user in front of it; the order is also the
+owner's learning progression from the research paper (§12.8), because value per stored night rises in
+the same order.
 
-### 1.12 Persistence, observability and offline behavior
+1. **The archivist (F8.3, F8.4).** Recording to transcript to structured entry. Learns audio APIs,
+   asynchronous jobs, schema-constrained output, prompting for ambiguity, retries, cost tracking,
+   provenance, and evaluating invented detail against a small fixture set: silence must not become a
+   dream; an uncertain fragment must stay uncertain.
+2. **Archive retrieval (F8.6).** Embeddings and grounded answers with citations to the user's nights.
+   The agent's memory is the inspectable archive, not a conversation history.
+3. **The script author (F8.10).** Structured generation with a tool-assisted correction loop against
+   the engine parser; the clearest separation of "proposed" from "executed", with concrete pass/fail
+   criteria.
+4. **The investigator (F8.8, F8.9).** "Did the bowl cue help this month?" The agent retrieves nights,
+   checks preparation and reports, asks the analysis core for the numbers, weighs missing data and
+   alternative explanations, and drafts a proposal. Tool design, durable state, stopping conditions,
+   tracing, permissions. Numbers from code; narrative from the model.
+5. **Bounded adaptation (F8.9 accepted proposals).** Decision policies and longitudinal evaluation,
+   with one change at a time so results stay interpretable.
 
-The native host writes an append-oriented journal and bounded telemetry storage independently of UI
-execution. JSONL with genuine append or an appropriate local database are implementation options.
-Separate high-volume observations from sparse session events; batch storage off the render thread.
-Define retention and backpressure, including observable dropped-data counters rather than unbounded
-memory growth. Ordinary logging failure must not crash audio execution; surface degraded recording.
+Two capabilities that touch the phone rather than the host: the personal spoken cue (F1.9, text to
+speech at import) and, later, a morning follow-up question after the initial report has been saved
+uninterrupted. The second is not in v2; it adds interaction complexity before the archivist has
+proven its value.
 
-Record plan and runtime versions, source capabilities, measurement/receipt times, cue eligibility,
-requested/actual timing where available, missed deadlines, interruptions, disconnections and terminal
-outcomes. Use event sequence numbers to reconnect UI views and correlate observations with cues.
-Persist only the data required for enabled features; raw bedroom audio storage is not required.
+### 5.6 Data model
 
-Preflight ensures scheduled execution can run without network. Disconnected live sources become
-unavailable and follow explicit policy. Historical imports can occur later without retroactively
-changing which cues were eligible during the run. Keep log viewing, filtering and export in RN.
-
-### 1.13 Web, modules and build strategy
-
-Retain the current RN phone/web UI. Initially keep the TS interpreter for web and as a migration
-reference: this means two implementations temporarily (TS plus shared mobile core), rather than TS,
-Swift and Kotlin engines. WebAssembly is a possible later path to one portable execution core, with
-separate web bindings/audio adapters. It does not remove browser throttling or suspension limits.
-The web target remains appropriate for preparation, previews and simulated sessions.
-
-Expose the runtime through maintained native modules; Expo Modules and RN C++ modules are integration
-options. Keep adapter/core code in source-controlled modules or reproducible build configuration,
-not solely in regenerated native project directories. Continue Expo tooling where useful. [R1, R3]
-
-A shared core still needs Android NDK/CMake and Apple build integration where applicable, bindings,
-separate binaries and watch targets. Retaining RN does not avoid native signing and build requirements;
-adding native modules does not automatically require discarding EAS or existing version conventions.
-Apple compilation requires an Apple-capable build environment, which may be provided by a cloud
-service; an Ubuntu orchestration job does not mean Apple compilation happens on Ubuntu.
-
-V2 requires coherent production release paths for both Google Play and the Apple App Store.
-Maintain comparable release gates, version traceability and sensor/reliability verification across
-platforms, with platform-specific signing, packaging and submission. Beta distribution supports
-validation; it does not replace either production-store target. A later distribution chapter must
-specify these workflows against current official platform guidance, including credentials, privacy
-and health-data declarations, permissions, review, updates and recovery from release problems.
-
-### 1.14 Migration sequence and acceptance gates
-
-The stages below express technical dependencies for the architecture migration only. They do not
-rank v2 features, prescribe release order or take precedence over forthcoming higher-priority
-features. Schedule this work within the product roadmap once those features are specified.
-
-| Stage | Deliverable | Exit evidence |
+| Entity | Contents | Notes |
 | --- | --- | --- |
-| A. Feasibility | Representative Apple and Android watch/phone probes; prototype shared-core build | Measured delivery age/gaps, battery use and supported runtime on both platforms; working bindings on both mobile platforms |
-| B. Native session ownership | Existing semantics with simple audio and explicit session API | Screen-off overnight run, UI reconnection, native Stop and interruption handling |
-| C. Historical integration | Health-store import and cue correlation | Correct time/source handling and offline behavior; delayed records cannot trigger current cues |
-| D. Live integration and optional DSP | Validated Apple and Android sensor paths; selected effects if scoped | Sensor-to-cue timing and selected audio behavior meet declared tolerances on physical devices; parity gaps documented |
-| E. Broader support | Additional devices or stage-based experiments | Per-device capability evidence and appropriate estimator validation before claims of support |
+| Profile | id, display name, settings, provider policy | One per person; no auth locally |
+| Night | id, date key (evening-based, as in the phone), bundle reference, recordings, status | The unit of everything |
+| Bundle | version, run log, observations, script versions, settings snapshot, morning review, lucid answer, battery, interruptions | Immutable once imported |
+| Recording | file reference, format, duration, device label, alignment (offset, confidence, method) | Any number per night |
+| Segment | type (speech, movement, noise, silence), start, end, source | Derived; regenerable |
+| Transcript | segment reference, text, provider, model, cost, user edits kept separately | Original audio never modified |
+| Annotation | user-confirmed or model-suggested tag with provenance and confidence | Suggested and confirmed are distinct states |
+| Pattern / experiment | definition, nights included, computed results, generated summary | Results regenerable from nights |
+| Proposal | evidence nights, change, alternatives, script before/after, decision and reason | Feeds the phone |
+| Provider log | what was sent, to whom, when, cost | The privacy ledger |
 
-Define acceptable latency before collecting results. Measure measurement-to-receipt, receipt-to-decision
-and decision-to-audible-output separately, including tail delays and gaps. Do not commit a universal
-live REM SLA from API availability alone.
+### 5.7 Distribution and desktop dependency
 
-Overnight reliability must be validated for the session architecture. Device probes may run sequentially, but
-Android-only evidence does not settle v2 feasibility. Store readiness is a parallel delivery track
-with production acceptance on both platforms, not a later Android-only distribution milestone.
+- Runs with one command on Windows, macOS or Linux; a Node runtime and a browser are the only
+  requirements. A packaged single binary is a later convenience, not a v2.1 dependency.
+- Audio decoding of recorder formats needs a decoder on the host; prefer a pure-JavaScript or
+  WebAssembly decoder to avoid a system dependency, with a documented fallback to `ffmpeg` for
+  exotic formats.
+- Local models are optional: a local transcription model where the machine can run it, otherwise a
+  provider through the adapter. The setting is visible and per-profile.
+- Data lives in one directory per profile that the user can back up, move or delete.
 
-Validation includes:
+### 5.8 Path to a hosted service (deferred decision)
 
-- Shared conformance fixtures for loops, scopes, phase resets, cancellation and changed unknown rules.
-- Replay of identical sensor timelines through TS and the shared core, comparing intended event traces.
-- Freshness, duplicate/out-of-order input, timeout, disconnection and delayed-command tests.
-- Audio overlap, cancellation, fade/duck behavior and effect output checks with defined tolerances.
-- Physical eight-hour tests with locked screens, silent gaps, Sleep Focus, battery constraints,
-  phone/watch disconnection, audio interruptions and route changes.
-- Separate UI-runtime loss and process-loss tests, including recovery reporting and no stale cue burst.
-- Representative Android device testing and Apple device testing; one platform passing is insufficient.
-
-Choose the smallest implementation that passes these gates. Historical health integration and reliable
-time-based cues provide useful v2 behavior even if live staging remains unavailable.
-
-### 1.15 Open architectural decisions
-
-- C++ versus KMP after the prototype; DSP scope and maintainability determine the choice.
-- Representative Apple and Android watch/phone pairs, and whether Wake Up smart-alarm behavior is the first live experiment.
-- Required observation metrics, acceptable age and device-specific capability tiers.
-- Exact execution-plan schema, command/event protocol and semantic version policy.
-- Deadline tolerances, interruption/resume behavior and process-recovery policy.
-- Audio effect list, scope composition, pitch/rate behavior and live versus pre-rendered processing.
-- Storage implementation, telemetry retention and recording-degradation behavior.
-- Native module/watch-target build ownership and physical-device validation coverage.
-- Whether a custom stage estimator is in scope at all; it is not implied by wearable integration.
-
-Detailed user flows, effect choices, DSL additions and feature release commitments belong in the later
-feature chapters. This chapter defines their execution boundaries and the evidence needed to support
-them.
-
-### 1.16 Primary references
-
-These sources informed the September 2026 architecture discussion. Platform limits must be rechecked
-when implementing a target; API existence is not a measured responsiveness guarantee.
-
-- **R1:** [React Native: cross-platform C++ native modules](https://reactnative.dev/docs/the-new-architecture/pure-cxx-modules)
-- **R2:** [Kotlin Multiplatform: supported platforms](https://kotlinlang.org/docs/multiplatform/supported-platforms.html)
-- **R3:** [Expo Modules API](https://docs.expo.dev/modules/overview/)
-- **R4:** [Expo KeepAwake](https://docs.expo.dev/versions/latest/sdk/keep-awake/)
-- **R5:** [Android Oboe: low-latency audio](https://developer.android.com/games/sdk/oboe/low-latency-audio)
-- **R6:** [Apple AVAudioSession](https://developer.apple.com/documentation/avfaudio/avaudiosession)
-- **R7:** [HealthKit background delivery](https://developer.apple.com/documentation/healthkit/hkhealthstore/enablebackgrounddelivery%28for%3Afrequency%3Awithcompletion%3A%29)
-- **R8:** [Health Connect reads](https://developer.android.com/health-and-fitness/health-connect/read-data?hl=en)
-- **R9:** [Health Connect synchronization](https://developer.android.com/health-and-fitness/health-connect/sync-data)
-- **R10:** [Apple Watch extended runtime sessions](https://developer.apple.com/documentation/watchkit/using-extended-runtime-sessions?changes=_2__8&language=objc)
-- **R11:** [Wear OS device compatibility and batching](https://developer.android.com/health-and-fitness/health-services/compatibility)
-- **R12:** [PassiveMonitoringClient](https://developer.android.com/reference/androidx/health/services/client/PassiveMonitoringClient)
-- **R13:** [Oura API](https://cloud.ouraring.com/v2/docs)
-- **R14:** [Watch Connectivity](https://developer.apple.com/documentation/WatchConnectivity/WCSession)
+If feedback justifies it: deploy the same server behind authentication; swap the storage adapter for
+a database and object store; add upload from the phone directly; keep the provider log per user.
+Bedroom audio custody becomes the project's responsibility at that point, which is why the decision
+waits for evidence that users want it. The website and prototype patterns already used for v1 apply
+to the UI half; the compute half needs a real backend.
 
 ---
 
-## 2. Features already tagged for v2 in the v1 spec
+## 6. Recorder guidance
 
-The following are direct excerpts from [luciddream-v1-spec.md](luciddream-v1-spec.md), each already
-marking the item as deferred to v2 (as opposed to simply "not in v1" â€” see Â§3 below for that
-broader list).
+v2 ships no recorder. The documentation describes the second-device setup as the lab kit:
 
-### 2.1 Audio DSP effects (reverb, EQ, spatial)
+- Any device that can record a common audio format for eight hours while charging: a spare or old
+  phone with its built-in recorder, a tablet, a laptop.
+- Placement on the nightstand, within a couple of metres of the bed and of the LucidDream phone.
+- The nightly ritual: press record on the recorder, then Begin the night on the phone; in the morning
+  stop both and move the recording to the host (cable, shared folder, or whatever the recorder offers).
+- The sync tone (F7.2) and the ambience (F2.4) make alignment independent of when the recorder started.
 
-> `with` | `with: { gain?, rate? }`, `body:` | Pushes an effect scope for its body. Nested scopes
-> multiply. **`gain` and `rate` are the only effects in v1 â€” reverb, EQ and spatial audio need
-> native DSP Expo doesn't provide, and land in v2; the grammar leaves room for them.**
-> â€” Â§3.2, Statements table
-
-### 2.2 Real wearable integration via Health Connect (and, by parity, HealthKit)
-
-> **v2 adds `HealthConnectContextProvider`.** One caveat worth recording now, because it affects
-> whether the feature can ever work as written: Health Connect data is written by the wearable's
-> companion app in _batches after sync_, so near-real-time sleep-stage triggering during the night
-> may simply not be available. The mock-first approach means we find out without having built the
-> app around it.
-> â€” Â§4.3, Context providers
-
-### 2.3 Real keyword-spotting for voice interrupt
-
-> Real speech recognition was considered and set aside for v1 specifically: cloud STT needs network
-> overnight and sends bedroom audio off-device; on-demand OS recognizers (Android `SpeechRecognizer`
-> / iOS `Speech`) are built for short, user-initiated sessions rather than multi-hour listening and
-> iOS restricts background mic access heavily; **dedicated offline keyword-spotters (e.g. Porcupine)
-> would work but add a new, often commercially-licensed native dependency â€” a real v2 candidate, not
-> a POC default. True keyword differentiation is deferred to v2 as its own dependency decision.**
-> â€” Â§4.6, Voice/sound-triggered interruption
-
-### 2.4 Re-evaluation of the voice interrupt feature itself
-
-> This entire feature may be scoped out to v2 if real overnight use shows it triggers on ambient
-> noise too often to be worth the false-positive rate.
-> â€” Â§4.6, Voice/sound-triggered interruption (Settings & privacy)
-
-### 2.5 Play Store distribution
-
-**Confirmed v2 scope:** production distribution through both Google Play and the Apple App Store,
-with coherent release engineering and platform-appropriate best practices. The v1 excerpt below is
-historical context. The detailed distribution feature chapter is still to be written; see chapter 4.
-
-> **Play Store:** out of scope for v1. The existing `eas-submit-android.yml` workflow is kept,
-> unused, as the on-ramp.
-> â€” Â§5.1, Android â€” sideloaded APK via GitHub Release
+Beginners are not the v2 audience; a single-device path waits for v3 evidence that it is wanted.
 
 ---
 
-## 3. Explicitly excluded from v1 (candidate v2 scope, not yet committed)
+## 7. Delivery shape
 
-These are named as out-of-scope for v1 without being explicitly assigned to v2 â€” they are the
-natural backlog to triage when scoping v2, distinct from the committed items in Â§2 above.
+### 7.1 Increments
 
-> **Explicitly not in v1:** reality-check reminders, dream journal, dream analysis, personalised
-> guidance, accounts, multi-user support, cloud sync, real wearable integration (see Â§4.3),
-> folder-watching of any kind (files are added one at a time, permanently â€” not a future item), and
-> an in-app script editor (scripts are authored in any text editor; the app offers a read-only
-> viewer).
-> â€” Â§1, Purpose and scope
+| Increment | Theme | Contents | Channel |
+| --- | --- | --- | --- |
+| **v2.0 Observe** | The phone records a faithful night | §4.1 audio, §4.2 hardening, §4.3 context, §4.4 morning and export, F6.1 redesign to trunk, F6.2 docs, F7.1-F7.2 recorder guidance | APK + TestFlight |
+| **v2.1 Understand** | The host reads the night | §5 through F8.7 (ingest, alignment, night view, archivist, retrieval, patterns), F9.4 host distribution | APK + TestFlight; host by command |
+| **v2.2 Adapt** | The loop closes across nights | F8.8-F8.10 experiments, proposals, script author; F5.1 linear editor; F5.2 proposal import; F4.5 | Stores (F9.1) after review readiness is confirmed |
 
-> User-defined variables and arithmetic, in-script function/macro definitions, parallel branches,
-> `goto`, and importing one script from another. Each is a clean addition later; none is needed to
-> express the experiments described in the requirements.
-> â€” Â§3.4, Explicitly deferred from the script language
+Store submission is planned for v2.2 because that is when the night-audio story, the ambience track
+and the privacy screen have all been through beta.
 
-Note the spec is explicit that **folder-watching is not a future item at all** (permanently
-out of scope, not merely deferred) â€” it should not be re-opened as v2 scope without a deliberate
-decision to reverse that.
+### 7.2 Acceptance gates
+
+- **v2.0:** eight-hour physical-device runs pass on both platforms (F2.7); softening presets have
+  unit fixtures and a listening sign-off from the customer who raised #6; a bundle exported from the
+  phone validates against its schema; battery per night measured and within target.
+- **v2.1:** a real night (bundle + recording) aligns automatically with stated confidence; the
+  archivist passes the fixture set (silence stays silent, unclear stays unclear); a night is
+  navigable end to end in the browser.
+- **v2.2:** a proposal round-trips: evidence, accepted change, validated script on the phone, night
+  run with it, next bundle shows the change; store review passed on both platforms.
+
+### 7.3 Work packages for the v1-to-v2 transition
+
+Before v2.0 feature work: the redesign review and merge to trunk (#4), the doc sync
+([luciddream-v1-redesign.md](luciddream-v1-redesign.md) lists what is stale), and the remaining iOS
+release automation from [luciddream-ios-support-plan.md](luciddream-ios-support-plan.md).
+
+### 7.4 What would pull v3 work forward
+
+Only field evidence: runs dying on beta users' devices for a cause the hardening package cannot
+address in TypeScript. The v3 plan lists the triggers (§1.1 there).
 
 ---
 
-## 4. Confirmed v2 scoping decisions
+## 8. Decisions recorded on 2026-09-13
 
-Status: **confirmed by the project owner, 2026-09-07**. These decisions resolve the previous three
-scoping questions. Detailed implementation choices and feature specifications remain open.
+| # | Decision |
+| --- | --- |
+| D1 | v2 thesis is "listen and learn": the loop across nights, on the current stack. |
+| D2 | The native session runtime, live DSP and sample-accurate timing are not needed for sleeping scenarios; the native architecture moves to the v3 plan and is entered only on field evidence. |
+| D3 | Session ownership problems (checkpoint/resume, append-only log) are fixed in TypeScript; an Android exact-alarm native module is the one small native addition; iOS relies on the audio session. |
+| D4 | The keep-alive track becomes a real, very quiet night ambience: a feature, optional, and the store-review defence. |
+| D5 | Full-night recording happens on a separate device; LucidDream itself does not record in v2. |
+| D6 | The host is source-agnostic: a run bundle plus any recordings from any source, aligned by cue matching. |
+| D7 | The host is a local service with a browser UI, designed to become a hosted service; the bundle format, per-profile storage and the analysis core are the stable contracts. Whether to host it is deferred to user feedback. |
+| D8 | Wearables enter v2 as historical import into the bundle (HealthKit, Health Connect, Oura); live wearable observations are v3. |
+| D9 | Script conditionals stay in the language and engine, with pluggable context sources; on-device sources (movement, sound level) are the v2 live sources. |
+| D10 | User-provided signals are WAV only; bundled MP3 is converted at build time. |
+| D11 | Store distribution on both platforms remains in v2 scope, targeted at v2.2. |
+| D12 | The v2 audience is enthusiasts and self-experimenters; beginners are addressed in v3. |
+| D13 | AI is used only where it produces traceable user value (§1.5); the owner's platform learning follows the same features in the same order. |
 
-These answers apply to the architectural-driver, store-integration and platform-parity questions
-only. They do not establish overall feature or release priorities. Higher-importance features are
-still to be specified and will take priority; the product roadmap remains open.
+---
 
-### 4.1 Architectural drivers: overnight reliability and wearables
+## 9. Open questions
 
-Within the architectural alternatives presented, overnight-reliability hardening and wearable
-integration are the main drivers, with hardening slightly more critical. This comparison does not
-rank these capabilities above other v2 features or assign DSP a release priority.
-Evaluate the shared-core language and native boundaries against dependable session ownership,
-background behavior, interruption handling and sensor delivery before optimizing for effect reuse.
+Strategic first.
 
-Validate both platforms on physical devices. A successful foreground demonstration or simulator
-run is not enough. The architecture's overnight validation gates apply before claiming reliability.
+1. **Hosted service.** Deferred until user feedback; what evidence would trigger it (number of users,
+   requests for cross-device access, unwillingness to run a local tool)?
+2. **Overnight-reliability evidence.** Collect from beta users now: have runs died, and how often?
+   This decides how much of §4.2 is urgent and whether anything in the v3 plan pulls forward.
+3. **AI provider policy.** Default provider, local-model option, and the exact wording of what leaves
+   the machine. Also the cost model for a user running the host themselves.
+4. **Store review of background audio.** Confirm current App Store and Play guidance on audible
+   background content before committing the v2.2 submission date.
+5. **Health module choice.** Which community HealthKit / Health Connect modules to adopt for F4.4;
+   both add native dependencies and a dev-client rebuild.
 
-### 4.2 Production distribution: Google Play and Apple App Store
+Audio softening (#6):
 
-V2 includes fully coherent production integration with both Google Play and the Apple App Store,
-following platform-appropriate best practices. APK sideloading and TestFlight may support development
-and testing, but do not fulfill the production distribution goal by themselves.
+6. Speaker versus earbuds for the customer who reported the problem.
+7. Listening test before building: render `gentle`/`strong` variants and the new soft signals as
+   files and let her listen first.
+8. Whether to accept `.flac`/`.aiff` in addition to WAV; the maximum signal length the phone
+   pre-renders before falling back to fades only.
+9. Migration notice for MP3 signals already imported by beta users.
 
-A dedicated distribution feature chapter must specify:
+Feature-level:
 
-- Repeatable builds, version/build identification and release traceability on both platforms.
-- Production signing, secure credential ownership and recovery, and separation from debug builds.
-- Automated validation and submission workflows, beta testing and production promotion.
-- Required store metadata, privacy/health-data disclosures and permission explanations.
-- Review readiness for background execution, audio and wearable/sensor functionality.
-- Update strategy, release monitoring and recovery from a faulty release using supported mechanisms.
+10. Linear editor: which statements it exposes; how it treats a script it cannot represent.
+11. Night recording: retention on the host, silence-compression parameters, whether recordings are
+    stored compressed.
+12. On-device sensing: sampling rates and their measured battery cost; which of F3.3's sources are
+    worth their power.
+13. Morning review: the final question set, and whether "noticed the cue" should be asked before or
+    after the free-form report is saved (the research paper argues for preserving the report first).
+14. Bundle transport: whether the host fetching from the phone over the local network is worth its
+    complexity in v2.1, or file sharing is enough.
 
-These are requirements for the planned integration, not assertions that the current pipelines meet
-them. Confirm exact store rules, signing mechanics and submission details from official sources when
-writing that chapter. Store readiness is part of v2 delivery on both platforms.
+---
 
-### 4.3 Platform parity: wearables and other sensors
+## 10. Appendix: source mapping
 
-Feature parity across iOS and Android is a v2 goal for wearables and other sensors. Design and validate
-both platform paths as first-class implementations. Plan HealthKit and Health Connect integration
-together; do not carry forward an Android-first scope that implicitly leaves iOS for a later release.
-
-Parity means consistent feature intent, condition semantics, data-quality handling, controls and
-reporting wherever platform capabilities permit. It does not imply identical hardware measurements,
-sampling frequencies, runtime allowances or vendor APIs. Use an explicit capability matrix to expose
-unsupported or unproven behavior, with comparable user-facing handling of unavailable data.
-
-Document any unavoidable platform difference and its proposed fallback as a scope decision. Do not
-silently equate historical sleep data with a live feed to claim parity. Exact device support and
-live stage responsiveness still depend on the feasibility gates in chapter 1; parity is a goal, not
-a claim that those capabilities have already been demonstrated.
+| Source | Where it landed |
+| --- | --- |
+| Customer: "sounds must be very soft; beeps, alerts, chirps are no go" | G1, §4.1 |
+| Issue #6 and its 2026-09-13 comment | §4.1, D10, open questions 6-9 |
+| Issue #5 (full-night recording, host analysis, privacy) | §5, F7.x, D5-D7 |
+| Issue #4 (new aesthetic to trunk) | F6.1 |
+| Issue #3 (URL import confusion) | F5.3 |
+| Owner list (former §4.4): visual editor | F5.1 |
+| Owner list: host analysis tool, "uber smart journal" | §5, F8.x |
+| Owner list: closed loop modifying scripts per user | F8.9, F5.2, S8 |
+| Owner list: usability (last used URL etc.) | F5.3 |
+| Research paper §8.4 speak-on-waking, §12 AI sequence | S4, F4.2, §5.5, §1.5 |
+| Competitive paper: v2 = phone-based loop, v3 = sensing | §1, D1, D8 |
+| v1 spec deferred items (DSP, wearables, keyword spotting, Play Store) | v3 plan §3; F9.1 |
+| Former chapter 1 (native architecture) | v3 plan §2 |
+| Former §4.1-4.3 (drivers, stores, parity) | D2, D11, F4.4 |
