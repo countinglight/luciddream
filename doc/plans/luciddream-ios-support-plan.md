@@ -1,6 +1,13 @@
 # LucidDream — iOS support plan
 
-Status: **plan, not yet implemented.** This document expands milestone **M6** of
+Status: **largely implemented; status reviewed 2026-09-13.** An external TestFlight tester has installed
+the app ([E-001](../evidence/v1-evidence.md)). Still open: lock-screen controls (**D2**), the H5
+decision, device verification of **B4**/**D4**/**D5**, the `expo-updates` publishing setup (**H2**),
+and the README section (**B8**). Current state per task is in **Part I**; device facts come from
+[`doc/evidence/`](../evidence/README.md). The sections below keep their original planning text, with
+dated status notes where the code has since moved on.
+
+This document expands milestone **M6** of
 [`luciddream-v1-spec.md`](./luciddream-v1-spec.md) §7 into an executable plan. It is written to serve
 two readers at once:
 
@@ -14,11 +21,9 @@ Where this plan disagrees with the v1 spec, the disagreement is called out expli
 rather than silently resolved. **H2, H4 and H6 were decided on 2026-09-09 and are settled** — where
 they contradict the spec, this document wins and the spec is to be amended.
 
-Two remain open, deliberately:
-
 **H1** was decided, then **revised and re-confirmed the same day** once the requirement "the build
 number must be readable offline from the clone" was raised; §3 is the full treatment and the revision
-is implemented. **H5** (`doNotMix` on iOS) is the one item still open — a product call that needs
+is implemented. **H5** (`doNotMix` on iOS) is the one decision still open — a product call that needs
 device evidence. Decide at Part E step 5.
 
 ---
@@ -91,7 +96,7 @@ bytes stream from the workstation on demand. So these are **hot**, no rebuild:
 | Asset                                       | Where                                                                                                       | Hot?                                                   |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | Anything under `src/**` (`.ts`, `.tsx`)     | —                                                                                                           | Yes, Fast Refresh                                      |
-| `assets/images/tabIcons/*.png`              | [`app-tabs.tsx:24`](../../src/components/app-tabs.tsx)                                                      | Yes, on reload                                         |
+| `assets/images/tabIcons/*.png`              | `src/components/app-tabs.tsx` on `master` only; the v1 redesign removed the tab bar                         | Yes, on reload                                         |
 | `assets/sounds/*.wav`, `*.mp3`              | [`sounds.ts:2`](../../src/lib/sounds.ts), [`keep-alive-track.ts:11`](../../src/session/keep-alive-track.ts) | Yes, on reload                                         |
 | `assets/scripts/*.yaml`                     | codegen → `src/storage/bundled-scripts.ts`                                                                  | Yes, **after** running the generator — see task **B7** |
 | `assets/images/icon.png`, `splash-icon.png` | consumed by `expo prebuild`                                                                                 | **No — rebuild**                                       |
@@ -182,9 +187,13 @@ The chain is worth writing down because it is load-bearing and slightly non-obvi
 So `npm run android:apk:release` on your clone already stamps the correct marketing version with no
 network access and no EAS involvement. **Nothing in this plan touches step 2, 4 or 5.**
 
-### 3.3 The build number — the actual open problem
+### 3.3 The build number — the problem as found
 
-Verified on 2026-09-09 against `npx expo config --type prebuild --json`:
+**Resolved 2026-09-09** by mechanism C (§3.5, decision H1): `eas.json` is now `appVersionSource:
+"local"` with no `autoIncrement`, and `app.config.js` computes both numbers. The rest of this section
+records the state before the fix, as the reason for the design.
+
+Verified on 2026-09-09, before the fix, against `npx expo config --type prebuild --json`:
 
 ```
 version: 0.5.0
@@ -413,10 +422,11 @@ npx eas login
 npx eas project:info
 ```
 
-If `project:info` reports no linked project, run `npx eas init`. Note that
-[`app.json`](../../app.json) currently has **no** `extra.eas.projectId`, and
-[`app.config.js`](../../app.config.js) spreads `appJson.expo` without adding one — so linkage very
-likely still needs doing. `eas init` will write it.
+If `project:info` reports no linked project, run `npx eas init`, which writes
+`extra.eas.projectId` into [`app.json`](../../app.json).
+
+**Status 2026-09-13: done.** `app.json` carries `extra.eas.projectId` and `owner:
+counting-light-team`.
 
 **[record]** the **EAS project ID**.
 
@@ -499,10 +509,14 @@ Add an `ios` block to the existing `development` and `preview` profiles, and add
   "extends": "production",
   "distribution": "store",
   "channel": "testflight",
-  "autoIncrement": true,
   "ios": { "resourceClass": "m-medium" }
 }
 ```
+
+No `autoIncrement`: the build number is computed (§3.5, rule 7 in §3.6). An earlier draft of this
+snippet carried `"autoIncrement": true`, which contradicts H1.
+
+**Status 2026-09-13: done** — [`eas.json`](../../eas.json) matches.
 
 Critical detail: `ios-testflight` **must not** be `distribution: "internal"`. Internal distribution
 yields an Ad Hoc build, which is the option §2.3 rejected. `"store"` is what produces a binary App
@@ -622,6 +636,11 @@ close that gap, in preference order:
 `usesNonExemptEncryption: false` and `bundleIdentifier: com.vladsadovsky.luciddream`; `UIBackgroundModes`
 confirmed by route 1, 2 or 3 and noted here.
 
+**Status 2026-09-13:** the config half is done. `UIBackgroundModes` is **not yet confirmed**. An
+external TestFlight install ([E-001](../evidence/v1-evidence.md)) proves submission works, not
+background audio. Route 3 needs a screen-off night on an iPhone
+([R-005](../evidence/v1-evidence.md)).
+
 ### B9. Add `version:info`
 
 Per §3.7. A small script printing the marketing version and the computed build number for the current
@@ -653,6 +672,10 @@ Add `"prestart": "npm run generate:bundled-scripts"`. Consider `preios` and `pre
 misleading — it is not the path this project uses. Document the Windows + EAS dev-client flow, and
 add a customer-facing TestFlight install section mirroring the Android APK instructions (Part F is
 the source text).
+
+**Status 2026-09-13: partly done.** The customer-facing TestFlight steps are on the website's install
+page (`site/install/index.html`). `README.md` still has no TestFlight section and no Windows +
+EAS dev-client flow.
 
 ---
 
@@ -697,6 +720,12 @@ There is no GitHub Release artifact on this path. The deliverable is a build lan
 Connect, unlike Android's APK-on-a-release-page.
 
 **Secrets consumed:** `EXPO_TOKEN`, `APPLE_API_KEY`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`.
+
+**Status 2026-09-13: workflow written, not yet proven by a tag.** The release tags cut so far are
+`0.5.0` and `0.5.1`, without the `v` prefix, so the `v*` trigger has never fired. The first
+scheduled run is due 2026-10-01. Which path produced the build the external tester installed is not
+recorded ([R-008](../evidence/v1-evidence.md)). Tag naming and the missing Android counterpart are
+v1 spec §5–§6 release work.
 
 ### C3. Leave `ci.yml` alone
 
@@ -767,6 +796,10 @@ background playback, or audio stops after roughly 3 minutes in the background. I
 overnight run currently works, something else is holding it — worth understanding before changing
 this code path, because it means the two platforms may be relying on different mechanisms.
 
+**Status 2026-09-13: not implemented.** No lock-screen API is called anywhere in `src/`, and H5 is
+still open. v2 plans the keep-alive loop to become an audible night ambience (v2 plan F2.4), which
+is the natural player to carry lock-screen metadata.
+
 ### D3. Add a notification handler
 
 `setNotificationHandler` appears **nowhere** in `src/`. On iOS, a local notification delivered while
@@ -778,6 +811,10 @@ Add a handler at app entry. Also reconsider _when_ permission is requested:
 `ensureRunNotificationSetup` ([`notification.ts:20`](../../src/session/notification.ts)) calls
 `requestPermissionsAsync` at session start, which pops a system dialog just as the user is settling
 in for the night. Moving it to onboarding or first library visit is better iOS UX.
+
+**Status 2026-09-13:** the handler is done
+([`notification.ts:25`](../../src/session/notification.ts)). The permission request still happens at
+session start ([`notification.ts:46`](../../src/session/notification.ts)); moving it is not done.
 
 ### D4. Re-examine the keep-alive track's platform reasoning
 
@@ -792,13 +829,18 @@ Two things need device verification, not reasoning: that a 0.01-amplitude loop i
 inaudible and optimised away, and that it survives a full 8-hour session. Update the comment once
 verified.
 
+**Status 2026-09-13: not verified.** Two testers completed 8-hour nights without a crash
+([E-002](../evidence/v1-evidence.md)), but their platforms are not recorded
+([R-001](../evidence/v1-evidence.md)), so this does not yet count for iOS. The comment in
+`keep-alive-track.ts` is still Android-only.
+
 ### D5. Verify the iOS-conditional UI on real hardware
 
-These branches have never run on an iOS device:
+These branches need checking on an iOS device (paths as of the v1 redesign; `BottomTabInset` and the
+`(tabs)` folder went away with the tab bar):
 
-- [`theme.ts:38`](../../src/constants/theme.ts) — the `ios` font/theme block
-- [`theme.ts:72`](../../src/constants/theme.ts) — `BottomTabInset = Platform.select({ ios: 50, android: 80 })`
-- [`settings.tsx:141`](<../../src/app/(tabs)/settings.tsx>) — `KeyboardAvoidingView` `behavior` and
+- [`theme.ts:108`](../../src/constants/theme.ts) — the `Fonts = Platform.select(...)` block
+- [`settings.tsx:186`](../../src/app/settings.tsx) — `KeyboardAvoidingView` `behavior` and
   `keyboardVerticalOffset` branches
 
 Also: `expo-glass-effect` is a dependency, and its Liquid Glass effects are gated on recent iOS
@@ -817,6 +859,11 @@ scaled iPhone app — acceptable for beta, worth stating in the tester notes.
 
 Do this **before** wiring C2 and **before** inviting a single customer. Same discipline spec §5.1
 applies to the Android flow: prove it by hand, then automate.
+
+**Status 2026-09-13:** the TestFlight half (steps 6–9) is effectively proven: an external tester
+installed a build ([E-001](../evidence/v1-evidence.md)). The dev-client half (steps 1–5) is not
+recorded ([R-007](../evidence/v1-evidence.md)), and the step 5 overnight walk is open
+([R-005](../evidence/v1-evidence.md)). C2 was written before step 5 was done.
 
 1. Complete Part A entirely.
 2. Merge Part B and task C1.
@@ -886,6 +933,9 @@ Tag `v<version>` → `release-android.yml` and `release-ios.yml` run in parallel
 Release, TestFlight build in App Store Connect. Android testers re-download; iOS testers get a
 notification.
 
+**Status 2026-09-13: not yet the real process.** `release-android.yml` does not exist; the APKs for
+0.5.0 and 0.5.1 were attached to GitHub Releases by hand, under tags without the `v` prefix.
+
 ### G2. The 90-day clock
 
 `release-ios.yml`'s monthly schedule (**C2**) handles it. **Verify the schedule actually fires** —
@@ -943,14 +993,17 @@ any script in the clone can derive offline.
 **Accepted cost:** the packing rules of §3.6 (minor/patch ≤ 99, counter ≤ 999) become real
 constraints on the version scheme, and `autoIncrement` must come out of `eas.json`.
 
-**Status:** [`eas.json`](../../eas.json) still says `"remote"` — deliberately left unchanged pending
-confirmation, so nothing is half-migrated. Spec §5.2/§5.3 already say `"local"`, so adopting this
-revision makes the spec _correct as written_ and reduces **H3** to the `package.json`-vs-`app.json`
-wording fix alone.
+**Status 2026-09-13: implemented.** [`eas.json`](../../eas.json) says `"local"` with no
+`autoIncrement`; `app.config.js` computes the numbers through `scripts/build-number.js`.
 
 ### H2. `expo-updates` — **decided: adopt now**
 
-`expo-updates` is **not** in [`package.json`](../../package.json). Without it, every JS-only fix for
+**Status 2026-09-13: partly implemented.** Steps 1, 3 and 4 are done (`expo-updates` in
+`package.json`, fingerprint `runtimeVersion` in `app.json`, channels in `eas.json`). Step 2
+(`eas update:configure`, which writes the `updates.url`) and step 5 (the `update:testflight` script)
+are not done, so no OTA update can be published yet.
+
+At the time of the decision `expo-updates` was **not** in [`package.json`](../../package.json). Without it, every JS-only fix for
 a beta customer costs a full EAS build plus a submission, plus (on a version bump, for external
 testers) another Beta App Review.
 
@@ -979,6 +1032,9 @@ what still requires a full build.
 Spec §5.3 says `app.json` `version` is the single source of truth;
 [`app.config.js`](../../app.config.js) overrides it from `package.json` and says so in a comment.
 `package.json` wins. Update §5.3, and make sure C2's tag check reads `package.json`.
+
+**Status 2026-09-13: done.** Spec §5.3 names `package.json`, and `release-ios.yml` checks the tag
+against it.
 
 ### H4. Tester model — **decided: both**
 
@@ -1013,29 +1069,32 @@ later is possible but painful.
 
 ## Part I — Execution order
 
-Dependencies matter; this order avoids rework.
+Dependencies matter; this order avoids rework. Status reviewed 2026-09-13 against the repository and
+[`doc/evidence/v1-evidence.md`](../evidence/v1-evidence.md). Rows 1, 8, 10, 11, 16 and 19 are marked
+done because an external tester installed a TestFlight build (E-001), which cannot happen without
+them.
 
-| #   | Task                                                                                      | Owner        | Blocked by |
-| --- | ----------------------------------------------------------------------------------------- | ------------ | ---------- |
-| 1   | **A1** Apple Developer enrolment, **Individual** — starts a 24–48 h clock, so do it first | Vlad         | —          |
-| 2   | DONE — **B3**, **B6** config correctness (B4 only partly verifiable on Windows, see B6)   | agent        | —          |
-| 3   | DONE — **B7** `prestart` / `preios` / `preandroid` hooks                                  | agent        | —          |
-| 4   | DONE — **H2** `expo-updates` + fingerprint policy (`update:configure` deferred to A6)     | agent        | —          |
-| 5   | DONE — **D1**, **D3** audio mode and notification handler                                 | agent        | —          |
-| 6   | DONE — **B1** `eas.json` build profiles, **C1** `eas-build-ios.yml`                       | agent        | —          |
-| 7   | DONE — **H1** §3 mechanism applied, **B9** `version:info`, **H3** spec §5.2/§5.3 wording  | agent        | —          |
-| 8   | **A2**, **A3**, **A4**, **A5**, **A6** Apple and Expo setup                               | Vlad         | A1         |
-| 9   | DONE — **B2** `eas.json` iOS submit config (Team `H6RLB65BLV`, app `6810464846`)          | agent        | —          |
-| 10  | **A7** signing credentials                                                                | Vlad         | B1         |
-| 11  | **A8** GitHub secrets                                                                     | Vlad         | A5, A6     |
-| 12  | _(C1 done at step 6)_                                                                     | —            | —          |
-| 13  | **A9** register your device                                                               | Vlad         | A1         |
-| 14  | **Part E** steps 1–5: dev client on device                                                | Vlad         | C1, A9     |
-| 15  | **D2**, **D4**, **D5**, **D6** iOS runtime work, device-verified                          | agent + Vlad | E          |
-| 16  | **Part E** steps 6–9: manual TestFlight round-trip                                        | Vlad         | B2, A8     |
-| 17  | **C2** `release-ios.yml` with the monthly schedule                                        | agent        | E          |
-| 18  | **B8** README, **Part F** tester instructions                                             | agent        | E          |
-| 19  | Invite external testers                                                                   | Vlad         | 16, 17, A4 |
+| #   | Task                                                                                                                  | Owner        | Blocked by |
+| --- | --------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| 1   | DONE (E-001) — **A1** Apple Developer enrolment, **Individual**                                                       | Vlad         | —          |
+| 2   | DONE — **B3**, **B6** config correctness (B4 only partly verifiable on Windows, see B6)                               | agent        | —          |
+| 3   | DONE — **B7** `prestart` / `preios` / `preandroid` hooks                                                              | agent        | —          |
+| 4   | PARTLY — **H2** `expo-updates` + fingerprint policy done; `update:configure` and `update:testflight` script not done  | agent        | A6         |
+| 5   | DONE — **D1**, **D3** audio mode and notification handler                                                             | agent        | —          |
+| 6   | DONE — **B1** `eas.json` build profiles, **C1** `eas-build-ios.yml`                                                   | agent        | —          |
+| 7   | DONE — **H1** §3 mechanism applied, **B9** `version:info`, **H3** spec §5.2/§5.3 wording                              | agent        | —          |
+| 8   | DONE (E-001) — **A2**, **A3**, **A4**, **A5**, **A6** Apple and Expo setup                                            | Vlad         | A1         |
+| 9   | DONE — **B2** `eas.json` iOS submit config (Team `H6RLB65BLV`, app `6810464846`)                                      | agent        | —          |
+| 10  | DONE (E-001) — **A7** signing credentials                                                                             | Vlad         | B1         |
+| 11  | DONE for manual submit (E-001); CI use unproven (R-008) — **A8** GitHub secrets                                       | Vlad         | A5, A6     |
+| 12  | _(C1 done at step 6)_                                                                                                 | —            | —          |
+| 13  | NOT RECORDED (R-007) — **A9** register your device                                                                    | Vlad         | A1         |
+| 14  | NOT RECORDED (R-007) — **Part E** steps 1–5: dev client on device                                                     | Vlad         | C1, A9     |
+| 15  | OPEN — **D2** not implemented (H5 open); **D4**, **D5** unverified (R-005, R-006); **D6** unverified                  | agent + Vlad | E          |
+| 16  | DONE (E-001) — **Part E** steps 6–9: TestFlight round-trip                                                            | Vlad         | B2, A8     |
+| 17  | WRITTEN, UNPROVEN — **C2** `release-ios.yml`; `v*` tag trigger never fired (tags lack `v`); first schedule 2026-10-01 | agent        | E          |
+| 18  | PARTLY — **Part F** text on the website install page; **B8** README not done                                          | agent        | E          |
+| 19  | DONE (E-001) — Invite external testers                                                                                | Vlad         | 16, 17, A4 |
 
 **Exit criterion for M6**, per spec §7: a version tag produces a TestFlight build installable by an
 external tester, with the developer workstation powered off.

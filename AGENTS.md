@@ -7,6 +7,14 @@
 - Use `vlads-dev` or an appropriate release/development branch for all work.
 - Treat `deploy` as a deployment-only branch. Update it only through the repository's release/deployment process, not as a working branch.
 
+# Field evidence
+
+- Facts code cannot establish (device runs, installs, battery, tester feedback, store review) live in
+  `doc/evidence/`, as described in `doc/evidence/README.md`.
+- Read the current `doc/evidence/v<N>-evidence.md` before reporting such a criterion as unmet.
+- When you need such a fact, add a row to its Requests table instead of asking only in chat. When the
+  owner states such a fact in chat, record it as Evidence. Never infer or embellish evidence.
+
 # Validation during UI iteration
 
 - During rapid UI/design iteration, do not run lint, Prettier, typechecking, or the full test suite after each change.
