@@ -29,6 +29,9 @@ export type StartSessionOptions = {
   context: ContextPort;
   log: LogPort;
   audioFocus: Settings['audioFocus'];
+  /** Voice interrupt is on for this run, so the audio session must also allow
+   * the microphone — see the comment at `setAudioModeAsync`. */
+  voiceInterrupt?: boolean;
 };
 
 const VOICE_INTERRUPT_DUCK_FACTOR = 0.15;
@@ -42,6 +45,7 @@ const VOICE_INTERRUPT_DUCK_FACTOR = 0.15;
  * `useScriptRun` hook did. */
 export async function startSession(options: StartSessionOptions): Promise<SessionController> {
   const { name, phases, sourceMap, context, log, audioFocus } = options;
+  const recording = options.voiceInterrupt === true;
 
   await setAudioModeAsync({
     // Explicit rather than relying on expo-audio's default: a run is expected to
@@ -51,6 +55,16 @@ export async function startSession(options: StartSessionOptions): Promise<Sessio
     playsInSilentMode: true,
     interruptionMode: audioFocus === 'exclusive' ? 'doNotMix' : 'duckOthers',
     shouldPlayInBackground: true,
+    // Voice interrupt meters the microphone all night with the screen locked.
+    // Without `allowsRecording`, iOS refuses to start the recorder at all; it
+    // switches the session to playAndRecord, which expo-audio still routes to
+    // the speaker. Without `allowsBackgroundRecording`, both platforms pause
+    // the recorder as soon as the app leaves the foreground (Android also
+    // needs the plugin's enableBackgroundRecording, set in app.json). Off
+    // otherwise, so a run without voice interrupt keeps the plain playback
+    // session and never touches the microphone.
+    allowsRecording: recording,
+    allowsBackgroundRecording: recording,
   });
 
   const audio = new ExpoAudioPort(sourceMap);

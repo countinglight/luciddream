@@ -41,15 +41,20 @@ export function useVoiceInterrupt(enabled: boolean, onEvent: (event: VoiceInterr
     detectorRef.current = new VoiceInterruptDetector(DEFAULT_VOICE_INTERRUPT_CONFIG);
     let cancelled = false;
 
-    requestRecordingPermissionsAsync()
-      .then(({ granted }) => {
-        if (cancelled) return;
-        setPermission(granted ? 'granted' : 'denied');
-        if (granted) recorder.record();
-      })
-      .catch(() => {
-        if (!cancelled) setPermission('error');
-      });
+    (async () => {
+      const { granted } = await requestRecordingPermissionsAsync();
+      if (cancelled) return;
+      setPermission(granted ? 'granted' : 'denied');
+      if (!granted) return;
+      // expo-audio's native recorders need preparing before `record()`;
+      // without it the recorder never starts on iOS or Android and metering
+      // stays empty. The session has already enabled recording in the audio
+      // mode (session.ts) by the time a run is `running`.
+      await recorder.prepareToRecordAsync();
+      if (!cancelled) recorder.record();
+    })().catch(() => {
+      if (!cancelled) setPermission('error');
+    });
 
     return () => {
       cancelled = true;

@@ -25,6 +25,7 @@ import {
 import type { VoiceInterruptEvent } from "@/session/voice-interrupt";
 import type { LibraryScript, LibrarySignal } from "@/storage/library-types";
 import { resolveScriptText } from "@/storage/scripts";
+import { telemetry } from "@/telemetry";
 
 export type SessionStatus =
   | "idle"
@@ -35,6 +36,9 @@ export type SessionStatus =
   | "error";
 
 const MAX_RECENT_EVENTS = 6;
+/** Refreshes the diagnostics open-run marker through long silent waits, so an
+ * interrupted night reports an end time within this margin. */
+const TELEMETRY_HEARTBEAT_MS = 5 * 60_000;
 
 export type SelectedRunPhase = {
   index: number;
@@ -128,6 +132,12 @@ export function useSession(signals: LibrarySignal[]) {
     return () => clearInterval(id);
   }, [status, startedAt]);
 
+  useEffect(() => {
+    if (status !== "running") return;
+    const id = setInterval(() => telemetry.heartbeat(), TELEMETRY_HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [status]);
+
   const start = useCallback(
     async (selectedPhases: SelectedRunPhase[], masterVolume: number) => {
       if (sessionRef.current) return; // one run at a time
@@ -212,10 +222,19 @@ export function useSession(signals: LibrarySignal[]) {
         setRunId(id);
         const started = Date.now();
         await persistRunStart(id, runName, started);
+        telemetry.runStarted({
+          id,
+          startedAt: started,
+          phases: populatedPhases.map((phase) => ({
+            label: phase.label,
+            script: phase.script.name,
+          })),
+        });
         let finishedBeforeStartReturned = false;
 
         const uiLog: LogPort = {
           log: (event) => {
+            telemetry.observe(event);
             eventCountRef.current += 1;
             setLastEvent(event);
             setRecentEvents((prev) =>
@@ -241,6 +260,7 @@ export function useSession(signals: LibrarySignal[]) {
                     : "completed",
               );
               sessionRef.current = null;
+              telemetry.runEnded(event.at, event.reason);
               void persistRunEnd(
                 id,
                 runName,
@@ -275,6 +295,7 @@ export function useSession(signals: LibrarySignal[]) {
           context,
           log,
           audioFocus: settings.audioFocus,
+          voiceInterrupt: settings.voiceInterrupt === "gentle",
         });
         if (!finishedBeforeStartReturned) {
           sessionRef.current = session;
@@ -295,6 +316,7 @@ export function useSession(signals: LibrarySignal[]) {
       settings.audioFocus,
       settings.logCategories,
       settings.periodPresets,
+      settings.voiceInterrupt,
     ],
   );
 

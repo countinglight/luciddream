@@ -1,0 +1,25 @@
+{
+  // Beta diagnostics ingest (doc/plans/luciddream-beta-telemetry.md). A Worker
+  // with a D1 database, not static assets. Not connected to a Git build: it is
+  // published only by `npm run deploy:telemetry`, which refuses to run while
+  // database_id below is still the placeholder. Everything here fits the
+  // Workers Free plan.
+  "name": "luciddream-telemetry",
+  "main": "telemetry/worker/index.js",
+  "compatibility_date": "2026-09-05",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "luciddream-telemetry.countinglight.com",
+      "custom_domain": true,
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "luciddream-telemetry",
+      // Replace with the id printed by `npx wrangler@4.129.0 d1 create luciddream-telemetry`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+    },
+  ],
+}

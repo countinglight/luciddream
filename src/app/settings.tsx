@@ -33,6 +33,7 @@ import type {
   SimulatedContextSettings,
   ThemePreference,
 } from "@/lib/settings";
+import { telemetry } from "@/telemetry";
 
 type PresetKey = keyof Settings["periodPresets"];
 
@@ -290,6 +291,66 @@ export default function SettingsScreen() {
                   </Surface>
                 </Section>
 
+                {telemetry.available && (
+                  <Section title="Beta diagnostics">
+                    <Surface style={styles.card}>
+                      <View style={styles.row}>
+                        <ThemedText style={styles.shrink}>
+                          Share night reports
+                        </ThemedText>
+                        <Switch
+                          value={settings.diagnostics.enabled}
+                          onValueChange={(enabled) =>
+                            updateSettings({
+                              diagnostics: { ...settings.diagnostics, enabled },
+                            })
+                          }
+                          trackColor={switchColors}
+                          accessibilityLabel="Share night reports with the LucidDream developer"
+                        />
+                      </View>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        Helps test the beta. Each night sends when it started
+                        and ended, how it ended, the script names, and your
+                        phone model, system and app version. Never audio, logs
+                        or your library. Turning this off deletes anything not
+                        yet sent.
+                      </ThemedText>
+                      {settings.diagnostics.enabled && (
+                        <View style={styles.row}>
+                          <ThemedText>Your name</ThemedText>
+                          <TextInput
+                            value={settings.diagnostics.testerLabel}
+                            onChangeText={(testerLabel) =>
+                              updateSettings({
+                                diagnostics: {
+                                  ...settings.diagnostics,
+                                  testerLabel,
+                                },
+                              })
+                            }
+                            autoCapitalize="words"
+                            autoCorrect={false}
+                            maxLength={60}
+                            placeholder="optional"
+                            placeholderTextColor={theme.textMuted}
+                            accessibilityLabel="Name shown with your reports"
+                            style={[
+                              styles.input,
+                              styles.wideInput,
+                              {
+                                color: theme.text,
+                                backgroundColor: theme.background,
+                                borderColor: theme.border,
+                              },
+                            ]}
+                          />
+                        </View>
+                      )}
+                    </Surface>
+                  </Section>
+                )}
+
                 <Section title="Advanced">
                   <Surface style={styles.flushCard}>
                     <Pressable
@@ -520,6 +581,10 @@ const styles = StyleSheet.create({
     width: 88,
     flexShrink: 0,
     textAlign: "right",
+  },
+  wideInput: {
+    width: 160,
+    flexShrink: 1,
   },
   footer: {
     flexDirection: "row",

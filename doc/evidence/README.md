@@ -58,6 +58,10 @@ supersedes it (`Supersedes E-003` in Details), never by editing history.
   `v<N>-evidence.md`.
 - **Ask through Requests.** When such a fact is needed, add a Requests row and mention it in chat.
   Do not keep the question only in chat or in agent memory.
+- **Use diagnostics when they exist.** Once beta diagnostics are switched on
+  ([luciddream-beta-telemetry.md](../plans/luciddream-beta-telemetry.md)), `npm run telemetry:nights`
+  answers who ran which build on which phone, when, for how long and how it ended. Record such
+  results as Evidence with source `telemetry` and the run id in Details, and prefer them over asking.
 - **Transcribe, never infer.** When the owner states a fact in chat, record it as Evidence with
   source `owner` and the chat date. Never write evidence the owner did not state, never upgrade
   `reported` to `verified`, and never fill a missing detail with a guess.

@@ -1,11 +1,12 @@
 # LucidDream — iOS support plan
 
-Status: **largely implemented; status reviewed 2026-09-13.** An external TestFlight tester has installed
-the app ([E-001](../evidence/v1-evidence.md)). Still open: lock-screen controls (**D2**), the H5
-decision, device verification of **B4**/**D4**/**D5**, the `expo-updates` publishing setup (**H2**),
-and the README section (**B8**). Current state per task is in **Part I**; device facts come from
-[`doc/evidence/`](../evidence/README.md). The sections below keep their original planning text, with
-dated status notes where the code has since moved on.
+Status: **implemented except for device verification; reviewed 2026-09-13.** An external TestFlight
+tester has installed the app ([E-001](../evidence/v1-evidence.md)). A robustness pass on the same day
+(**Part J**) fixed the iOS problems found in review and finished **B8**, **C2** and **H2**. Still
+open: device verification of **B4**/**D4**/**D5**/**D6** and of the Part J changes, and lock-screen
+controls (**D2**), deliberately deferred with **H5**. Current state per task is in **Part I**; device
+facts come from [`doc/evidence/`](../evidence/README.md). The sections below keep their original
+planning text, with dated status notes where the code has since moved on.
 
 This document expands milestone **M6** of
 [`luciddream-v1-spec.md`](./luciddream-v1-spec.md) §7 into an executable plan. It is written to serve
@@ -23,8 +24,8 @@ they contradict the spec, this document wins and the spec is to be amended.
 
 **H1** was decided, then **revised and re-confirmed the same day** once the requirement "the build
 number must be readable offline from the clone" was raised; §3 is the full treatment and the revision
-is implemented. **H5** (`doNotMix` on iOS) is the one decision still open — a product call that needs
-device evidence. Decide at Part E step 5.
+is implemented. **H5** (`doNotMix` on iOS) was decided on 2026-09-13 together with deferring the
+lock-screen controls of **D2** to v2.
 
 ---
 
@@ -673,9 +674,9 @@ misleading — it is not the path this project uses. Document the Windows + EAS 
 add a customer-facing TestFlight install section mirroring the Android APK instructions (Part F is
 the source text).
 
-**Status 2026-09-13: partly done.** The customer-facing TestFlight steps are on the website's install
-page (`site/install/index.html`). `README.md` still has no TestFlight section and no Windows +
-EAS dev-client flow.
+**Status 2026-09-13: done.** The customer-facing TestFlight steps are on the website's install page
+(`site/install/index.html`); `README.md` now points at the Windows + EAS dev-client flow and
+describes the TestFlight release path and OTA updates.
 
 ---
 
@@ -722,7 +723,8 @@ Connect, unlike Android's APK-on-a-release-page.
 **Secrets consumed:** `EXPO_TOKEN`, `APPLE_API_KEY`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`.
 
 **Status 2026-09-13: workflow written, not yet proven by a tag.** The release tags cut so far are
-`0.5.0` and `0.5.1`, without the `v` prefix, so the `v*` trigger has never fired. The first
+`0.5.0` and `0.5.1`, without the `v` prefix, so the original `v*` trigger never fired. The trigger
+now also accepts bare `0.6.0`-style tags; the version check already strips a leading `v`. The first
 scheduled run is due 2026-10-01. Which path produced the build the external tester installed is not
 recorded ([R-008](../evidence/v1-evidence.md)). Tag naming and the missing Android counterpart are
 v1 spec §5–§6 release work.
@@ -796,9 +798,13 @@ background playback, or audio stops after roughly 3 minutes in the background. I
 overnight run currently works, something else is holding it — worth understanding before changing
 this code path, because it means the two platforms may be relying on different mechanisms.
 
-**Status 2026-09-13: not implemented.** No lock-screen API is called anywhere in `src/`, and H5 is
-still open. v2 plans the keep-alive loop to become an audible night ambience (v2 plan F2.4), which
-is the natural player to carry lock-screen metadata.
+**Status 2026-09-13: deliberately deferred to v2** (see H5). Now Playing controls always include a
+pause button. On the keep-alive player, pausing from the lock screen would stop the only audio
+keeping a backgrounded iPhone app alive, and iOS would suspend the run before the next cue — a new
+way for a night to die, created by a half-asleep tap. The run notification (now `passive`, see D3)
+already carries the step and a Stop action. v2 turns the keep-alive loop into an audible night
+ambience (v2 plan F2.4), where pause can honestly mean "quiet the ambience" and the controls can be
+designed around that.
 
 ### D3. Add a notification handler
 
@@ -813,8 +819,11 @@ Add a handler at app entry. Also reconsider _when_ permission is requested:
 in for the night. Moving it to onboarding or first library visit is better iOS UX.
 
 **Status 2026-09-13:** the handler is done
-([`notification.ts:25`](../../src/session/notification.ts)). The permission request still happens at
-session start ([`notification.ts:46`](../../src/session/notification.ts)); moving it is not done.
+([`notification.ts`](../../src/session/notification.ts)). A second iOS problem was found and fixed in
+Part J: the run posts a notification update for every engine event, and on iOS each is a new
+delivery that lights up a locked screen, all night. iOS content is now `interruptionLevel:
+'passive'`. The permission request stays at the first Begin: the app has no onboarding to move it
+to, and the prompt appears only once per install.
 
 ### D4. Re-examine the keep-alive track's platform reasoning
 
@@ -832,7 +841,9 @@ verified.
 **Status 2026-09-13: not verified.** Two testers completed 8-hour nights without a crash
 ([E-002](../evidence/v1-evidence.md)), but their platforms are not recorded
 ([R-001](../evidence/v1-evidence.md)), so this does not yet count for iOS. The comment in
-`keep-alive-track.ts` is still Android-only.
+`keep-alive-track.ts` now explains the iOS reason alongside the Android one, marked unverified. Beta
+diagnostics, once switched on, answer this directly: an iPhone night ending `interrupted` shortly
+after a long `wait` began is the failure this item worries about.
 
 ### D5. Verify the iOS-conditional UI on real hardware
 
@@ -935,6 +946,7 @@ notification.
 
 **Status 2026-09-13: not yet the real process.** `release-android.yml` does not exist; the APKs for
 0.5.0 and 0.5.1 were attached to GitHub Releases by hand, under tags without the `v` prefix.
+`release-ios.yml` accepts both tag spellings. The Android side is v1 spec §5–§6 release work.
 
 ### G2. The 90-day clock
 
@@ -998,10 +1010,12 @@ constraints on the version scheme, and `autoIncrement` must come out of `eas.jso
 
 ### H2. `expo-updates` — **decided: adopt now**
 
-**Status 2026-09-13: partly implemented.** Steps 1, 3 and 4 are done (`expo-updates` in
-`package.json`, fingerprint `runtimeVersion` in `app.json`, channels in `eas.json`). Step 2
-(`eas update:configure`, which writes the `updates.url`) and step 5 (the `update:testflight` script)
-are not done, so no OTA update can be published yet.
+**Status 2026-09-13: implemented.** `expo-updates` is in `package.json`, `runtimeVersion` uses the
+fingerprint policy, the `eas.json` profiles carry channels, `app.json` carries
+`updates.url` (`https://u.expo.dev/<projectId>`, what `eas update:configure` writes), and
+`npm run update:testflight` / `update:preview` publish. Builds made before this change have no
+update URL and will not receive updates; the first build after it will. The update check is a
+request to Expo's servers on launch, now stated on the privacy page.
 
 At the time of the decision `expo-updates` was **not** in [`package.json`](../../package.json). Without it, every JS-only fix for
 a beta customer costs a full EAS build plus a submission, plus (on a version bump, for external
@@ -1046,7 +1060,11 @@ account.
 **Accepted cost:** external testers wait on Beta App Review for the first build of each `version` —
 see **G4** on batching fixes into one version bump.
 
-### H5. Force `doNotMix` on iOS? — **OPEN**
+### H5. Force `doNotMix` on iOS? — **decided 2026-09-13: no; lock-screen controls deferred to v2**
+
+**Decision:** keep the user-facing `audioFocus` setting on both platforms and do not implement
+lock-screen controls in v1 (reasoning under D2: their pause button could suspend a night). With no
+lock-screen controls there is no reason to force `doNotMix`. Revisit with v2's night ambience.
 
 Per **D2**. Lock-screen controls want `interruptionMode: 'doNotMix'`, but `audioFocus` is a
 user-facing setting that also selects `duckOthers`. Options: force `doNotMix` on iOS and drop the
@@ -1067,6 +1085,35 @@ later is possible but painful.
 
 ---
 
+## Part J — Robustness review, 2026-09-13
+
+A review of every iOS-related build setting, asset, script and code path after the first external
+TestFlight install. Each change below needs a fresh EAS build (several touch native configuration)
+and a night on an iPhone to count as verified ([R-005](../evidence/v1-evidence.md)).
+
+| Area                          | Finding                                                                                                                                                                                      | Change                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run notification              | One notification update per engine event; on iOS each is a new delivery that lights a locked screen all night.                                                                               | iOS content is `interruptionLevel: 'passive'` ([`notification.ts`](../../src/session/notification.ts)).                                                                                                                                                                                                                                        |
+| Voice interrupt               | The recorder was never prepared (`prepareToRecordAsync`), so it could not start; the iOS audio session did not allow recording; both platforms pause recorders in the background by default. | Recorder prepared before `record()` ([`use-voice-interrupt.ts`](../../src/hooks/use-voice-interrupt.ts)); `allowsRecording` and `allowsBackgroundRecording` set for runs with voice interrupt on ([`session.ts`](../../src/session/session.ts)); `enableBackgroundRecording` in the expo-audio plugin (Android microphone foreground service). |
+| Microphone prompt             | iOS showed expo-audio's generic "Allow $(PRODUCT_NAME) to access your microphone".                                                                                                           | A specific `microphonePermission` string in `app.json`.                                                                                                                                                                                                                                                                                        |
+| Home screen name              | `name` was `luciddream`, so the iPhone and Android launchers showed it lower-case.                                                                                                           | `LucidDream`. Bundle id, slug and scheme unchanged.                                                                                                                                                                                                                                                                                            |
+| Splash                        | A white splash before a dark-themed app.                                                                                                                                                     | Background `#f2efe9` (light theme) and a `dark` variant `#11152c`. The owl image stays: at 263 px it is soft at 160 pt on 3x screens, and no larger transparent source exists in the repository (`assets/Owl blue right.zip` holds Android launcher art). A 512 px or larger transparent owl would fix it.                                     |
+| Privacy manifest              | None declared at app level. App Store Connect warns about required-reason APIs (UserDefaults via AsyncStorage, file timestamps, boot time, disk space).                                      | `ios.privacyManifests` in `app.json` with those reasons, no tracking, and the diagnostic data types of beta diagnostics.                                                                                                                                                                                                                       |
+| OTA updates (H2)              | No `updates.url`, no publish script.                                                                                                                                                         | Both added.                                                                                                                                                                                                                                                                                                                                    |
+| Release trigger (C2)          | Tags `0.5.x` never matched `v*`.                                                                                                                                                             | Both spellings accepted.                                                                                                                                                                                                                                                                                                                       |
+| Keep-alive (D4)               | Comment described Android only.                                                                                                                                                              | iOS reason documented, marked unverified.                                                                                                                                                                                                                                                                                                      |
+| Lock-screen controls (D2, H5) | —                                                                                                                                                                                            | Deferred to v2, with the reason recorded.                                                                                                                                                                                                                                                                                                      |
+| Field evidence                | Every device question depended on asking testers.                                                                                                                                            | Opt-in beta diagnostics for iOS and Android, dormant until switched on: [luciddream-beta-telemetry.md](luciddream-beta-telemetry.md).                                                                                                                                                                                                          |
+| App icon                      | 1024 × 1024 RGB, no alpha — correct for iOS.                                                                                                                                                 | None.                                                                                                                                                                                                                                                                                                                                          |
+| Unused native code            | `expo-glass-effect` is a dependency not imported by `src/`.                                                                                                                                  | Kept: Expo Router's native components can use it, and removing it is not worth an untested native change.                                                                                                                                                                                                                                      |
+
+One behaviour to know about: with voice interrupt on, the iOS audio session becomes
+`playAndRecord` with Bluetooth hands-free allowed, which expo-audio still routes to the speaker but
+which can lower playback quality on some Bluetooth speakers. Runs without voice interrupt keep the
+plain playback session.
+
+---
+
 ## Part I — Execution order
 
 Dependencies matter; this order avoids rework. Status reviewed 2026-09-13 against the repository and
@@ -1074,27 +1121,27 @@ Dependencies matter; this order avoids rework. Status reviewed 2026-09-13 agains
 done because an external tester installed a TestFlight build (E-001), which cannot happen without
 them.
 
-| #   | Task                                                                                                                  | Owner        | Blocked by |
-| --- | --------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| 1   | DONE (E-001) — **A1** Apple Developer enrolment, **Individual**                                                       | Vlad         | —          |
-| 2   | DONE — **B3**, **B6** config correctness (B4 only partly verifiable on Windows, see B6)                               | agent        | —          |
-| 3   | DONE — **B7** `prestart` / `preios` / `preandroid` hooks                                                              | agent        | —          |
-| 4   | PARTLY — **H2** `expo-updates` + fingerprint policy done; `update:configure` and `update:testflight` script not done  | agent        | A6         |
-| 5   | DONE — **D1**, **D3** audio mode and notification handler                                                             | agent        | —          |
-| 6   | DONE — **B1** `eas.json` build profiles, **C1** `eas-build-ios.yml`                                                   | agent        | —          |
-| 7   | DONE — **H1** §3 mechanism applied, **B9** `version:info`, **H3** spec §5.2/§5.3 wording                              | agent        | —          |
-| 8   | DONE (E-001) — **A2**, **A3**, **A4**, **A5**, **A6** Apple and Expo setup                                            | Vlad         | A1         |
-| 9   | DONE — **B2** `eas.json` iOS submit config (Team `H6RLB65BLV`, app `6810464846`)                                      | agent        | —          |
-| 10  | DONE (E-001) — **A7** signing credentials                                                                             | Vlad         | B1         |
-| 11  | DONE for manual submit (E-001); CI use unproven (R-008) — **A8** GitHub secrets                                       | Vlad         | A5, A6     |
-| 12  | _(C1 done at step 6)_                                                                                                 | —            | —          |
-| 13  | NOT RECORDED (R-007) — **A9** register your device                                                                    | Vlad         | A1         |
-| 14  | NOT RECORDED (R-007) — **Part E** steps 1–5: dev client on device                                                     | Vlad         | C1, A9     |
-| 15  | OPEN — **D2** not implemented (H5 open); **D4**, **D5** unverified (R-005, R-006); **D6** unverified                  | agent + Vlad | E          |
-| 16  | DONE (E-001) — **Part E** steps 6–9: TestFlight round-trip                                                            | Vlad         | B2, A8     |
-| 17  | WRITTEN, UNPROVEN — **C2** `release-ios.yml`; `v*` tag trigger never fired (tags lack `v`); first schedule 2026-10-01 | agent        | E          |
-| 18  | PARTLY — **Part F** text on the website install page; **B8** README not done                                          | agent        | E          |
-| 19  | DONE (E-001) — Invite external testers                                                                                | Vlad         | 16, 17, A4 |
+| #   | Task                                                                                                              | Owner        | Blocked by |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| 1   | DONE (E-001) — **A1** Apple Developer enrolment, **Individual**                                                   | Vlad         | —          |
+| 2   | DONE — **B3**, **B6** config correctness (B4 only partly verifiable on Windows, see B6)                           | agent        | —          |
+| 3   | DONE — **B7** `prestart` / `preios` / `preandroid` hooks                                                          | agent        | —          |
+| 4   | DONE — **H2** `expo-updates`, fingerprint policy, `updates.url`, `update:testflight` script                       | agent        | A6         |
+| 5   | DONE — **D1**, **D3** audio mode and notification handler                                                         | agent        | —          |
+| 6   | DONE — **B1** `eas.json` build profiles, **C1** `eas-build-ios.yml`                                               | agent        | —          |
+| 7   | DONE — **H1** §3 mechanism applied, **B9** `version:info`, **H3** spec §5.2/§5.3 wording                          | agent        | —          |
+| 8   | DONE (E-001) — **A2**, **A3**, **A4**, **A5**, **A6** Apple and Expo setup                                        | Vlad         | A1         |
+| 9   | DONE — **B2** `eas.json` iOS submit config (Team `H6RLB65BLV`, app `6810464846`)                                  | agent        | —          |
+| 10  | DONE (E-001) — **A7** signing credentials                                                                         | Vlad         | B1         |
+| 11  | DONE for manual submit (E-001); CI use unproven (R-008) — **A8** GitHub secrets                                   | Vlad         | A5, A6     |
+| 12  | _(C1 done at step 6)_                                                                                             | —            | —          |
+| 13  | NOT RECORDED (R-007) — **A9** register your device                                                                | Vlad         | A1         |
+| 14  | NOT RECORDED (R-007) — **Part E** steps 1–5: dev client on device                                                 | Vlad         | C1, A9     |
+| 15  | OPEN — **D4**, **D5**, **D6** and Part J unverified on device (R-005, R-006); **D2** deferred to v2 (H5 decided)  | agent + Vlad | E          |
+| 16  | DONE (E-001) — **Part E** steps 6–9: TestFlight round-trip                                                        | Vlad         | B2, A8     |
+| 17  | WRITTEN, UNPROVEN — **C2** `release-ios.yml`; trigger now accepts `v0.6.0` and `0.6.0`; first schedule 2026-10-01 | agent        | E          |
+| 18  | DONE — **Part F** text on the website install page; **B8** README                                                 | agent        | E          |
+| 19  | DONE (E-001) — Invite external testers                                                                            | Vlad         | 16, 17, A4 |
 
 **Exit criterion for M6**, per spec §7: a version tag produces a TestFlight build installable by an
 external tester, with the developer workstation powered off.

@@ -500,6 +500,10 @@ and the privacy screen have all been through beta.
 
 ### 7.3 Work packages for the v1-to-v2 transition
 
+Beta diagnostics already exist in the v1 code, dormant
+([luciddream-beta-telemetry.md](luciddream-beta-telemetry.md)); switched on, they supply the field
+evidence for F2.7 and for the v3 triggers without asking testers.
+
 Before v2.0 feature work: the redesign review and merge to trunk (#4), the doc sync
 ([luciddream-v1-redesign.md](luciddream-v1-redesign.md) lists what is stale), and the remaining iOS
 release automation from [luciddream-ios-support-plan.md](luciddream-ios-support-plan.md).

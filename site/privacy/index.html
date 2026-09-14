@@ -6,13 +6,13 @@
     <title>Privacy — LucidDream</title>
     <meta
       name="description"
-      content="LucidDream has no accounts, no server and no tracking. What stays on your device, and the only things that ever leave it."
+      content="LucidDream has no accounts, no analytics and no tracking. What stays on your device, and the only things that ever leave it."
     />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="LucidDream privacy" />
     <meta
       property="og:description"
-      content="No accounts, no server, no tracking. Everything stays on your device."
+      content="No accounts, no analytics, no tracking. Your nights stay on your device."
     />
     <meta
       property="og:image"
@@ -53,11 +53,12 @@
       <section class="band" style="border-top: 0">
         <div class="container">
           <p class="eyebrow">Privacy</p>
-          <h1>Everything stays on your device</h1>
+          <h1>Your nights stay on your device</h1>
           <p class="band__lede">
-            LucidDream has no accounts, no server of its own, and no analytics.
-            There is nowhere for your data to go, because there is nothing on
-            the other end.
+            LucidDream has no accounts, no advertising and no analytics. Your
+            library, settings and run logs never leave the phone unless you send
+            them. Beta builds can report a short summary of each night to the
+            developer, but only if you switch that on.
           </p>
         </div>
       </section>
@@ -86,11 +87,45 @@
               whoever hosts it — this site, if the file came from here.
             </li>
             <li>
-              <strong>Nothing else.</strong> No account, no sync, no crash
-              reporting, no usage statistics, no advertising identifiers, no
-              third-party SDKs of any kind.
+              <strong>An update check.</strong> The Android and iOS builds ask
+              Expo's update service at launch whether a newer version of the
+              app's code is available. The request names the app's platform,
+              build and release channel — nothing about you or your nights.
+            </li>
+            <li>
+              <strong>Beta diagnostics, only if you turn them on.</strong> See
+              below.
+            </li>
+            <li>
+              <strong>Nothing else.</strong> No account, no sync, no usage
+              statistics, no advertising identifiers, no third-party analytics
+              or crash-reporting SDKs.
             </li>
           </ul>
+
+          <h2>Beta diagnostics</h2>
+          <div class="prose">
+            <p>
+              Test builds can include a switch in Settings called
+              <em>Share night reports</em>. It is off unless you turn it on, and
+              builds that are not set up for it do not show it at all.
+            </p>
+            <p>
+              When it is on, the app sends the LucidDream developer one short
+              report when a night starts and one when it ends: the times, how
+              long it ran, how it ended (including whether the app stopped
+              unexpectedly), how many sounds played, the names of the scripts,
+              your phone's model and system version, the app version, a random
+              number created for this installation, and a name, if you typed
+              one. It never sends audio, microphone readings, your run log, your
+              signals or the contents of your scripts.
+            </p>
+            <p>
+              Reports go to a small service the project runs on Cloudflare and
+              are used only to find out whether the app works through the night.
+              Turning the switch off deletes any report not yet sent.
+            </p>
+          </div>
 
           <h2>The microphone</h2>
           <div class="prose">
@@ -128,10 +163,10 @@
           <h2>Children, and health data</h2>
           <div class="prose">
             <p>
-              LucidDream is not directed at children, collects nothing from
-              anyone, and is not a medical device. It is an experimental
-              self-study tool. Nothing it records is health information held by
-              us, because we hold nothing.
+              LucidDream is not directed at children and is not a medical
+              device. It is an experimental self-study tool. It collects nothing
+              unless you turn on beta diagnostics, and those reports hold no
+              sleep, heart or other health readings.
             </p>
           </div>
 

@@ -43,6 +43,13 @@ export type Settings = {
   /** Last-used three-phase plan on the Run screen. Null means that phase is
    * intentionally empty, not that settings have failed to load. */
   runPhaseScriptIds: RunPhaseScriptIds;
+  /** Opt-in beta diagnostics (doc/plans/luciddream-beta-telemetry.md). Only
+   * shown, and only effective, in builds that carry a telemetry endpoint. */
+  diagnostics: {
+    enabled: boolean;
+    /** Optional name the tester chooses, so reports can be told apart. */
+    testerLabel: string;
+  };
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -66,6 +73,10 @@ export const DEFAULT_SETTINGS: Settings = {
     long: 5 * 60_000,
   },
   runPhaseScriptIds: DEFAULT_RUN_PHASE_SCRIPT_IDS,
+  diagnostics: {
+    enabled: false,
+    testerLabel: "",
+  },
 };
 
 const STORAGE_KEY = "luciddream.settings.v1";
@@ -93,6 +104,10 @@ export async function loadSettings(): Promise<Settings> {
       runPhaseScriptIds: {
         ...DEFAULT_SETTINGS.runPhaseScriptIds,
         ...parsed.runPhaseScriptIds,
+      },
+      diagnostics: {
+        ...DEFAULT_SETTINGS.diagnostics,
+        ...parsed.diagnostics,
       },
     };
   } catch {

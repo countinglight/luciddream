@@ -3,6 +3,7 @@ import { createContext, useContext, type PropsWithChildren } from 'react';
 import { useLibrary } from '@/context/library-context';
 import { useSettings } from '@/context/settings-context';
 import { useSession } from '@/hooks/use-session';
+import { useTelemetryLifecycle } from '@/hooks/use-telemetry';
 import { useVoiceInterrupt } from '@/hooks/use-voice-interrupt';
 
 type SessionContextValue = ReturnType<typeof useSession>;
@@ -15,9 +16,11 @@ const SessionContext = createContext<SessionContextValue | null>(null);
  * run. Voice interrupt listens here too, so it keeps working while the user
  * is looking at either screen. */
 export function SessionProvider({ children }: PropsWithChildren) {
-  const { settings } = useSettings();
+  const { settings, isLoaded } = useSettings();
   const { signals } = useLibrary();
   const session = useSession(signals);
+
+  useTelemetryLifecycle(settings.diagnostics, isLoaded);
 
   useVoiceInterrupt(
     settings.voiceInterrupt === 'gentle' && session.status === 'running',

@@ -9,10 +9,13 @@ Cloudflare Workers that serve the project.
 | `luciddream-web`       | `luciddreamapp.countinglight.com`        | `dist/` | The Expo static web application                      |
 | `luciddream-site`      | `luciddream.countinglight.com`           | `site/` | The marketing website and published customer content |
 | `luciddream-prototype` | `luciddream-prototype.countinglight.com` | `dist/` | Customer preview of an unreleased branch (manual)    |
+| `luciddream-telemetry` | `luciddream-telemetry.countinglight.com` | (code)  | Opt-in beta diagnostics ingest — not yet created     |
 
-Both are deployed from the same `deploy` branch, but by **two separate Cloudflare Workers Builds** —
-one project per Worker, for the reason given under "One-time Cloudflare setup". Published customer
-content lives on the site domain so that `/content/*` URLs already handed out keep working; see
+The web application and the website are deployed from the same `deploy` branch, but by **two
+separate Cloudflare Workers Builds** — one project per Worker, for the reason given under "One-time
+Cloudflare setup". The prototype and telemetry Workers have no Git build and are published only by
+their npm scripts. Published customer content lives on the site domain so that `/content/*` URLs
+already handed out keep working; see
 [doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md) for the reasoning.
 
 ## Web behavior and limitation
@@ -347,6 +350,37 @@ shows a "Prototype" badge on Tonight (preview locally with `?variant=prototype`)
 origin and is separate from production. Retire the preview by deleting the Worker once the branch
 ships.
 
+## Beta diagnostics Worker (dormant)
+
+`luciddream-telemetry` receives the opt-in night summaries described in
+[doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md). It is a code Worker
+with a D1 database, fits the Workers Free plan, and **has not been created**. Until it exists and a
+build is given its URL, the app hides the feature and sends nothing.
+
+To create it, from a clean checkout:
+
+```bash
+npx wrangler@4.129.0 whoami
+npx wrangler@4.129.0 d1 create luciddream-telemetry
+```
+
+Paste the printed `database_id` into `wrangler.telemetry.jsonc`, commit it, then:
+
+```bash
+npm run telemetry:db:schema
+npm run deploy:telemetry
+```
+
+`deploy:telemetry` refuses to run while the placeholder id is present, and runs `wrangler whoami`
+before deploying. Optionally set an ingest token with
+`npx wrangler@4.129.0 secret put INGEST_TOKEN -c wrangler.telemetry.jsonc`. Check
+`https://luciddream-telemetry.countinglight.com/v1/health`, then follow §7 of the design document to
+give builds the endpoint. Read results with `npm run telemetry:nights`.
+
+The same one-level-subdomain rule as the prototype applies: Universal SSL covers
+`luciddream-telemetry.countinglight.com`. Never run a bare `wrangler deploy` for it; the default
+configuration is the production web app.
+
 ## Manual deployment (fallback)
 
 Normal releases use Cloudflare's Git integration. If it is unavailable, an authorized maintainer
@@ -394,7 +428,11 @@ Common failures:
 
 ## Android install APK via USB
 
-start %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install android\app\build\outputs\apk\release\luciddream-v0.5.0-release.apk
+From a Windows command prompt, after `npm run android:apk:release`:
+
+```bat
+%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install android\app\build\outputs\apk\release\luciddream-v0.5.1-release.apk
+```
 
 The APK filename tracks `version` in `package.json` through
 `plugins/withCanonicalVersion.js`, so it changes with each version bump.

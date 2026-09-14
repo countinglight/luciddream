@@ -83,6 +83,11 @@
     "deploy:prototype": "npm run build:web && node ./scripts/mark-prototype-headers.js && npx wrangler@4.129.0 deploy -c wrangler.prototype.jsonc",
     "preview:site": "npx wrangler@4.129.0 dev -c wrangler.site.jsonc",
     "deploy:site": "npx wrangler@4.129.0 deploy -c wrangler.site.jsonc",
+    "deploy:telemetry": "node ./scripts/check-telemetry-config.js && npx wrangler@4.129.0 whoami && npx wrangler@4.129.0 deploy -c wrangler.telemetry.jsonc",
+    "telemetry:db:schema": "npx wrangler@4.129.0 d1 execute luciddream-telemetry --remote --file telemetry/schema.sql -c wrangler.telemetry.jsonc",
+    "telemetry:nights": "npx wrangler@4.129.0 d1 execute luciddream-telemetry --remote -c wrangler.telemetry.jsonc --command \"SELECT * FROM nights ORDER BY started_utc DESC LIMIT 50\"",
+    "update:preview": "npx eas-cli update --channel preview",
+    "update:testflight": "npx eas-cli update --channel testflight",
     "lint": "expo lint",
     "lint:fix": "expo lint --fix",
     "format": "prettier --write .",
@@ -116,8 +121,10 @@
       "src/runtime/**/*.{ts,tsx}",
       "src/session/**/*.{ts,tsx}",
       "src/logging/**/*.{ts,tsx}",
+      "src/telemetry/**/*.{ts,tsx}",
       "!src/engine/testing/**",
-      "!src/storage/testing/**"
+      "!src/storage/testing/**",
+      "!src/telemetry/testing/**"
     ]
   },
   "volta": {

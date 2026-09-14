@@ -63,7 +63,12 @@ export async function ensureRunNotificationSetup(): Promise<boolean> {
 
 /** Shows the run notification, or updates it in place — always scheduled
  * under the same `identifier`, so a second call replaces the first rather
- * than stacking a new notification per step. */
+ * than stacking a new notification per step.
+ *
+ * On iOS every update is a fresh delivery, and an ordinary delivery lights up
+ * a locked iPhone's screen. The run posts one per engine event, all night, so
+ * iOS content is `passive`: it lands silently in Notification Center and on
+ * the lock screen list without waking the display or breaking through Focus. */
 export async function showOrUpdateRunNotification(scriptName: string, stepText: string): Promise<void> {
   if (Platform.OS === 'web') return;
 
@@ -75,6 +80,7 @@ export async function showOrUpdateRunNotification(scriptName: string, stepText: 
       sticky: true,
       autoDismiss: false,
       categoryIdentifier: CATEGORY_ID,
+      ...(Platform.OS === 'ios' ? { interruptionLevel: 'passive' as const } : {}),
     },
     trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
   });

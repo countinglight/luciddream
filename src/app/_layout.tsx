@@ -10,9 +10,11 @@ import { SessionProvider } from '@/context/session-context';
 import { SettingsProvider } from '@/context/settings-context';
 import { useResolvedColorScheme } from '@/hooks/use-theme';
 import { configureNotificationHandler } from '@/session/notification';
+import { installGlobalErrorHandler } from '@/telemetry';
 
 SplashScreen.preventAutoHideAsync();
 configureNotificationHandler();
+installGlobalErrorHandler();
 
 /** No tab bar: Tonight is the console, Library / Nights / Settings present as
  * sheets over it, and /run takes the whole screen while a night runs. */

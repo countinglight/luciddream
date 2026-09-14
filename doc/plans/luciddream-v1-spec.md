@@ -91,14 +91,16 @@ folder import and no folder-watching — every item is added one file at a time.
 
 **Log** — list of past runs (date, script, duration, event count). Tapping one opens a filterable
 event timeline. Actions per run: share, delete. Global action: delete all. Logging is local-only;
-nothing leaves the device except a log the user explicitly shares.
+nothing leaves the device except a log the user explicitly shares, and — in beta builds, only when
+the user opts in — the night summaries of §4.8.
 
 **Settings** — theme (system/light/dark), master default volume, per-category logging toggles
 (playback / context / engine / errors), audio focus behaviour (lowered vs. exclusive), **Period
 presets** (T-shirt-sized `short` / `medium` / `long` period values that scripts reference as
 `$short` / `$medium` / `$long` — §3.2), a
 **Simulated context** panel (§4.3) for testing conditionals without a wearable, and a
-**Voice interrupt** control (off / gentle / stop — §4.6).
+**Voice interrupt** control (off / gentle — §4.6), and, in builds that carry a diagnostics endpoint,
+an opt-in **Beta diagnostics** switch with an optional tester name (§4.8).
 
 Splash screen and adaptive icons already exist in the skeleton and are kept.
 
@@ -347,6 +349,17 @@ use shows it triggers on ambient noise too often to be worth the false-positive 
 - **UI:** smoke tests on the Run screen states via `@testing-library/react-native` (existing setup).
 - **Manual overnight checklist** in `doc/`, run before each release tag: 8-hour run on a physical
   device with the screen off, verified log completeness and battery draw.
+
+### 4.8 Beta diagnostics
+
+Beta builds may report, with the user's opt-in, one summary when a night starts and one when it
+ends: start and end time, duration, how it ended (completed, stopped, error, or interrupted/crashed
+as detected on the next launch), play and error counts, script display names, phone model, OS and
+app build, a random install id and an optional tester name. No audio, logs, library content or
+device identifiers. The feature is invisible in builds without an endpoint, never runs on the web,
+and deletes anything unsent when switched off. It exists to replace asking testers what happened
+(`doc/evidence/`). Design, backend, cost and the steps to switch it on:
+[luciddream-beta-telemetry.md](luciddream-beta-telemetry.md).
 
 ---
 

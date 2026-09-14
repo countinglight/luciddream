@@ -24,6 +24,9 @@ audio before starting one continuous session and one run log.
 - JSONL run logs, local run index, filtering, export, and simulated context
 - Light/dark/system themes and Android/iOS/web adapters
 - Static Expo web export and Cloudflare Workers Static Assets configuration
+- Opt-in beta diagnostics (night start/end, device, crashes) for iOS and Android, dormant until a
+  build is given an endpoint — see
+  [doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md)
 
 See [doc/plans/luciddream-v1-spec.md](doc/plans/luciddream-v1-spec.md) for the functional and
 engineering specification.
@@ -37,8 +40,12 @@ npm ci
 npm start          # Expo development server
 npm run web        # browser development server
 npm run android    # connected Android device/emulator
-npm run ios        # macOS + Xcode simulator/device
+npm run ios        # macOS + Xcode only
 ```
+
+There is no Mac in this project's workflow. iOS development on Windows uses an EAS development build
+on a registered iPhone, connected to `npm start`; the steps are in
+[doc/plans/luciddream-ios-support-plan.md](doc/plans/luciddream-ios-support-plan.md) §2.1 and Part E.
 
 Quality checks:
 
@@ -58,7 +65,9 @@ src/runtime/     context providers
 src/session/     three-phase run lifecycle and platform keep-alive behavior
 src/logging/     JSONL logs, filtering, index, and export
 src/storage/     library persistence and web/native file stores
+src/telemetry/   opt-in beta diagnostics: events, offline queue, crash/kill detection
 src/app/         Expo Router screens
+telemetry/       diagnostics ingest Worker and D1 schema
 public/          static assets copied into the web export (PWA manifest, icons)
 site/            the marketing website — hand-authored static HTML, no build step
 site/content/    customer-hosted scripts, signals, and manifest
@@ -89,9 +98,20 @@ See [BUILD.md](BUILD.md) for:
 The website's plan and content specification is
 [doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md).
 
-Native Android/iOS distribution is specified in sections 5–7 of the v1 specification. The current
-Android build is published as an APK on the repository's
-[releases page](https://github.com/countinglight/luciddream/releases).
+Native Android/iOS distribution is specified in sections 5–7 of the v1 specification.
+
+- **Android:** an APK attached to the repository's
+  [releases page](https://github.com/countinglight/luciddream/releases).
+- **iOS:** TestFlight. `.github/workflows/release-ios.yml` builds with EAS and submits to App Store
+  Connect on a version tag (`v0.6.0` or `0.6.0`, matching `package.json`), and monthly so tester
+  builds never reach Apple's 90-day expiry. Testers install TestFlight from the App Store, open the
+  invitation link on the iPhone and tap Install; the website's
+  [install page](https://luciddream.countinglight.com/install/#ios) carries the same steps.
+- **JavaScript-only fixes** can reach installed builds without a new binary:
+  `npm run update:testflight -- --message "..."` (or `update:preview` for APK builds). Native changes
+  still need a build.
+
+`npm run version:info` prints the version and build number the working tree will produce.
 
 The hosted web app matches normal browser behavior, but browsers may throttle inactive tabs. Native
 mobile builds remain the target for reliable unattended overnight execution.

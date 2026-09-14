@@ -23,6 +23,22 @@ describe("settings persistence", () => {
     expect(await loadSettings()).toEqual(next);
   });
 
+  it("keeps beta diagnostics off, and merges a partial diagnostics object", async () => {
+    expect(DEFAULT_SETTINGS.diagnostics).toEqual({
+      enabled: false,
+      testerLabel: "",
+    });
+    await AsyncStorage.setItem(
+      "luciddream.settings.v1",
+      JSON.stringify({ diagnostics: { enabled: true } }),
+    );
+
+    expect((await loadSettings()).diagnostics).toEqual({
+      enabled: true,
+      testerLabel: "",
+    });
+  });
+
   it("fills in defaults for fields missing from an older saved shape", async () => {
     await AsyncStorage.setItem(
       "luciddream.settings.v1",
