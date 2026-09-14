@@ -7,7 +7,9 @@ nothing is sent; no Cloudflare resource has been created. Switching it on is the
 
 Related: [luciddream-v1-spec.md](luciddream-v1-spec.md) §4.8,
 [luciddream-ios-support-plan.md](luciddream-ios-support-plan.md),
-[doc/evidence/](../evidence/README.md).
+[doc/evidence/](../evidence/README.md). Process record with the full design detail, the options and
+questions behind it, setup, smoke tests and operations:
+[telemetry_session_091326.md](../dev_process/telemetry_session_091326.md).
 
 ---
 
