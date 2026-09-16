@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LucidDream owl">
+  <!-- Simplified silhouette derived from the LucidDream owl painting by
+       Galina Landes. Used where brushwork would be illegible: favicon scale,
+       header mark, small section marks. -->
+  <g fill="currentColor">
+    <path d="M17.5 16.5 L12.5 3 L29 10.5 Z" />
+    <path d="M46.5 16.5 L51.5 3 L35 10.5 Z" />
+    <path d="M32 9 C41.9 9 50 17.1 50 27 C50 32.3 47.7 37.1 44 40.4 L44 62 L20 62 L20 40.4 C16.3 37.1 14 32.3 14 27 C14 17.1 22.1 9 32 9 Z" />
+  </g>
+  <g fill="#F2EFE9">
+    <circle cx="24.5" cy="25" r="6.2" />
+    <circle cx="39.5" cy="25" r="6.2" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="24.5" cy="25" r="2.7" />
+    <circle cx="39.5" cy="25" r="2.7" />
+    <path d="M32 29.5 L29.2 35.5 L34.8 35.5 Z" />
+  </g>
+</svg>
