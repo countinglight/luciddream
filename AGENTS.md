@@ -13,6 +13,8 @@
   progress reporting: no session narratives, no "done on" or "as of" dates, no "not yet created" or
   "never executed" status, no history of how a rule was learned.
 - Progress, status and session records belong in `doc/dev_process/`.
+- The rule covers the top-level introductory documents only. `doc/plans/` holds specification-level
+  documents, which may record status and decisions.
 - `README.md` is the user's concise manual. Building, installing on devices, releasing, deployment
   and operations belong in `BUILD.md`, which `README.md` links to.
 
