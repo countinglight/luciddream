@@ -7,7 +7,10 @@ export type RunSummary = {
   /** Undefined while the run is still in progress. */
   endedAt?: number;
   eventCount: number;
-  reason?: "completed" | "stopped" | "error";
+  /** 'interrupted' is written at launch for a run whose process vanished —
+   * an OS kill, a native crash, a flat battery. A run never writes it
+   * itself, being by definition not there to do so. */
+  reason?: "completed" | "stopped" | "error" | "interrupted";
 };
 
 const STORAGE_KEY = "luciddream.runs.v1";

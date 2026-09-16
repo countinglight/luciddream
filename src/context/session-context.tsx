@@ -10,7 +10,7 @@ import { useSettings } from "@/context/settings-context";
 import { useSession } from "@/hooks/use-session";
 import { useTelemetryLifecycle } from "@/hooks/use-telemetry";
 import { useVoiceInterrupt } from "@/hooks/use-voice-interrupt";
-import { getContextProvider } from "@/runtime/services";
+import { getContextProvider, recoverOnLaunch } from "@/runtime/services";
 
 type SessionContextValue = ReturnType<typeof useSession>;
 
@@ -40,6 +40,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, [settings.simulatedContext]);
 
   useTelemetryLifecycle(settings.diagnostics, isLoaded);
+
+  // A night the OS took away is closed as interrupted at the next launch, for
+  // every user, before they can open Nights and see it claiming to run.
+  useEffect(() => {
+    void recoverOnLaunch();
+  }, []);
 
   useVoiceInterrupt(
     settings.voiceInterrupt === "gentle" && session.status === "running",

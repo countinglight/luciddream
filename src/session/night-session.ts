@@ -7,6 +7,7 @@ import {
   type NightPlan,
   type PreparedRun,
 } from "./prepare";
+import type { OpenRunMarker } from "./run-recovery";
 import type { SessionController, StartSessionOptions } from "./session";
 
 export type NightSessionStatus =
@@ -57,6 +58,11 @@ export const IDLE_SNAPSHOT: NightSessionSnapshot = {
 };
 
 const MAX_RECENT_EVENTS = 6;
+
+/** How often, at most, ordinary events rewrite the open-run marker. An
+ * interrupted night's reported end time is accurate to about this, or to the
+ * heartbeat, whichever fired last. */
+const MARKER_REFRESH_MS = 60_000;
 
 export type NightRuntimeOptions = {
   audioFocus: "duck" | "exclusive";
@@ -113,6 +119,11 @@ export type NightSessionDeps = {
   recordStart: (run: RunRecordStart) => Promise<void>;
   recordEnd: (run: RunRecordEnd) => Promise<void>;
   observer?: NightSessionObserver;
+  /** Always-on interrupted-night detection. The marker is refreshed while a
+   * night runs and removed when it ends cleanly; anything left behind at the
+   * next launch means the process died mid-night (AR-04). */
+  markOpenRun?: (marker: OpenRunMarker) => void;
+  clearOpenRun?: () => void;
   now: () => number;
   newRunId: () => string;
 };
@@ -143,6 +154,9 @@ export class NightSession {
   private teardown: Promise<void> = Promise.resolve();
   private eventCount = 0;
   private durable: (LogPort & { drain?: () => Promise<void> }) | null = null;
+  /** Identity of the night currently being tracked by the open-run marker. */
+  private openRun: OpenRunMarker | null = null;
+  private lastMarkerWrite = 0;
   /** Guards against a late event from an abandoned run rewriting the
    * snapshot of the one after it. */
   private generation = 0;
@@ -219,6 +233,15 @@ export class NightSession {
         startedAt,
         prepared,
       });
+      this.openRun = {
+        id,
+        name: prepared.name,
+        startedAt,
+        lastSeenAt: startedAt,
+        eventCount: 0,
+      };
+      this.lastMarkerWrite = startedAt;
+      this.deps.markOpenRun?.(this.openRun);
       this.notifyObserver(() =>
         this.deps.observer?.runStarted({
           id,
@@ -237,6 +260,7 @@ export class NightSession {
           durable.log(event);
           this.notifyObserver(() => this.deps.observer?.observe(event));
           this.eventCount += 1;
+          this.refreshOpenRun(event.at);
           if (generation !== this.generation) return;
           if (event.type === "run.stop") {
             terminal = { at: event.at, reason: event.reason };
@@ -311,6 +335,42 @@ export class NightSession {
     }
   }
 
+  /** Refreshes the open-run marker during long silent waits, when no events
+   * arrive at all. Without it an interrupted night would be reported as
+   * ending at its last cue, which can be hours early. */
+  heartbeat(): void {
+    if (this.openRun) this.writeOpenRun(this.deps.now());
+  }
+
+  /** Records a temporary microphone file this night owns, so an interrupted
+   * night still gets it deleted at the next launch (spec §4.6). */
+  setOwnedRecording(uri: string | null): void {
+    if (!this.openRun) return;
+    this.openRun = {
+      ...this.openRun,
+      ...(uri ? { recordingUri: uri } : {}),
+    };
+    if (!uri) delete this.openRun.recordingUri;
+    this.writeOpenRun(this.openRun.lastSeenAt);
+  }
+
+  private refreshOpenRun(at: number): void {
+    if (!this.openRun) return;
+    if (at - this.lastMarkerWrite < MARKER_REFRESH_MS) return;
+    this.writeOpenRun(at);
+  }
+
+  private writeOpenRun(at: number): void {
+    if (!this.openRun) return;
+    this.lastMarkerWrite = at;
+    this.openRun = {
+      ...this.openRun,
+      lastSeenAt: Math.max(at, this.openRun.lastSeenAt),
+      eventCount: this.eventCount,
+    };
+    this.deps.markOpenRun?.(this.openRun);
+  }
+
   handleVoiceInterrupt(event: "trigger" | "resume"): void {
     this.controller?.handleVoiceInterrupt(event);
   }
@@ -324,6 +384,8 @@ export class NightSession {
   ): void {
     this.controller = null;
     this.abort = null;
+    this.openRun = null;
+    this.deps.clearOpenRun?.();
     this.publish({
       ...this.snapshot,
       status:

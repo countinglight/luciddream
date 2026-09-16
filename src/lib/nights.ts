@@ -1,4 +1,4 @@
-import type { EngineEvent } from "@/engine";
+import type { RunRecord } from "@/logging/records";
 import type { RunSummary } from "@/logging/run-index";
 
 import type { LucidAnswer } from "./lucid-notes";
@@ -47,19 +47,25 @@ export function scriptChain(runName: string | null | undefined): string {
   return names.length > 0 ? names.join(" → ") : (runName ?? "");
 }
 
-export type NightState = "none" | "error" | "stopped" | "running" | "completed";
+export type NightState =
+  "none" | "error" | "stopped" | "interrupted" | "running" | "completed";
 
 export function runState(run: RunSummary): NightState {
   if (run.endedAt === undefined) return "running";
   return run.reason ?? "completed";
 }
 
+// Several runs on one night collapse to the best outcome. Interrupted sits
+// above error but below a night the user deliberately stopped: losing the
+// process is a worse result than choosing to end early, but it is not the
+// engine failing.
 const STATE_RANK: Record<NightState, number> = {
   none: 0,
   error: 1,
-  stopped: 2,
-  running: 3,
-  completed: 4,
+  interrupted: 2,
+  stopped: 3,
+  running: 4,
+  completed: 5,
 };
 
 export type WeekDay = {
@@ -123,7 +129,7 @@ export type PhaseSegment = { phaseIndex: number; durationMs: number };
 
 /** How long each phase actually ran, from its phase.start/phase.stop events. A
  * phase with no stop (log cut short) runs to the last recorded event. */
-export function phaseSegments(events: EngineEvent[]): PhaseSegment[] {
+export function phaseSegments(events: RunRecord[]): PhaseSegment[] {
   const openPhases = new Map<number, number>();
   const segments: PhaseSegment[] = [];
   let lastAt = 0;
@@ -147,18 +153,30 @@ export function phaseSegments(events: EngineEvent[]): PhaseSegment[] {
   return segments.sort((a, b) => a.phaseIndex - b.phaseIndex);
 }
 
-export function countPlays(events: EngineEvent[]): number {
+export function countPlays(events: RunRecord[]): number {
   return events.filter((event) => event.type === "play").length;
 }
 
-export function parseLogText(text: string): EngineEvent[] {
+/** Parses a stored run log. Unreadable lines are skipped rather than
+ * throwing: a process killed mid-append leaves a partial final line, and a
+ * log from a newer build can hold record types this one has never seen.
+ * Neither may stop a night being read. */
+export function parseLogText(text: string): RunRecord[] {
   return text
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .flatMap((line) => {
       try {
-        return [JSON.parse(line) as EngineEvent];
+        const parsed: unknown = JSON.parse(line);
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          typeof (parsed as { type?: unknown }).type !== "string"
+        ) {
+          return [];
+        }
+        return [parsed as RunRecord];
       } catch {
         return [];
       }

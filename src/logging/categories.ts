@@ -1,24 +1,30 @@
-import type { EngineEvent, LogPort } from '@/engine';
-import type { LogCategory } from '@/lib/settings';
+import type { EngineEvent, LogPort } from "@/engine";
+
+import type { RunRecord } from "./records";
+import type { LogCategory } from "@/lib/settings";
 
 /** Maps every EngineEvent to one of the Settings screen's four logging
  * toggles (spec §2.3: "per-category logging toggles (playback / context /
  * engine / errors)"). */
-export function eventCategory(event: EngineEvent): LogCategory {
+export function eventCategory(event: RunRecord): LogCategory {
   switch (event.type) {
-    case 'play':
-    case 'volume.changed':
-      return 'playback';
-    case 'context.unavailable':
-      return 'context';
-    case 'error':
-      return 'errors';
-    case 'run.start':
-    case 'run.stop':
-    case 'phase.start':
-    case 'phase.stop':
-    case 'log':
-      return 'engine';
+    case "play":
+    case "volume.changed":
+      return "playback";
+    case "context.unavailable":
+      return "context";
+    case "error":
+      return "errors";
+    case "run.start":
+    case "run.stop":
+    case "phase.start":
+    case "phase.stop":
+    case "log":
+    case "run.interrupted":
+      return "engine";
+    default:
+      // Unknown records from a newer build still belong somewhere visible.
+      return "engine";
   }
 }
 
@@ -34,10 +40,10 @@ export class FilteringLogPort implements LogPort {
 
   log(event: EngineEvent): void {
     if (
-      event.type === 'run.start' ||
-      event.type === 'run.stop' ||
-      event.type === 'phase.start' ||
-      event.type === 'phase.stop' ||
+      event.type === "run.start" ||
+      event.type === "run.stop" ||
+      event.type === "phase.start" ||
+      event.type === "phase.stop" ||
       this.enabled[eventCategory(event)]
     ) {
       this.inner.log(event);

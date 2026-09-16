@@ -77,6 +77,9 @@ function statusPill(
       return { label: "Error", color: theme.danger };
     case "running":
       return { label: "In progress", color: theme.tint };
+    case "interrupted":
+      // Not an error and not a choice: the app stopped existing mid-night.
+      return { label: "Interrupted", color: theme.warn };
     default:
       return { label: "", color: theme.textMuted };
   }
@@ -84,6 +87,12 @@ function statusPill(
 
 function timeRange(run: RunSummary): string {
   if (!run.endedAt) return `${formatTimeOfDay(run.startedAt)} → in progress`;
+  if (run.reason === "interrupted") {
+    // The end time is the last moment the app was seen alive, which is not
+    // the same as knowing when the night ended. Say so rather than presenting
+    // an exact figure we cannot stand behind.
+    return `${formatTimeOfDay(run.startedAt)} → last seen ${formatTimeOfDay(run.endedAt)}`;
+  }
   return `${formatTimeOfDay(run.startedAt)} → ${formatTimeOfDay(run.endedAt)} · ${formatHuman(run.endedAt - run.startedAt)}`;
 }
 

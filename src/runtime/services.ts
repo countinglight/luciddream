@@ -3,6 +3,12 @@ import { Platform } from "react-native";
 import { JsonlLogPort } from "@/logging/jsonl-log-port";
 import { recordRunEnd, recordRunStart } from "@/logging/run-index";
 import { NightSession } from "@/session/night-session";
+import {
+  clearOpenRun,
+  recoverInterruptedRuns,
+  writeOpenRun,
+  type RecoveryResult,
+} from "@/session/run-recovery";
 import { startSession } from "@/session/session";
 import { ExpoFileSystemStore } from "@/storage/expo-file-store";
 import type { FileStorePort } from "@/storage/file-store";
@@ -48,6 +54,25 @@ function generateRunId(): string {
 
 let nightSession: NightSession | null = null;
 
+let launchRecovery: Promise<RecoveryResult> | null = null;
+
+/**
+ * Closes any night the previous process left open, once per launch.
+ *
+ * Idempotent, and independent of both the React tree and diagnostics consent:
+ * every user gets an honest Nights screen, not only those who opted into
+ * beta diagnostics (architectural review AR-04).
+ */
+export function recoverOnLaunch(): Promise<RecoveryResult> {
+  if (!launchRecovery) {
+    launchRecovery = recoverInterruptedRuns({
+      fileStore,
+      now: () => Date.now(),
+    }).catch(() => ({ interrupted: [] }));
+  }
+  return launchRecovery;
+}
+
 /** The app's single night session. Created lazily so importing this module
  * stays cheap for code that only wants the file store. */
 export function getNightSession(): NightSession {
@@ -73,6 +98,13 @@ export function getNightSession(): NightSession {
           eventCount,
         }),
       observer: telemetry,
+      // Fire-and-forget: marker upkeep must never delay a cue.
+      markOpenRun: (marker) => {
+        void writeOpenRun(marker);
+      },
+      clearOpenRun: () => {
+        void clearOpenRun();
+      },
       now: () => Date.now(),
       newRunId: generateRunId,
     });

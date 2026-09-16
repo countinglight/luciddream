@@ -21,9 +21,9 @@ import { telemetry } from "@/telemetry";
 export type SessionStatus =
   "idle" | "starting" | "running" | "completed" | "stopped" | "error";
 
-/** Refreshes the diagnostics open-run marker through long silent waits, so an
- * interrupted night reports an end time within this margin. */
-const TELEMETRY_HEARTBEAT_MS = 5 * 60_000;
+/** Refreshes the open-run marker through long silent waits, so an interrupted
+ * night reports an end time within this margin. */
+const HEARTBEAT_MS = 5 * 60_000;
 
 export type SelectedRunPhase = {
   index: number;
@@ -111,9 +111,15 @@ export function useSession(signals: LibrarySignal[]) {
 
   useEffect(() => {
     if (!isRunning) return;
-    const id = setInterval(() => telemetry.heartbeat(), TELEMETRY_HEARTBEAT_MS);
+    const id = setInterval(() => {
+      // Keeps the open-run marker fresh through long silent waits, so an
+      // interrupted night is reported as ending near when it really did
+      // rather than at its last cue.
+      session.heartbeat();
+      telemetry.heartbeat();
+    }, HEARTBEAT_MS);
     return () => clearInterval(id);
-  }, [isRunning]);
+  }, [isRunning, session]);
 
   const start = useCallback(
     async (selectedPhases: SelectedRunPhase[], masterVolume: number) => {
