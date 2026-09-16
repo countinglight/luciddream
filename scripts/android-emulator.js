@@ -86,7 +86,14 @@ function pickSystemImage(sdk) {
 
   for (const platform of fs.readdirSync(root)) {
     for (const variant of safeReadDir(path.join(root, platform))) {
-      if (!fs.existsSync(path.join(root, platform, variant, abi))) continue;
+      // A folder alone proves nothing: an interrupted download leaves an empty
+      // one behind, which avdmanager then rejects as an invalid package.
+      const imageDir = path.join(root, platform, variant, abi);
+      if (
+        !fs.existsSync(path.join(imageDir, "package.xml")) ||
+        !fs.existsSync(path.join(imageDir, "system.img"))
+      )
+        continue;
       const api = Number(platform.replace("android-", ""));
       images.push({
         id: `system-images;${platform};${variant};${abi}`,
