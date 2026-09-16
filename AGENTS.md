@@ -7,6 +7,15 @@
 - Use `vlads-dev` or an appropriate release/development branch for all work.
 - Treat `deploy` as a deployment-only branch. Update it only through the repository's release/deployment process, not as a working branch.
 
+# No progress reporting in master documents
+
+- `README.md` and `BUILD.md` describe the product and how to build and run it as it is. They carry no
+  progress reporting: no session narratives, no "done on" or "as of" dates, no "not yet created" or
+  "never executed" status, no history of how a rule was learned.
+- Progress, status and session records belong in `doc/dev_process/`.
+- `README.md` is the user's concise manual. Building, installing on devices, releasing, deployment
+  and operations belong in `BUILD.md`, which `README.md` links to.
+
 # Session records
 
 - Summaries, TODO lists, session records and review write-ups live in `doc/dev_process/`, never as

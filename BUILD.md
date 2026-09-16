@@ -1,124 +1,70 @@
-# LucidDream build and deployment
+# Building, releasing and operating LucidDream
 
-This file is the operational guide for producing and publishing LucidDream. Native Android/iOS
-release work remains described in the v1 specification; this guide covers local web builds and the
-Cloudflare Workers that serve the project.
+How to set up a development environment, build and run the app on each platform, release it, and
+operate the services behind it. For what the app does and how to use it, see [README.md](README.md).
 
-| Worker                 | Domain                                   | Assets  | Serves                                               |
-| ---------------------- | ---------------------------------------- | ------- | ---------------------------------------------------- |
-| `luciddream-web`       | `luciddreamapp.countinglight.com`        | `dist/` | The Expo static web application                      |
-| `luciddream-site`      | `luciddream.countinglight.com`           | `site/` | The marketing website and published customer content |
-| `luciddream-prototype` | `luciddream-prototype.countinglight.com` | `dist/` | Customer preview of an unreleased branch (manual)    |
-| `luciddream-telemetry` | `luciddream-telemetry.countinglight.com` | (code)  | Opt-in beta diagnostics ingest — not yet created     |
+## Contents
 
-The web application and the website are deployed from the same `deploy` branch, but by **two
-separate Cloudflare Workers Builds** — one project per Worker, for the reason given under "One-time
-Cloudflare setup". The prototype and telemetry Workers have no Git build and are published only by
-their npm scripts. Published customer content lives on the site domain so that `/content/*` URLs
-already handed out keep working; see
-[doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md) for the reasoning.
+1. [Overview](#1-overview)
+   - [What gets published where](#what-gets-published-where)
+   - [Branches](#branches)
+2. [Development setup](#2-development-setup)
+   - [Toolchain](#toolchain)
+   - [Install and run](#install-and-run)
+   - [Quality checks](#quality-checks)
+   - [Versioning](#versioning)
+   - [Repository layout](#repository-layout)
+3. [Web](#3-web)
+   - [Build and preview](#build-and-preview)
+   - [Debugging and the lock-screen demo](#debugging-and-the-lock-screen-demo)
+   - [Deploying with Cloudflare](#deploying-with-cloudflare)
+   - [Prototype deployment](#prototype-deployment)
+   - [Verification](#verification)
+   - [Rollback and troubleshooting](#rollback-and-troubleshooting)
+4. [Android](#4-android)
+   - [Build](#build)
+   - [Install on a USB phone](#install-on-a-usb-phone)
+   - [Emulator](#emulator)
+   - [Debugging](#debugging)
+   - [Release to testers](#release-to-testers)
+5. [iOS](#5-ios)
+   - [Development without a Mac](#development-without-a-mac)
+   - [Release to testers (TestFlight)](#release-to-testers-testflight)
+6. [Updates without a new binary](#6-updates-without-a-new-binary)
+7. [Device smoke tests (Maestro)](#7-device-smoke-tests-maestro)
+8. [Website and published content](#8-website-and-published-content)
+9. [Diagnostics service](#9-diagnostics-service)
 
-## Web behavior and limitation
+---
 
-The production web bundle runs the same Expo/React Native Web application as `npm run web`, using a
-static export. Browser power-management rules still apply: an inactive or sleeping browser tab is
-not an equivalent replacement for the Android foreground service. Treat the hosted web build as the
-browser version of the app, not as a promise of native-quality unattended overnight execution.
+## 1. Overview
 
-## Local web build
+### What gets published where
 
-Requirements: Node.js 22 and npm.
+| Surface                       | Address or channel                                                             | Built from                   | Published by                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------ | ---------------------------- | --------------------------------------------------------------- |
+| Web app                       | `luciddreamapp.countinglight.com`                                              | Expo static export (`dist/`) | Cloudflare Workers Build `luciddream-web`, on push to `deploy`  |
+| Website and published content | `luciddream.countinglight.com`                                                 | `site/` (static, no build)   | Cloudflare Workers Build `luciddream-site`, on push to `deploy` |
+| Prototype web app             | `luciddream-prototype.countinglight.com`                                       | Expo static export           | `npm run deploy:prototype` only                                 |
+| Diagnostics ingest            | `luciddream-telemetry.countinglight.com`                                       | `telemetry/worker/`          | `npm run deploy:telemetry` only                                 |
+| Android app                   | APK on [GitHub Releases](https://github.com/countinglight/luciddream/releases) | EAS `preview` profile        | Attached to a GitHub Release                                    |
+| iOS app                       | TestFlight                                                                     | EAS `ios-testflight` profile | `release-ios.yml` on a version tag, and monthly                 |
 
-The repository pins Node 22/npm 10 through `.nvmrc`, `package.json`, and `.npmrc`. With nvm, run
-`nvm use` before installing dependencies. The strict engine check prevents a newer npm release from
-silently rewriting lockfile metadata.
+Every Wrangler command in this guide uses the pinned version `npx wrangler@4.129.0`. Run
+`npx wrangler@4.129.0 whoami` and confirm the account that owns `countinglight.com` before any deploy.
 
-Five places state a version, and they must agree:
+### Branches
 
-| Where                         | Value                        | Read by                                      |
-| ----------------------------- | ---------------------------- | -------------------------------------------- |
-| `.nvmrc`                      | `22.20.0`                    | nvm, and Cloudflare's tool detection         |
-| `engines`                     | `node 22.x`, `npm 10.x`      | npm, enforced by `engine-strict` in `.npmrc` |
-| `packageManager`              | `npm@10.9.8`                 | corepack, and Cloudflare's tool detection    |
-| `volta`                       | `node 22.20.0`, `npm 10.9.8` | Volta                                        |
-| `NODE_VERSION` build variable | `22.20.0`                    | Cloudflare only, set per Workers Build       |
+- Development and release preparation happen on working branches.
+- `master` is the long-term stable branch. It is not a deployment trigger. Before work is merged into
+  it, the documents in `doc/plans/` and `doc/dev_process/` are brought into a coherent state (see
+  [AGENTS.md](AGENTS.md)).
+- `deploy` is deployment-only: **a push to it publishes the web app and the website.** Never use it
+  for development work or direct commits. Protect it in GitHub (Settings > Branches): require pull
+  requests and the CI status check, and disallow force pushes and deletion.
 
-**Every Node pin must name an exact version, never a bare major.** Cloudflare Workers Builds
-resolves `22` to the newest release in that line and then installs it, and its image lags the Node
-release feed. Two application builds failed on 2026-09-09 at `Installing nodejs 22.23.2` — a valid
-release from 2026-07-28 that the image did not have — while `.nvmrc` and the `NODE_VERSION` variable
-both said `22`. Changing `volta.node` alone did not fix it, which is how we learned Volta's pin is
-not what Cloudflare reads.
-
-If a build fails at `Installing nodejs <version>` for a version written nowhere in the repository,
-it is the resolved newest of a major-only spec. Pin the exact version instead.
-
-If `npm ci` fails locally with `EBADENGINE` reporting npm 11, a globally installed npm is shadowing
-the one Node ships. No Node 22 release bundles npm 11 — 22.23.2 bundles 10.9.8 — so the fix is
-`npm i -g npm@10.9.8`, matching `packageManager`.
-
-```bash
-npm ci
-npm run build:web
-```
-
-To start the development server with the lock-screen demo enabled locally, run:
-
-```bash
-npm run demo:web
-```
-
-This opens the normal local web address with the same controls enabled by the production
-`?demo=lock` query parameter.
-
-Expo writes the production site to the ignored `dist/` directory. To exercise Cloudflare's local
-static-asset server, run:
-
-```bash
-npm run preview:web
-```
-
-The first invocation downloads the pinned Wrangler CLI (`4.129.0`) through `npx`. No Cloudflare
-login is required for local preview.
-
-## Local website preview
-
-The marketing website in `site/` is hand-authored static HTML and has **no build step**. Preview it
-with the same local static-asset server:
-
-```bash
-npm run preview:site
-```
-
-This serves `site/` exactly as the `luciddream-site` Worker will, including `/content/*` and the
-rules in `site/_headers`. Because nothing is compiled, an edit is visible on reload.
-
-Two runtime details are worth knowing when reviewing locally:
-
-- The download button and version badges call GitHub's public releases API. If the call fails —
-  offline, or rate-limited — the page falls back to the values hard-coded in
-  `site/assets/js/release.js`, which must be kept roughly current.
-- The `/scripts/` library is rendered from `/content/manifest.json` at page load. An entry missing
-  from the manifest does not appear, even if the file is published.
-
-## Branch policy
-
-- Feature and release preparation happens on development/release branches (currently `vlads-dev`).
-- `deploy` is deployment-only. Never use it for development work, file edits, or direct commits.
-  Update it only through the approved release/deployment process; a push to it publishes production.
-- `master` remains the long-term stable branch and is not Cloudflare's deployment trigger.
-- Other branches may produce Cloudflare preview versions when non-production builds are enabled.
-
-Create the production branch once, after the release candidate is approved:
-
-```bash
-git fetch origin
-git switch -c deploy vlads-dev
-git push -u origin deploy
-```
-
-For later releases, update `deploy` through a reviewed pull request from the release branch. If the
-repository permits a local fast-forward release, the equivalent commands are:
+Update `deploy` through a reviewed pull request from the approved release branch. Where a local
+fast-forward is permitted:
 
 ```bash
 git switch deploy
@@ -127,149 +73,507 @@ git merge --ff-only <approved-release-branch>
 git push origin deploy
 ```
 
-Protect `deploy` in GitHub (Settings > Branches > Add branch protection rule): require pull requests
-and the CI status check, and disallow force pushes/deletion.
+---
 
-## One-time Cloudflare setup
+## 2. Development setup
 
-The repository contains both Worker configurations:
+### Toolchain
 
-- `wrangler.jsonc` — Worker `luciddream-web`, assets `dist/`, custom domain
-  `luciddreamapp.countinglight.com`.
-- `wrangler.site.jsonc` — Worker `luciddream-site`, assets `site/`, custom domain
-  `luciddream.countinglight.com`.
+Node 22 and npm 10, pinned in five places that must agree:
 
-Before connecting Git, open Cloudflare > `countinglight.com` > DNS > Records and confirm there is no
-existing A, AAAA, or CNAME record named `luciddream` or `luciddreamapp`. A Worker Custom Domain is
-the origin and Cloudflare creates its DNS record and TLS certificate. If a conflicting record
-exists, decide where its current traffic should go before deleting it.
+| Where                         | Value                        | Read by                                      |
+| ----------------------------- | ---------------------------- | -------------------------------------------- |
+| `.nvmrc`                      | `22.20.0`                    | nvm, and Cloudflare's tool detection         |
+| `engines` in `package.json`   | `node 22.x`, `npm 10.x`      | npm, enforced by `engine-strict` in `.npmrc` |
+| `packageManager`              | `npm@10.9.8`                 | corepack, and Cloudflare's tool detection    |
+| `volta`                       | `node 22.20.0`, `npm 10.9.8` | Volta                                        |
+| `NODE_VERSION` build variable | `22.20.0`                    | Cloudflare Workers Builds only               |
 
-**One build project per Worker.** A Workers Build deploys to the Worker its project is connected
-to, whatever the Wrangler configuration says. Passing `-c wrangler.site.jsonc` to a second
-`wrangler deploy` inside the application's build changes which assets are uploaded but **not which
-Worker receives them**, so the website's files land on `luciddream-web` and replace the application.
-This was tried on 2026-09-08 and did exactly that. Each Worker therefore needs its own build
-project, and each deploy command names exactly one configuration.
+**Every Node pin names an exact version, never a bare major.** Cloudflare resolves `22` to the newest
+release in that line and its build image may not have it yet. A build that fails at
+`Installing nodejs <version>` for a version written nowhere in the repository is this problem.
 
-Configure the application's build:
+If `npm ci` fails with `EBADENGINE` reporting npm 11, a globally installed npm is shadowing the one
+Node ships. Fix it with `npm i -g npm@10.9.8`.
 
-1. Sign in to Cloudflare and select the account that owns `countinglight.com`.
-2. Open **Workers & Pages** > **Create application**.
-3. Under **Import a repository**, select **Get started**.
-4. Connect GitHub. Grant the Cloudflare GitHub app access to
-   `countinglight/luciddream` (repository-only access is sufficient).
-5. Select the `countinglight/luciddream` repository.
-6. Set the application/Worker name to exactly `luciddream-web`. It must match `name` in
-   `wrangler.jsonc`.
-7. Set **Production branch** to `deploy`.
-8. Leave **Root directory** empty, or `/` (the project is at repository root).
-9. Set **Build command** to `npm run build:web`.
-10. Set **Deploy command** to `npx wrangler@4.129.0 deploy`. Nothing more — no second deploy.
-11. Leave non-production branch builds disabled. If preview URLs are wanted, set their deploy
-    command to `npx wrangler@4.129.0 versions upload`.
-12. Add build variable `NODE_VERSION` with the **exact** value `22.20.0`. A bare major resolves to
-    the newest release in that line, which the build image may not have.
-13. Accept Cloudflare's generated build API token. No application runtime secrets are required.
-14. Select **Save and Deploy**.
+Platform tooling:
 
-Then configure the website's build, on its own Worker:
+- **Android:** Android Studio, which provides the SDK, `adb`, the emulator and a JDK.
+- **iOS:** no Mac is needed. Builds run in EAS; see [section 5](#5-ios).
 
-1. Create the `luciddream-site` Worker if it does not exist. The simplest way is one manual deploy
-   from a checkout of the release branch: `npx wrangler@4.129.0 login` then `npm run deploy:site`.
-2. Open **Workers & Pages** > `luciddream-site` > **Settings** > **Builds** and **Connect** the
-   `countinglight/luciddream` repository. (Alternatively, **Create application** > **Import a
-   repository** with the Worker name set to exactly `luciddream-site`, which attaches to the
-   existing Worker rather than creating a second one.)
-3. Set **Production branch** to `deploy`.
-4. Leave **Build command** empty. The website is static HTML and compiles nothing.
-5. Set **Deploy command** to `npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`.
-6. Leave **Root directory** as `/`.
-7. Leave preview builds disabled. If they are wanted, their command must also carry the
-   configuration flag: `npx wrangler@4.129.0 versions upload -c wrangler.site.jsonc`. Without it,
-   the build falls back to `wrangler.jsonc` — the application's configuration — and fails, because
-   this project has no build command and therefore no `dist/`.
+### Install and run
 
-**Ignore Cloudflare's "keep settings consistent" notice on `luciddream-site`.** It advises setting
-`"name": "luciddream-site"` in `wrangler.jsonc` and offers to raise a pull request doing so. That
-advice assumes the project deploys the default configuration file; this one passes
-`-c wrangler.site.jsonc`, which already carries the correct name. Merging that pull request would
-rename the **application's** configuration and make the application's build publish to the website's
-Worker. Dismiss the notice, and close the pull request if one appears.
+```bash
+npm ci
+npm start
+```
 
-A push to `deploy` should produce **two** builds, one per project.
+`npm start` runs the Expo development server. From it, or directly:
 
-The first production deployment reads each custom-domain route from its Wrangler configuration.
-Cloudflare creates the DNS records and provisions TLS. Open **Settings > Domains & Routes** on each
-Worker and confirm its `workers.dev` address and its custom domain appear. Certificate/DNS
-activation can take a few minutes.
+| Command                    | Runs                                                                        |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `npm run web`              | The app in a browser                                                        |
+| `npm run android`          | A debug build on a connected Android phone or running emulator              |
+| `npm run android:emulator` | The same, creating and booting an emulator first ([4. Emulator](#emulator)) |
+| `npm run ios`              | macOS with Xcode only; without a Mac use [section 5](#5-ios)                |
 
-If a custom domain was not created, add it manually from **Settings > Domains & Routes > Add >
-Custom Domain** on the correct Worker. Do not add a Worker Route ending in `/*`; these Workers are
-origins, so Custom Domain is the correct routing mode.
+Before each of these, `generate:bundled-scripts` regenerates `src/storage/bundled-scripts.ts` from
+`assets/scripts/`. That file is generated: edit the YAML, not the TypeScript.
 
-**Moving the application off `luciddream.countinglight.com`.** A hostname can belong to only one
-Worker. When migrating an existing single-Worker setup, remove `luciddream.countinglight.com` from
-`luciddream-web` first, add `luciddreamapp.countinglight.com` to it, then attach
-`luciddream.countinglight.com` to `luciddream-site`. Doing it in that order avoids a routing
-conflict, at the cost of a short window in which the old address serves nothing.
+`npm run clean:build` removes build output (`dist/`, Android build folders, coverage, `.expo`) and
+leaves source untouched.
 
-## Production verification
+### Quality checks
 
-Open these URLs in a private browser window.
+```bash
+npm run check
+```
 
-Application:
+Runs, in order: `format:check`, `line-endings:check`, `lint`, `typecheck`, and the full test suite.
+Run it before pushing. The individual steps are also scripts: `npm run lint`, `npm run typecheck`,
+`npm test`, and `npm run test:ci` for coverage. `npm run format` rewrites formatting.
 
-- `https://luciddreamapp.countinglight.com/`
-- `https://luciddreamapp.countinglight.com/library`
+CI (`.github/workflows/ci.yml`) runs lint, typecheck and tests with coverage on pushes and pull
+requests to `master`.
 
-Website and published content:
+### Versioning
 
-- `https://luciddream.countinglight.com/`
-- `https://luciddream.countinglight.com/scripts/`
-- `https://luciddream.countinglight.com/install/`
-- `https://luciddream.countinglight.com/privacy/`
-- `https://luciddream.countinglight.com/about/`
+`version` in `package.json` is the single source of truth for the app version. `app.config.js`
+derives the Android `versionCode` and the iOS build number from it plus the `LUCIDDREAM_BUILD`
+counter, which release workflows set from the workflow run number. Local builds use counter `0`, so
+they can never be uploaded to a store by accident.
+
+```bash
+npm run version:info
+```
+
+prints the version and build number the working tree will produce.
+
+To release a version: update `version` in `package.json`, commit, and tag the commit `v<version>`
+(for example `v0.6.0`). Release workflows refuse to build when the tag and `package.json` disagree.
+The full rules are in [doc/plans/luciddream-ios-support-plan.md](doc/plans/luciddream-ios-support-plan.md)
+§3.
+
+### Repository layout
+
+```text
+src/engine/      pure TypeScript script parser and interpreter
+src/audio/       Expo Audio adapter and signal resolution
+src/runtime/     composition root (services.ts) and context providers
+src/session/     the night: session service, preparation, recovery, platform keep-alive
+src/logging/     run logs, record types, filtering, index, deletion, and export
+src/storage/     library persistence and web/native file stores
+src/telemetry/   opt-in diagnostics client
+src/lib/         pure helpers: settings, night grouping, formatting
+src/context/     React providers over the services
+src/hooks/       React views of the session, library, and run logs
+src/components/  shared UI, including the root error boundary
+src/constants/   theme tokens
+src/app/         Expo Router screens
+assets/scripts/  bundled example scripts (YAML)
+telemetry/       diagnostics ingest Worker and D1 schema
+scripts/         build, deploy and emulator helpers
+public/          static assets copied into the web export
+site/            the website: hand-authored static HTML, no build step
+site/content/    published scripts, signals, and manifest
+.maestro/        device smoke-test flows
+doc/             specifications, plans, release notes, process records, field evidence
+```
+
+The engine imports only its own files and `js-yaml`, enforced as an allowlist in `eslint.config.js`;
+everything else reaches it through the port interfaces in `src/engine/ports.ts`. A night is owned by
+`src/session/night-session.ts`, a plain TypeScript service with no dependency on React, which
+`src/hooks/use-session.ts` subscribes to. Code that must run without the UI reaches storage through
+`src/runtime/services.ts`. The design is specified in
+[doc/plans/luciddream-v1-spec.md](doc/plans/luciddream-v1-spec.md) §4.
+
+---
+
+## 3. Web
+
+The web app is the same Expo application as `npm run web`, exported as static files. Browsers throttle
+and suspend inactive tabs, so the web app is not a substitute for a phone for unattended overnight
+runs.
+
+### Build and preview
+
+```bash
+npm run build:web
+```
+
+writes the static export to `dist/`. To serve it through Cloudflare's local static-asset server,
+exactly as production will:
+
+```bash
+npm run preview:web
+```
+
+No Cloudflare login is needed for local preview.
+
+The website in `site/` has no build step. Preview it the same way, including `/content/*` and the
+rules in `site/_headers`:
+
+```bash
+npm run preview:site
+```
+
+Two things to know when reviewing the website locally:
+
+- The download button and version badges call GitHub's public releases API. Offline or rate-limited,
+  the page falls back to the values in `site/assets/js/release.js`, which must be kept roughly
+  current.
+- The `/scripts/` page is rendered from `/content/manifest.json`. A published file missing from the
+  manifest does not appear there.
+
+### Debugging and the lock-screen demo
+
+Use the browser's developer tools against `npm run web`.
+
+The lock-screen demo shows the Sleeping screen's controls without locking anything. Locally:
+
+```bash
+npm run demo:web
+```
+
+In production, open `https://luciddreamapp.countinglight.com/?demo=lock`. Start a night first, then:
+
+- **Simulate Lock** shows the dark lock-screen presentation with the active phase, current step,
+  elapsed time, **Stop run**, **Wake / Unlock** and **Simulate loud noise**.
+- **Stop run** uses the real stop path. **Wake / Unlock** returns to the running screen.
+- **Simulate loud noise** uses the real voice-interrupt behaviour: playback is lowered and restored
+  after 15 seconds.
+
+With **Settings > Voice interrupt > Gentle** on, the demo also shows the live microphone level and
+the −30 dB trigger threshold when the browser supports metering.
+
+The demo does not lock the device and says nothing about whether a browser run survives with the
+screen off.
+
+### Deploying with Cloudflare
+
+The web app and the website are two Workers, each with **its own** Workers Build project connected to
+this repository:
+
+| Worker            | Configuration         | Build command       | Deploy command                                       |
+| ----------------- | --------------------- | ------------------- | ---------------------------------------------------- |
+| `luciddream-web`  | `wrangler.jsonc`      | `npm run build:web` | `npx wrangler@4.129.0 deploy`                        |
+| `luciddream-site` | `wrangler.site.jsonc` | none                | `npx wrangler@4.129.0 deploy -c wrangler.site.jsonc` |
+
+**One build project per Worker.** A Workers Build deploys to the Worker its project is connected to,
+whatever configuration file it is given. Deploying `-c wrangler.site.jsonc` from the web app's build
+uploads the website's files to `luciddream-web` and replaces the app. Each project's deploy command
+names exactly one configuration. A push to `deploy` therefore produces two builds.
+
+#### One-time setup
+
+Before connecting Git, check Cloudflare > `countinglight.com` > DNS for existing A, AAAA or CNAME
+records named `luciddreamapp` or `luciddream`. A Worker Custom Domain creates its own DNS record and
+certificate, and conflicts with an existing one.
+
+**Web app (`luciddream-web`):**
+
+1. **Workers & Pages** > **Create application** > **Import a repository** > **Get started**.
+2. Connect GitHub and grant access to `countinglight/luciddream` (repository-only access is enough).
+3. Worker name: exactly `luciddream-web`, matching `name` in `wrangler.jsonc`.
+4. Production branch: `deploy`. Root directory: empty or `/`.
+5. Build command: `npm run build:web`. Deploy command: `npx wrangler@4.129.0 deploy`, nothing more.
+6. Leave non-production branch builds off. If previews are wanted, their deploy command is
+   `npx wrangler@4.129.0 versions upload`.
+7. Build variable `NODE_VERSION` = `22.20.0`, exactly.
+8. Accept the generated build API token. **Save and Deploy**.
+
+**Website (`luciddream-site`):**
+
+1. Create the Worker with one manual deploy from a release checkout:
+   `npx wrangler@4.129.0 login`, then `npm run deploy:site`.
+2. **Workers & Pages** > `luciddream-site` > **Settings** > **Builds** > **Connect** the repository.
+3. Production branch: `deploy`. Root directory: `/`.
+4. Build command: empty. Deploy command: `npx wrangler@4.129.0 deploy -c wrangler.site.jsonc`.
+5. Leave previews off. If wanted, their command must also carry the flag:
+   `npx wrangler@4.129.0 versions upload -c wrangler.site.jsonc`.
+
+**Dismiss Cloudflare's "keep settings consistent" notice on `luciddream-site`.** It proposes setting
+`"name": "luciddream-site"` in `wrangler.jsonc`, which is the web app's configuration; accepting it
+would make the web app's build publish to the website's Worker. Close any pull request it opens.
+
+The first deployment creates each custom domain from its configuration. Confirm under each Worker's
+**Settings > Domains & Routes**; activation can take a few minutes. If a domain is missing, add it
+there as a **Custom Domain**, not as a Route ending in `/*`. A hostname belongs to one Worker at a
+time: remove it from one before attaching it to another.
+
+#### Manual deployment
+
+If the Git integration is unavailable, an authorised maintainer can publish the checked-out commit:
+
+```bash
+npx wrangler@4.129.0 login
+npm run deploy:web
+npm run deploy:site
+```
+
+The two are independent. **Never run a bare `npx wrangler deploy`:** the default configuration is the
+production web app.
+
+### Prototype deployment
+
+`luciddream-prototype` lets invited users try an unreleased branch without touching production. It
+has **no Git build project**; only this command publishes it:
+
+```bash
+npm run deploy:prototype
+```
+
+Run it from a clean checkout of the branch being previewed. It runs `build:web`, adds an
+`X-Robots-Tag: noindex` header (`scripts/mark-prototype-headers.js`) and deploys with
+`-c wrangler.prototype.jsonc`. The bundle is identical to production; the app recognises the
+prototype by hostname and shows a **Prototype** badge on Tonight. Preview the badge locally with
+`?variant=prototype`.
+
+One-time setup: confirm no DNS record named `luciddream-prototype` exists, and use this one-level
+subdomain (Universal SSL covers `*.countinglight.com` only). Optionally restrict it with Cloudflare
+Access. Data entered on the prototype lives in that origin's browser storage, separate from
+production. Delete the Worker when the branch ships.
+
+### Verification
+
+After a deployment, open in a private window:
+
+- `https://luciddreamapp.countinglight.com/` and `/library`
+- `https://luciddream.countinglight.com/`, `/scripts/`, `/install/`, `/privacy/`, `/about/`
 - `https://luciddream.countinglight.com/content/manifest.json`
 - `https://luciddream.countinglight.com/content/scripts/example.yaml`
 
-Also verify headers from a terminal:
-
 ```bash
 curl -I https://luciddreamapp.countinglight.com/
-curl -I https://luciddream.countinglight.com/
 curl -I https://luciddream.countinglight.com/content/scripts/example.yaml
 ```
 
-The content response must include `access-control-allow-origin: *`. Exercise the app by adding the
-example script from its full URL, running its Test action, and reloading the browser to confirm the
-library and selected phase persist. On the website, confirm the download button resolves to the
-current GitHub release and that the script library on `/scripts/` lists the published entries.
+The content response must include `access-control-allow-origin: *`. In the app, add the example
+script by URL, test it, and reload to confirm the library and phase selection persist. On the website,
+confirm the download button points at the current GitHub release and `/scripts/` lists the published
+entries.
 
-## Web lock-screen demo
+### Rollback and troubleshooting
 
-The testing controls are available only at this exact production URL:
+**Roll back:** **Workers & Pages** > the affected Worker > **Deployments** > last good version >
+**Rollback**. Then revert the bad commit, or the next push to `deploy` publishes it again.
 
-```text
-https://luciddreamapp.countinglight.com/?demo=lock
+| Symptom                                      | Cause and fix                                                                                                                                                               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One surface serving the other's content      | A build project deployed the other Worker's configuration. Roll back, then correct that project's deploy command.                                                           |
+| Prototype badge on production                | A prototype branch was deployed without `-c`. Roll back `luciddream-web`, then `npm run deploy:prototype`.                                                                  |
+| Only one surface updated                     | Each Worker has its own build project; check both are connected and both ran.                                                                                               |
+| Worker name mismatch                         | Dashboard name and configuration must agree: `luciddream-web`/`wrangler.jsonc`, `luciddream-site`/`wrangler.site.jsonc`, `luciddream-prototype`/`wrangler.prototype.jsonc`. |
+| Custom domain conflict                       | Remove the hostname from the previous Worker and any conflicting DNS record first.                                                                                          |
+| Wrong code built                             | Production branch must be `deploy`, root directory empty.                                                                                                                   |
+| `dist` missing                               | The web app's build command must be `npm run build:web`.                                                                                                                    |
+| Build fails at `Installing nodejs <version>` | A Node pin is a bare major; see [Toolchain](#toolchain).                                                                                                                    |
+| Content URL works directly, not in the app   | The response lacks the CORS header from `site/_headers`.                                                                                                                    |
+| Audio upload rejected                        | A file exceeds the Workers Static Assets limit of 25 MiB.                                                                                                                   |
+
+---
+
+## 4. Android
+
+### Build
+
+| Command                       | Produces                                                                  | Use for                                                              |
+| ----------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `npm run android`             | Debug development build, installed and launched                           | Daily development; needs Metro (`npm start`) running                 |
+| `npm run android:apk:debug`   | `android\app\build\outputs\apk\debug\`                                    | A debug APK to install by hand; needs Metro                          |
+| `npm run android:apk:release` | `android\app\build\outputs\apk\release\luciddream-v<version>-release.apk` | Testing on your own phone, including full nights; runs without Metro |
+
+The APK name carries the version from `package.json` (`plugins/withCanonicalVersion.js`). The local
+release APK is built for ARM phones only (`armeabi-v7a`, `arm64-v8a`) and is signed with the **debug
+keystore**, not the release key EAS holds. Do not give it to testers: a tester who later installs the
+EAS-built APK would have to uninstall first and lose their data. Testers get the EAS build
+([Release to testers](#release-to-testers)).
+
+### Install on a USB phone
+
+**One-time phone setup:** enable Developer options (Settings > About phone, tap **Build number**
+seven times), turn on **USB debugging**, connect the cable, unlock the phone and accept **Allow USB
+debugging**.
+
+`adb` is usually not on `PATH`. The commands below use its full path from Command Prompt (`cmd`). In
+PowerShell, replace `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` with
+`& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"`.
+
+1. Check the phone is visible. A line ending in `device` means ready; `unauthorized` means accept the
+   prompt on the phone.
+
+   ```bat
+   %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe devices
+   ```
+
+2. Install, replacing any existing copy:
+
+   ```bat
+   %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d install -r android\app\build\outputs\apk\release\luciddream-v0.6.0-release.apk
+   ```
+
+   `-d` targets the USB phone, which matters when an emulator is also running. `-r` replaces an
+   existing install and keeps its data. Adjust the version in the file name to match `package.json`.
+
+If install fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the installed copy was signed with a
+different key. Uninstalling it **deletes the app's data on the phone**, including nights and library
+items:
+
+```bat
+%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d uninstall com.vladsadovsky.luciddream
 ```
 
-Start a run before using the controls. **Simulate Lock** replaces the normal page with a dark
-lock-screen presentation showing the active phase, current step, elapsed time, **Stop run**,
-**Wake / Unlock**, and **Simulate loud noise**. Stop uses the real session stop path. Wake returns to
-the running Home screen. Loud noise uses the real duck/resume behavior: playback is reduced and
-restored after 15 seconds.
+**Before a full-night test**, set LucidDream's battery setting to **Unrestricted** in the phone's app
+settings. Many Android makers stop background apps overnight otherwise.
 
-For a live microphone reading, enable **Voice interrupt > Gentle** in Settings and start a run. The
-demo panel reports the current dB level and the -30 dB trigger threshold when browser metering is
-available. The HTTPS site will request microphone permission. The simulated-noise button remains
-available when permission is denied or metering is unsupported.
+### Emulator
 
-This is a UI and session-control demonstration only. It does not lock the physical device and does
-not prove that a browser run survives real screen-off/background execution.
+`scripts/android-emulator.js` creates, boots and inspects an emulator with the SDK tools Android
+Studio installed. Its `adb` calls target the emulator only (`adb -e`), so a connected phone is never
+touched.
 
-## Publishing customer scripts and signals
+| Command                            | What it does                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `npm run emulator:plan`            | Shows the SDK, system image and emulator it would use. Changes nothing.    |
+| `npm run emulator:start`           | Creates the `luciddream` emulator if missing, boots it, waits for Android. |
+| `npm run android:emulator`         | Starts it, then builds and installs the debug app (needs Metro).           |
+| `npm run android:emulator:release` | Starts it, then builds and installs a release build.                       |
+| `npm run emulator:check`           | Boot, Doze, install and foreground-service state.                          |
+| `npm run emulator:doze`            | Screen off, battery unplugged, forced into deep Doze.                      |
+| `npm run emulator:wake`            | Undoes `emulator:doze`.                                                    |
 
-Public customer files live here, served by the **site** Worker:
+The emulator is created from the newest complete, stable Google APIs x86_64 system image. If none is
+installed: Android Studio > **Settings > Languages & Frameworks > Android SDK**, tick **Show Package
+Details**, and under a released Android version install **Google APIs Intel x86_64 Atom System
+Image**. On the **SDK Tools** tab, keep **Android SDK Command-line Tools (latest)** installed; older
+tools cannot read what current Android Studio installs. Do not install ARM system images on an x86
+PC. Set `LUCIDDREAM_AVD` to use an emulator you created yourself.
+
+**Checking a night survives Doze:** start a night, run `npm run emulator:doze`, wait through a silent
+stretch, then `npm run emulator:check`. `Foreground service: RUNNING` is the result wanted: without
+it, Android stops background playback after about three minutes. A full night still belongs on a
+phone.
+
+`android:apk:release` output will not install on an x86_64 emulator; use `android:emulator:release`.
+
+### Debugging
+
+- **JavaScript logs** from a USB phone:
+
+  ```bat
+  %LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d logcat *:S ReactNative:V ReactNativeJS:V
+  ```
+
+- **Debug builds** (`npm run android`) connect to Metro; press `j` in the Metro terminal to open the
+  debugger, or shake the phone for the developer menu.
+- **Background behaviour:** `npm run emulator:check` reports whether the media foreground service is
+  running, on the emulator.
+- **Run logs:** every night's log can be shared from **Nights** in the app.
+
+### Release to testers
+
+Testers install an APK attached to a
+[GitHub Release](https://github.com/countinglight/luciddream/releases). It is built by EAS with the
+`preview` profile (`buildType: apk`), so every release is signed with the same EAS-managed key and
+installs over the previous one.
+
+1. Update and tag the version ([Versioning](#versioning)).
+2. Run the **EAS Build (Android)** workflow (`eas-build-android.yml`, manual dispatch) with profile
+   `preview`, or `npx eas-cli build --platform android --profile preview` locally.
+3. Download the APK from the build page on expo.dev and attach it to a GitHub Release for the tag.
+
+Export the upload keystore once with `npx eas-cli credentials` and keep it outside the repository:
+losing it forces every tester to uninstall to update.
+
+The workflows need the `EXPO_TOKEN` repository secret. Play Store submission (`eas-submit-android.yml`,
+`production` profile, needs `GOOGLE_SERVICE_ACCOUNT_KEY`) exists but is not a v1 distribution channel.
+
+---
+
+## 5. iOS
+
+### Development without a Mac
+
+iOS development uses an EAS **development** build installed on a registered iPhone, which loads
+JavaScript from `npm start` on the development machine. Building it:
+
+- the **EAS Build (iOS)** workflow (`eas-build-ios.yml`, manual dispatch) with profile `development`,
+  or
+- `npx eas-cli build --platform ios --profile development`.
+
+The iPhone must be registered first (`npx eas-cli device:create`). The complete steps, including
+Apple prerequisites, are in
+[doc/plans/luciddream-ios-support-plan.md](doc/plans/luciddream-ios-support-plan.md) §2.1 and Part E.
+
+### Release to testers (TestFlight)
+
+`release-ios.yml` builds with the `ios-testflight` profile and submits to App Store Connect:
+
+- on a version tag (`v0.6.0` or `0.6.0`, which must match `package.json`), and
+- monthly, because TestFlight builds expire 90 days after upload and testers would otherwise lose a
+  working app. GitHub disables scheduled workflows in repositories inactive for 60 days; check that it
+  still runs.
+
+It needs the repository secrets `EXPO_TOKEN`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` and
+`APPLE_API_ISSUER_ID`. A store build without submitting: `eas-build-ios.yml` with profile
+`ios-testflight`.
+
+Testers install **TestFlight** from the App Store, open the invitation link on the iPhone and tap
+**Install**. The website's [install page](https://luciddream.countinglight.com/install/#ios) gives the
+same steps.
+
+Full nights on iPhone are tested through a TestFlight build, which behaves like an App Store install
+for background audio.
+
+---
+
+## 6. Updates without a new binary
+
+JavaScript-only changes can reach installed apps through Expo Updates:
+
+```bash
+npm run update:testflight -- --message "What changed"
+```
+
+for TestFlight builds, or `npm run update:preview` for APKs built with the `preview` profile. Native
+changes (new native modules, `app.json` plugin or permission changes) always need a new build.
+
+`EXPO_PUBLIC_*` variables are compiled into the bundle. An update published from a shell without the
+variables a build was made with — for example the diagnostics endpoint — ships a bundle without them.
+Set the same variables before publishing.
+
+---
+
+## 7. Device smoke tests (Maestro)
+
+Flows in [.maestro/](.maestro/README.md) cover launch, opening each sheet, a night that begins and
+stops, and a plan with nothing to play. Maestro is a standalone tool, not an npm dependency:
+
+```bash
+curl -fsSL https://get.maestro.mobile.dev | bash
+```
+
+On Windows, install it under WSL. Then, with an emulator or phone running the app:
+
+| Command                 | Flow                                        |
+| ----------------------- | ------------------------------------------- |
+| `npm run e2e`           | All flows                                   |
+| `npm run e2e:launch`    | App launches to Tonight                     |
+| `npm run e2e:sheets`    | Library, Nights and Settings open and close |
+| `npm run e2e:night`     | A night begins, runs and stops              |
+| `npm run e2e:bad-input` | An empty plan refuses to start              |
+
+Flows select controls by their accessibility labels. Screenshots go to `.maestro/artifacts/`, which
+is ignored by git. Emulator flows cannot exercise an eight-hour night, Doze, screen-lock behaviour,
+background audio or battery; those need a phone.
+
+---
+
+## 8. Website and published content
+
+The website's content and design are specified in
+[doc/plans/luciddream-website-plan.md](doc/plans/luciddream-website-plan.md). Published scripts and
+signals live under `site/content/` and are served by the website Worker:
 
 ```text
 site/content/
@@ -278,263 +582,44 @@ site/content/
   signals/
 ```
 
-This `manifest.json` is a **library extension**: customers can paste its public URL into **Library
+`manifest.json` is a **library extension**: its public URL,
+`https://luciddream.countinglight.com/content/manifest.json`, can be imported in the app to add every
+listed item at once. The format is described in [README.md](README.md#library-extensions).
 
-> Library Extensions > Import extension** to add every listed signal and script at once. The
-> checked-in production example is:
+File rules:
 
-```text
-https://luciddream.countinglight.com/content/manifest.json
-```
+- lowercase, URL-safe names with no spaces
+- scripts as `.yaml`; audio normally `.wav` or `.mp3`
+- every file below 25 MiB
+- every URL in the manifest must be `https://`
 
-The manifest uses schema version 1, with optional `baseUrl` and `signals`/`scripts` arrays. Each
-entry requires a display `name` and an HTTP(S) `url`; URLs may be relative when `baseUrl` is set.
-See `site/content/manifest.json` for a complete working example.
+To publish:
 
-Use lowercase URL-safe filenames and avoid spaces. Script files should use `.yaml`; audio may use a
-format supported by Expo Audio, normally `.wav` or `.mp3`. Every individual file must remain below
-Cloudflare Workers Static Assets' 25 MiB limit.
+1. Add the file under `site/content/scripts/` or `site/content/signals/` on the release branch.
+2. Add its name and absolute production URL to `site/content/manifest.json`. An entry left out is
+   published but invisible on `/scripts/`, and every script in a manifest must be valid, or the app
+   refuses the whole import.
+3. `npm run preview:site` and fetch the file locally.
+4. Merge the release branch into `deploy`.
+5. Fetch the production URL and add it in the app's Library.
 
-To publish content:
+Content is public and served with `Access-Control-Allow-Origin: *`. `site/_headers` makes browsers
+revalidate `/content/*`, so a stable URL never serves stale content for long. There is no directory
+listing: the manifest is the catalog. Removing a file breaks anyone still using its URL; prefer a
+versioned replacement.
 
-1. Add the YAML file under `site/content/scripts/` or audio under `site/content/signals/` on the
-   active release branch.
-2. Add its display name and absolute production URL to `site/content/manifest.json`. The website's
-   `/scripts/` page renders this manifest, so an entry omitted here is published but invisible.
-3. Run `npm run preview:site` and fetch the file from the local preview.
-4. Commit and push the release branch.
-5. Test the Cloudflare preview version if branch previews are enabled.
-6. Merge the release branch into `deploy`. Cloudflare publishes it automatically.
-7. Fetch the production URL directly and test adding it in LucidDream's Library.
+---
 
-Content is intentionally public and receives `Access-Control-Allow-Origin: *`. The checked-in
-`site/_headers` uses browser revalidation for `/content/*`, so keeping a stable URL is safe: after
-a deployment clients revalidate it instead of retaining stale content indefinitely. Expo's hashed
-application bundles receive a one-year immutable cache policy from `public/_headers`.
+## 9. Diagnostics service
 
-Static hosting has no directory listing. `manifest.json` is the discoverable catalog and must be
-updated alongside files. Removing a file breaks customers who still reference its URL; prefer
-adding a versioned replacement and retaining the old file unless removal is deliberate.
-
-## Prototype deployment (customer preview)
-
-`luciddream-prototype` lets customers try an unreleased branch (currently `v1-redesign`) without
-touching production. It is a **separate Worker with no Git build project**: nothing publishes it
-except the command below, and pushes to `deploy` never affect it.
-
-One-time setup:
-
-1. Confirm there is no DNS record named `luciddream-prototype` in `countinglight.com`. Use a
-   one-level subdomain — Universal SSL covers `*.countinglight.com` only, so a deeper name such as
-   `prototype.luciddreamapp.countinglight.com` would need an Advanced Certificate.
-2. Create the Worker named exactly `luciddream-prototype` (or let the first deploy create it). Do
-   **not** connect it to the repository.
-3. Optional: protect the domain with Cloudflare Access (Zero Trust > Access > Applications) if only
-   invited customers should reach it.
-
-Publish from a clean checkout of the branch being previewed:
+`luciddream-telemetry` receives opt-in night summaries from the app. Everything about it —
+what is collected, the API, connecting builds, operations, queries and troubleshooting — is in
+[doc/plans/luciddream-telemetry.md](doc/plans/luciddream-telemetry.md).
 
 ```bash
-npx wrangler@4.129.0 login
-git switch v1-redesign
-npm run deploy:prototype
-```
-
-`deploy:prototype` runs the normal `build:web`, adds an `X-Robots-Tag: noindex` rule to
-`dist/_headers` (scripts/mark-prototype-headers.js), and deploys with `-c wrangler.prototype.jsonc`.
-The bundle is identical to a production build; the app recognises the prototype by hostname and
-shows a "Prototype" badge on Tonight (preview locally with `?variant=prototype`).
-
-**Never run `npx wrangler deploy` without `-c` from a prototype branch** — the default
-`wrangler.jsonc` is production. Customers' data on the prototype is browser storage for its own
-origin and is separate from production. Retire the preview by deleting the Worker once the branch
-ships.
-
-## Beta diagnostics Worker
-
-`luciddream-telemetry` receives the opt-in night summaries. It was created and deployed on
-2026-09-16 and is live at `https://luciddream-telemetry.countinglight.com`; no app build carries its
-address yet. Setup record, routine operations, queries and troubleshooting are all in
-[doc/plans/luciddream-telemetry.md](doc/plans/luciddream-telemetry.md) §7 and §8.
-
-```bash
+npm run telemetry:db:schema
 npm run deploy:telemetry
 ```
 
-It refuses a placeholder database id and runs `wrangler whoami` before deploying. Apply any schema
-change first with `npm run telemetry:db:schema`. Never run a bare `wrangler deploy` for it; the default
-configuration is the production web app.
-
-## Manual deployment (fallback)
-
-Normal releases use Cloudflare's Git integration. If it is unavailable, an authorized maintainer
-can publish the checked-out commit locally:
-
-```bash
-npx wrangler@4.129.0 login
-npm run deploy:web
-npm run deploy:site
-```
-
-Wrangler opens a browser for Cloudflare authorization. Confirm the selected account owns
-`countinglight.com` before deploying. The two commands are independent — publishing only the website
-does not require rebuilding or redeploying the application.
-
-## Rollback and troubleshooting
-
-To roll back immediately, open **Workers & Pages**, select the affected Worker (`luciddream-web` for
-the application, `luciddream-site` for the website), open **Deployments**, choose the last
-known-good deployment/version, and select **Rollback**. Then revert the bad commit in Git; otherwise
-the next push to `deploy` will publish it again.
-
-Common failures:
-
-- **Worker name mismatch:** the dashboard application and the Wrangler configuration must agree —
-  `luciddream-web` with `wrangler.jsonc`, `luciddream-site` with `wrangler.site.jsonc`,
-  `luciddream-prototype` with `wrangler.prototype.jsonc`.
-- **Prototype shown on production:** someone deployed a prototype branch without `-c`. Roll
-  `luciddream-web` back to its last good version, then redeploy the prototype with
-  `npm run deploy:prototype`.
-- **Custom domain conflict:** a hostname can belong to only one Worker. Remove it from the previous
-  Worker before attaching it to another, and remove any conflicting DNS record first.
-- **Build uses the wrong code:** confirm the production branch is `deploy` and root directory is
-  empty.
-- **`dist` missing:** the build command must be `npm run build:web` and complete before deploy.
-- **Only one surface updated:** each Worker has its own build project. Check that both projects are
-  connected to the repository and that both ran for the commit in question.
-- **One surface serving the other's content:** a build project deployed a configuration belonging to
-  the other Worker. Roll the affected Worker back to its last good version, then correct that
-  project's deploy command so it names only its own configuration.
-- **A customer URL works directly but not in a browser app:** check that the response contains the
-  CORS header from `site/_headers`.
-- **Audio deployment is rejected:** verify that every individual file is below 25 MiB; larger files
-  require a different store such as Cloudflare R2.
-
-## Android install APK via USB
-
-Installs a release APK you built onto a phone connected by USB. The release APK runs on its own; it
-does not need Metro or the computer after installing. Use it for full-night tests.
-
-**One-time phone setup.** Enable Developer options (Settings > About phone, tap _Build number_ seven
-times), then turn on _USB debugging_ in Developer options. Connect the cable, unlock the phone, and
-accept the _Allow USB debugging_ prompt.
-
-**1. Build** (from the project folder):
-
-```bash
-npm run android:apk:release
-```
-
-The APK lands in `android\app\build\outputs\apk\release\` as `luciddream-v<version>-release.apk`. The
-version comes from `package.json` through `plugins/withCanonicalVersion.js`, so the name changes with
-each version bump. The commands below use `0.5.1`.
-
-**2. Check the phone is visible.** `adb` is usually not on `PATH`; these use its full path from
-Command Prompt (`cmd`):
-
-```bat
-%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe devices
-```
-
-A line ending in `device` means it is ready. `unauthorized` means the phone is waiting for you to
-accept the USB debugging prompt.
-
-**3. Install**, replacing any copy already on the phone:
-
-```bat
-%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d install -r android\app\build\outputs\apk\release\luciddream-v0.5.1-release.apk
-```
-
-- `-d` targets the USB phone. Without it, `adb` refuses when an emulator is also running.
-- `-r` replaces an existing install and keeps its data. Without it, a second install fails with
-  `INSTALL_FAILED_ALREADY_EXISTS`.
-
-`Success` means done; open LucidDream from the app drawer.
-
-In PowerShell, replace `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` with `& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"`.
-
-**If install fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`**, the copy on the phone was signed with a
-different key (for example an APK from GitHub Releases). Uninstall it first. **This deletes the app's
-data on the phone**, including nights and library items:
-
-```bat
-%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d uninstall com.vladsadovsky.luciddream
-```
-
-Then repeat step 3.
-
-**Before a full-night test**, set LucidDream's battery setting to _Unrestricted_ in the phone's app
-settings. Many Android makers stop background apps overnight otherwise.
-
-## Android emulator
-
-`scripts/android-emulator.js` creates, boots and inspects a local emulator using only the Android
-SDK tools Android Studio already installed. Nothing is downloaded, and every `adb` call targets the
-emulator (`adb -e`), so a phone plugged in at the same time is never touched.
-
-| Command                            | What it does                                                                                         |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `npm run emulator:plan`            | Shows what it found and would do: SDK, system image, whether the emulator exists. Changes nothing.   |
-| `npm run emulator:start`           | Creates an emulator named `luciddream` if missing, boots it, waits until Android is ready.           |
-| `npm run android:emulator`         | `emulator:start`, then builds and installs the debug app. Needs Metro, like `npm run android`.       |
-| `npm run android:emulator:release` | `emulator:start`, then a release build that runs without Metro.                                      |
-| `npm run emulator:check`           | Boot state, Doze state, whether the app is installed, and whether its foreground service is running. |
-| `npm run emulator:doze`            | Screen off, battery unplugged, forced into deep Doze.                                                |
-| `npm run emulator:wake`            | Undoes `emulator:doze`.                                                                              |
-
-The emulator is created from the newest stable Google APIs image installed. Preview images such as
-`android-Tiramisu` are skipped. Set `LUCIDDREAM_AVD` to use an emulator you created yourself.
-
-**Checking that a night survives Doze (D1 in the hardening summary):** start a night in the app, lock
-it with `npm run emulator:doze`, wait through a silent stretch, then run `npm run emulator:check`.
-`Foreground service: RUNNING` is the result you want. Without it, Android stops background playback
-after about three minutes.
-
-`android:apk:release` builds only ARM architectures and will not install on an x86_64 emulator; use
-`android:emulator:release` for a release build on the emulator. A full eight-hour night still belongs
-on a phone, with the release APK.
-
-**If creating the emulator fails**, the usual cause is Java: `avdmanager` needs a JDK. The script
-borrows Android Studio's bundled one when `JAVA_HOME` is unset, and says so if it cannot find it. The
-fallback is to create an emulator named `luciddream` in Android Studio's Device Manager; the other
-commands then work as normal.
-
-## Device smoke flows (Maestro)
-
-Flows live in [`.maestro/`](.maestro/README.md) and cover launch, the three sheets, a night that
-begins and stops, and a plan with nothing to play. They were written during the v1 hardening pass
-and **have never been executed** — expect the first run to be part of writing them.
-
-Maestro is a standalone binary, not an npm dependency, so none of this changes the app's build.
-
-### Android emulator, on Windows
-
-```bash
-npm run android:apk:debug
-```
-
-Start the emulator and install the app with `npm run android:emulator` (see "Android emulator" above),
-then run the flows. Maestro
-installs under WSL on Windows:
-
-```bash
-npm run e2e
-```
-
-### iOS Simulator, on a Mac
-
-```bash
-npm run ios
-```
-
-Then:
-
-```bash
-npm run e2e
-```
-
-### What these flows cannot tell you
-
-An emulator cannot exercise an eight-hour night, Doze, screen-lock behaviour, background audio, the
-Android media foreground service, or battery. Those remain manual device checks and are listed in
-[doc/dev_process/v1-hardening-091526.md](doc/dev_process/v1-hardening-091526.md) §1.
+Apply schema changes before deploying a Worker that depends on them. `deploy:telemetry` refuses a
+placeholder database id and runs `wrangler whoami` first.
