@@ -95,6 +95,9 @@ function pickSystemImage(sdk) {
       )
         continue;
       const api = Number(platform.replace("android-", ""));
+      // Preview codenames such as android-Tiramisu are skipped outright: they
+      // are unfinished releases and a poor base for checking real behaviour.
+      if (!Number.isFinite(api)) continue;
       images.push({
         id: `system-images;${platform};${variant};${abi}`,
         stable: Number.isFinite(api),
@@ -187,6 +190,8 @@ function createAvd(t, image) {
   if (!result.ok) {
     fail(
       `avdmanager could not create the emulator.\n${result.err || result.out}\n\n` +
+        "If it warns about SDK XML versions, the command-line tools are out of date: in Android\n" +
+        "Studio's SDK Manager > SDK Tools, install Android SDK Command-line Tools (latest).\n" +
         "If it mentions Java, set JAVA_HOME to Android Studio's bundled JDK (its `jbr` folder),\n" +
         "or create an emulator named " +
         `"${AVD_NAME}" in Android Studio's Device Manager instead.`,
@@ -252,8 +257,10 @@ async function start(sdk, t) {
     const image = pickSystemImage(sdk);
     if (!image) {
       fail(
-        "No emulator system image is installed. In Android Studio: SDK Manager > SDK Platforms,\n" +
-          "tick an API level, open its details and install a Google APIs x86_64 system image.",
+        "No complete, stable x86_64 system image is installed (preview images are skipped).\n" +
+          "In Android Studio: Settings > Languages & Frameworks > Android SDK > SDK Platforms,\n" +
+          'tick "Show Package Details", and install "Google APIs Intel x86_64 Atom System Image"\n' +
+          "under a released Android version.",
       );
     }
     createAvd(t, image);
