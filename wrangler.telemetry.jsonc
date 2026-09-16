@@ -18,8 +18,8 @@
     {
       "binding": "DB",
       "database_name": "luciddream-telemetry",
-      // Replace with the id printed by `npx wrangler@4.129.0 d1 create luciddream-telemetry`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Created 2026-09-16 with `npx wrangler@4.129.0 d1 create luciddream-telemetry`.
+      "database_id": "c92165fc-434b-4915-a0f9-2e0b94e22ce7",
     },
   ],
 }
