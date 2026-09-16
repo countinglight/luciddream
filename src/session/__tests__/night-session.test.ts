@@ -26,6 +26,9 @@ const PLAN: NightPlan = {
 
 const OPTIONS = { audioFocus: "duck" as const, voiceInterrupt: false };
 
+/** Lets the service's queued async work (log drain, index write) settle. */
+const settle = () => new Promise((resolve) => setImmediate(resolve));
+
 const PREPARED: PreparedRun = {
   name: "Early Sleep: Test",
   phases: [
@@ -124,6 +127,9 @@ describe("NightSession", () => {
     const snapshot = session.getSnapshot();
     expect(snapshot.status).toBe("completed");
     expect(snapshot.endedAt).toBe(5_000);
+
+    // The record is closed only after the durable log has drained.
+    await settle();
     expect(recordEnd).toHaveBeenCalledWith(
       expect.objectContaining({ reason: "completed", endedAt: 5_000 }),
     );
@@ -163,7 +169,7 @@ describe("NightSession", () => {
     expect(session.getSnapshot().status).toBe("preparing");
     // Preparation begins after an await, so let it actually start before
     // stopping it.
-    await new Promise((resolve) => setImmediate(resolve));
+    await settle();
 
     session.stop();
     control.release?.();

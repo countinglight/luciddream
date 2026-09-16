@@ -99,8 +99,9 @@ export type NightSessionDeps = {
   context: ContextPort;
   startSession: (options: StartSessionOptions) => Promise<SessionController>;
   /** The run's durable sink. Composed by the caller so filtering and
-   * fan-out policy stay out of the lifecycle. */
-  createLog: (runId: string) => LogPort;
+   * fan-out policy stay out of the lifecycle. A sink that can `drain` lets
+   * the night's record be closed only once its log has settled. */
+  createLog: (runId: string) => LogPort & { drain?: () => Promise<void> };
   /** Injectable so lifecycle tests can drive preparation — including making
    * it hang, so Stop-during-preparation is testable. Defaults to the real
    * prepareRun. */
@@ -141,6 +142,7 @@ export class NightSession {
    * over the shared wake lock, keep-alive track and notification. */
   private teardown: Promise<void> = Promise.resolve();
   private eventCount = 0;
+  private durable: (LogPort & { drain?: () => Promise<void> }) | null = null;
   /** Guards against a late event from an abandoned run rewriting the
    * snapshot of the one after it. */
   private generation = 0;
@@ -229,6 +231,7 @@ export class NightSession {
       );
 
       const durable = this.deps.createLog(id);
+      this.durable = durable;
       const log: LogPort = {
         log: (event) => {
           durable.log(event);
@@ -332,18 +335,31 @@ export class NightSession {
       endedAt,
     });
     this.notifyObserver(() => this.deps.observer?.runEnded(endedAt, reason));
-    void this.deps
-      .recordEnd({
-        id,
-        name,
-        startedAt,
-        endedAt,
-        reason,
-        eventCount: this.eventCount,
-      })
-      .catch(() => {
-        // The index write is best effort; the durable log is the record.
-      });
+
+    // Close the index entry only after the log has settled, so Good morning
+    // and export cannot read a prefix of a night that is still being written
+    // (architectural review A5).
+    const durable = this.durable;
+    this.durable = null;
+    void (async () => {
+      try {
+        await durable?.drain?.();
+      } catch {
+        // A drain failure is already counted by the log port.
+      }
+      await this.deps
+        .recordEnd({
+          id,
+          name,
+          startedAt,
+          endedAt,
+          reason,
+          eventCount: this.eventCount,
+        })
+        .catch(() => {
+          // The index write is best effort; the durable log is the record.
+        });
+    })();
   }
 
   private apply(event: EngineEvent): void {

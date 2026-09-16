@@ -11,7 +11,7 @@
  *  - "document": persists across app updates and storage cleanup. Used only
  *    for content the user explicitly saved offline.
  */
-export type FileRoot = 'cache' | 'document';
+export type FileRoot = "cache" | "document";
 
 export class FileStoreError extends Error {}
 
@@ -19,16 +19,33 @@ export interface FileStorePort {
   exists(root: FileRoot, path: string): Promise<boolean>;
   ensureDir(root: FileRoot, path: string): Promise<void>;
   writeText(root: FileRoot, path: string, content: string): Promise<void>;
+  /** Appends to the end of a file, creating it if absent.
+   *
+   * A run log is written one line at a time for hours; rewriting the whole
+   * file per event costs O(n^2) in total writes and, worse, a process death
+   * mid-rewrite can truncate the entire night rather than just its last line
+   * (architectural review AR-03 / A5 / v2 F2.2).
+   *
+   * Native appends through the filesystem. The web store has no append
+   * primitive and does read-modify-write, which is ordered but not atomic —
+   * see WebFileStore.appendText. */
+  appendText(root: FileRoot, path: string, content: string): Promise<void>;
   readText(root: FileRoot, path: string): Promise<string>;
   /** Downloads `url` directly to `root`/`path`, never buffering the whole
    * file in memory. Overwrites an existing file at that path. */
   downloadTo(url: string, root: FileRoot, path: string): Promise<void>;
   /** Copies a file already inside this store from one root/path to
    * another — used to promote a cached signal to a permanently saved one. */
-  copy(from: { root: FileRoot; path: string }, to: { root: FileRoot; path: string }): Promise<void>;
+  copy(
+    from: { root: FileRoot; path: string },
+    to: { root: FileRoot; path: string },
+  ): Promise<void>;
   /** Copies a file from outside this store (e.g. a document-picker result,
    * which may be a content:// URI) in. */
-  copyExternal(sourceUri: string, to: { root: FileRoot; path: string }): Promise<void>;
+  copyExternal(
+    sourceUri: string,
+    to: { root: FileRoot; path: string },
+  ): Promise<void>;
   deleteFile(root: FileRoot, path: string): Promise<void>;
   /** A URI usable as an expo-audio source / for reading elsewhere. */
   uriFor(root: FileRoot, path: string): string;

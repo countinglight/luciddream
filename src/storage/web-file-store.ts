@@ -7,8 +7,7 @@ import { FileRoot, FileStoreError, FileStorePort } from "./file-store";
  * Blobs, keyed the same way InMemoryFileStore is for tests. */
 
 type StoredValue =
-  | { kind: "text"; text: string }
-  | { kind: "blob"; blob: Blob };
+  { kind: "text"; text: string } | { kind: "blob"; blob: Blob };
 
 const DB_NAME = "luciddream-files";
 const STORE_NAME = "files";
@@ -88,6 +87,26 @@ export class WebFileStore implements FileStorePort {
     content: string,
   ): Promise<void> {
     await this.put(key(root, path), { kind: "text", text: content });
+  }
+
+  /** IndexedDB stores whole values under one key, so there is no append
+   * primitive: this reads, concatenates and writes back. JsonlLogPort
+   * serialises its writes, so records stay ordered, but a crash mid-write can
+   * still lose the batch in flight. The web build is a demo surface, not a
+   * device anyone sleeps next to; native gets a real filesystem append. */
+  async appendText(
+    root: FileRoot,
+    path: string,
+    content: string,
+  ): Promise<void> {
+    const existing = await this.get(key(root, path));
+    const before =
+      existing === undefined
+        ? ""
+        : existing.kind === "text"
+          ? existing.text
+          : await existing.blob.text();
+    await this.put(key(root, path), { kind: "text", text: before + content });
   }
 
   async readText(root: FileRoot, path: string): Promise<string> {

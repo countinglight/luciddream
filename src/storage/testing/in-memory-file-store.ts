@@ -1,4 +1,4 @@
-import { FileRoot, FileStorePort } from '../file-store';
+import { FileRoot, FileStorePort } from "../file-store";
 
 function key(root: FileRoot, path: string): string {
   return `${root}:${path}`;
@@ -21,13 +21,27 @@ export class InMemoryFileStore implements FileStorePort {
     // No real directories to create.
   }
 
-  async writeText(root: FileRoot, path: string, content: string): Promise<void> {
+  async writeText(
+    root: FileRoot,
+    path: string,
+    content: string,
+  ): Promise<void> {
     this.files.set(key(root, path), content);
+  }
+
+  async appendText(
+    root: FileRoot,
+    path: string,
+    content: string,
+  ): Promise<void> {
+    const k = key(root, path);
+    this.files.set(k, (this.files.get(k) ?? "") + content);
   }
 
   async readText(root: FileRoot, path: string): Promise<string> {
     const content = this.files.get(key(root, path));
-    if (content === undefined) throw new Error(`InMemoryFileStore: no file at ${root}:${path}`);
+    if (content === undefined)
+      throw new Error(`InMemoryFileStore: no file at ${root}:${path}`);
     return content;
   }
 
@@ -36,12 +50,18 @@ export class InMemoryFileStore implements FileStorePort {
     this.files.set(key(root, path), `content-of(${url})`);
   }
 
-  async copy(from: { root: FileRoot; path: string }, to: { root: FileRoot; path: string }): Promise<void> {
+  async copy(
+    from: { root: FileRoot; path: string },
+    to: { root: FileRoot; path: string },
+  ): Promise<void> {
     const content = await this.readText(from.root, from.path);
     this.files.set(key(to.root, to.path), content);
   }
 
-  async copyExternal(sourceUri: string, to: { root: FileRoot; path: string }): Promise<void> {
+  async copyExternal(
+    sourceUri: string,
+    to: { root: FileRoot; path: string },
+  ): Promise<void> {
     this.files.set(key(to.root, to.path), `content-of(${sourceUri})`);
   }
 

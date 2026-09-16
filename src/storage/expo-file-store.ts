@@ -1,16 +1,16 @@
-import { Directory, File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from "expo-file-system";
 
-import { FileRoot, FileStoreError, FileStorePort } from './file-store';
+import { FileRoot, FileStoreError, FileStorePort } from "./file-store";
 
 function rootDirectory(root: FileRoot): Directory {
-  return root === 'cache' ? Paths.cache : Paths.document;
+  return root === "cache" ? Paths.cache : Paths.document;
 }
 
 /** Splits a "a/b/c.txt" path into its directory segments and file name, so
  * callers can address files with a plain forward-slash-joined path without
  * knowing anything about expo-file-system's Directory/File constructors. */
 function splitPath(path: string): { dirSegments: string[]; fileName: string } {
-  const segments = path.split('/').filter(Boolean);
+  const segments = path.split("/").filter(Boolean);
   const fileName = segments.pop();
   if (!fileName) throw new FileStoreError(`Invalid file path: "${path}"`);
   return { dirSegments: segments, fileName };
@@ -22,7 +22,7 @@ function toFile(root: FileRoot, path: string): File {
 }
 
 function toDirectory(root: FileRoot, path: string): Directory {
-  const segments = path.split('/').filter(Boolean);
+  const segments = path.split("/").filter(Boolean);
   return new Directory(rootDirectory(root), ...segments);
 }
 
@@ -46,11 +46,26 @@ export class ExpoFileSystemStore implements FileStorePort {
     }
   }
 
-  async writeText(root: FileRoot, path: string, content: string): Promise<void> {
-    await this.ensureDir(root, parentDirSegments(path).join('/'));
+  async writeText(
+    root: FileRoot,
+    path: string,
+    content: string,
+  ): Promise<void> {
+    await this.ensureDir(root, parentDirSegments(path).join("/"));
     const file = toFile(root, path);
     if (!file.exists) file.create({ overwrite: true });
     file.write(content);
+  }
+
+  async appendText(
+    root: FileRoot,
+    path: string,
+    content: string,
+  ): Promise<void> {
+    await this.ensureDir(root, parentDirSegments(path).join("/"));
+    const file = toFile(root, path);
+    if (!file.exists) file.create({ overwrite: false });
+    file.write(content, { append: true });
   }
 
   async readText(root: FileRoot, path: string): Promise<string> {
@@ -58,22 +73,28 @@ export class ExpoFileSystemStore implements FileStorePort {
   }
 
   async downloadTo(url: string, root: FileRoot, path: string): Promise<void> {
-    await this.ensureDir(root, parentDirSegments(path).join('/'));
+    await this.ensureDir(root, parentDirSegments(path).join("/"));
     const destination = toFile(root, path);
     if (destination.exists) destination.delete();
     await File.downloadFileAsync(url, destination);
   }
 
-  async copy(from: { root: FileRoot; path: string }, to: { root: FileRoot; path: string }): Promise<void> {
-    await this.ensureDir(to.root, parentDirSegments(to.path).join('/'));
+  async copy(
+    from: { root: FileRoot; path: string },
+    to: { root: FileRoot; path: string },
+  ): Promise<void> {
+    await this.ensureDir(to.root, parentDirSegments(to.path).join("/"));
     const source = toFile(from.root, from.path);
     const destination = toFile(to.root, to.path);
     if (destination.exists) destination.delete();
     await source.copy(destination);
   }
 
-  async copyExternal(sourceUri: string, to: { root: FileRoot; path: string }): Promise<void> {
-    await this.ensureDir(to.root, parentDirSegments(to.path).join('/'));
+  async copyExternal(
+    sourceUri: string,
+    to: { root: FileRoot; path: string },
+  ): Promise<void> {
+    await this.ensureDir(to.root, parentDirSegments(to.path).join("/"));
     const source = new File(sourceUri);
     const destination = toFile(to.root, to.path);
     if (destination.exists) destination.delete();
