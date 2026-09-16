@@ -1,3 +1,5 @@
+import { requireHttpsUrl } from "./url";
+
 export type LibraryManifestEntry = {
   name: string;
   url: string;
@@ -8,19 +10,6 @@ export type LibraryManifest = {
   signals: LibraryManifestEntry[];
   scripts: LibraryManifestEntry[];
 };
-
-function httpUrl(value: string, base?: string): string {
-  let url: URL;
-  try {
-    url = new URL(value, base);
-  } catch {
-    throw new Error(`Invalid URL: ${value}`);
-  }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new Error(`Unsupported URL protocol: ${url.protocol}`);
-  }
-  return url.toString();
-}
 
 function entries(
   value: unknown,
@@ -42,7 +31,7 @@ function entries(
     if (typeof url !== "string" || !url.trim()) {
       throw new Error(`Manifest ${kind} "${name.trim()}" needs a URL.`);
     }
-    return { name: name.trim(), url: httpUrl(url.trim(), baseUrl) };
+    return { name: name.trim(), url: requireHttpsUrl(url.trim(), baseUrl) };
   });
 
   const seen = new Set<string>();
@@ -61,7 +50,7 @@ export function parseLibraryManifest(
   manifestUrl: string,
   value: unknown,
 ): LibraryManifest {
-  const url = httpUrl(manifestUrl);
+  const url = requireHttpsUrl(manifestUrl);
   if (!value || typeof value !== "object") {
     throw new Error("Manifest must be a JSON object.");
   }
@@ -77,7 +66,9 @@ export function parseLibraryManifest(
   if (manifest.baseUrl !== undefined && typeof manifest.baseUrl !== "string") {
     throw new Error("Manifest baseUrl must be a URL string.");
   }
-  const baseUrl = manifest.baseUrl ? httpUrl(manifest.baseUrl, url) : url;
+  const baseUrl = manifest.baseUrl
+    ? requireHttpsUrl(manifest.baseUrl, url)
+    : url;
 
   return {
     url,
@@ -89,7 +80,7 @@ export function parseLibraryManifest(
 export async function loadLibraryManifest(
   manifestUrl: string,
 ): Promise<LibraryManifest> {
-  const url = httpUrl(manifestUrl.trim());
+  const url = requireHttpsUrl(manifestUrl.trim());
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Could not load manifest (HTTP ${response.status}).`);

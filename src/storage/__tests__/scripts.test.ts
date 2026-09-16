@@ -1,5 +1,9 @@
 import { BUNDLED_SCRIPT_TEXT } from "../bundled-scripts";
-import { resolveScriptText } from "../scripts";
+import {
+  resolveScriptText,
+  validateLibraryScript,
+  validateScriptText,
+} from "../scripts";
 import { InMemoryFileStore } from "../testing/in-memory-file-store";
 import type { LibraryScript } from "../library-types";
 
@@ -55,5 +59,67 @@ describe("resolveScriptText", () => {
     expect(store.downloads).toEqual([
       { url, root: "cache", path: "scripts/url-abc.yaml.part" },
     ]);
+  });
+});
+
+describe("script validation on add", () => {
+  const valid = "name: Ok\nversion: 1\nbody:\n  - play: chime\n";
+
+  it("accepts a valid script", () => {
+    expect(() => validateScriptText("Ok", valid)).not.toThrow();
+  });
+
+  it("names the script and the failing node when it is invalid", () => {
+    expect(() =>
+      validateScriptText(
+        "Typo",
+        "name: T\nversion: 1\nbody:\n  - repeat: 2\n    wiatt: 5m\n    body:\n      - play: chime\n",
+      ),
+    ).toThrow(/"Typo" could not be read: Unknown option "wiatt"/);
+  });
+
+  it("accepts the period presets a script may use", () => {
+    expect(() =>
+      validateScriptText(
+        "Presets",
+        "name: P\nversion: 1\nbody:\n  - wait: $short\n  - wait: $medium\n  - wait: $long\n",
+      ),
+    ).not.toThrow();
+  });
+
+  it("downloads and validates a URL script", async () => {
+    const store = new InMemoryFileStore();
+    const item: LibraryScript = {
+      id: "url-ok",
+      kind: "script",
+      name: "Remote",
+      source: { type: "url", url: "https://x.test/ok.yaml" },
+      savedOffline: false,
+      addedAt: 0,
+    };
+    jest
+      .spyOn(store, "downloadTo")
+      .mockImplementation(async (_url, root, path) => {
+        await store.writeText(root, path, valid);
+      });
+
+    await expect(validateLibraryScript(item, store)).resolves.toBeUndefined();
+  });
+
+  it("reports a download failure as such, not as a bad script", async () => {
+    const store = new InMemoryFileStore();
+    jest.spyOn(store, "downloadTo").mockRejectedValue(new Error("offline"));
+    const item: LibraryScript = {
+      id: "url-down",
+      kind: "script",
+      name: "Remote",
+      source: { type: "url", url: "https://x.test/down.yaml" },
+      savedOffline: false,
+      addedAt: 0,
+    };
+
+    await expect(validateLibraryScript(item, store)).rejects.toThrow(
+      /"Remote" could not be downloaded: offline/,
+    );
   });
 });

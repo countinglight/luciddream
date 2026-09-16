@@ -6,7 +6,7 @@ import type { AudioSourceRef } from "@/audio/types";
 import { parseScript, type DurationPresets } from "@/engine";
 import type { FileStorePort } from "@/storage/file-store";
 import type { LibraryScript, LibrarySignal } from "@/storage/library-types";
-import { resolveScriptText } from "@/storage/scripts";
+import { describeScriptProblem, resolveScriptText } from "@/storage/scripts";
 
 import type { SessionPhase } from "./sequence";
 
@@ -135,9 +135,8 @@ export async function prepareRun(
     try {
       parsed = parseScript(text, { durationPresets: plan.durationPresets });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
       throw new RunPreparationError(
-        `"${phase.script.name}" could not be read: ${detail}`,
+        describeScriptProblem(phase.script.name, error),
       );
     }
     phases.push({

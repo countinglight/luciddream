@@ -25,6 +25,8 @@ import {
   upsertItem,
 } from "@/storage/library-store";
 import type { LibraryManifest } from "@/storage/library-manifest";
+import { validateLibraryScript } from "@/storage/scripts";
+import { requireHttpsUrl } from "@/storage/url";
 import type {
   LibraryItem,
   LibraryScript,
@@ -32,6 +34,17 @@ import type {
 } from "@/storage/library-types";
 
 const fileStore = getFileStore();
+
+/** Validates a script being added; on failure removes whatever was stored
+ * for it, so a rejected script leaves nothing behind. */
+async function rejectInvalidScript(item: LibraryScript): Promise<void> {
+  try {
+    await validateLibraryScript(item, fileStore);
+  } catch (error) {
+    await deleteContent("scripts", item.id, item.source, fileStore, "yaml");
+    throw error;
+  }
+}
 
 type LibraryContextValue = {
   isLoaded: boolean;
@@ -98,7 +111,8 @@ export function LibraryProvider({ children }: PropsWithChildren) {
   }, []);
 
   const addSignalFromUrl = useCallback(
-    async (url: string, name: string) => {
+    async (rawUrl: string, name: string) => {
+      const url = requireHttpsUrl(rawUrl);
       const item: LibrarySignal = {
         id: idForUrl(url),
         kind: "signal",
@@ -113,7 +127,8 @@ export function LibraryProvider({ children }: PropsWithChildren) {
   );
 
   const addScriptFromUrl = useCallback(
-    async (url: string, name: string) => {
+    async (rawUrl: string, name: string) => {
+      const url = requireHttpsUrl(rawUrl);
       const item: LibraryScript = {
         id: idForUrl(url),
         kind: "script",
@@ -122,6 +137,9 @@ export function LibraryProvider({ children }: PropsWithChildren) {
         savedOffline: false,
         addedAt: Date.now(),
       };
+      // Checked now, while the user is looking at what they just added, not at
+      // bedtime (C2). This also downloads it, which the first night needed.
+      await rejectInvalidScript(item);
       persist(upsertItem(persisted, item));
     },
     [persist, persisted],
@@ -168,6 +186,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
         savedOffline: true,
         addedAt: Date.now(),
       };
+      await rejectInvalidScript(item);
       persist(upsertItem(persisted, item));
     },
     [persist, persisted],
@@ -197,6 +216,31 @@ export function LibraryProvider({ children }: PropsWithChildren) {
           );
         }),
       );
+
+      // Every script is checked before anything changes. A manifest with a
+      // broken script is refused whole, naming the scripts at fault, rather
+      // than half-imported into a Library the user then has to untangle.
+      const problems: string[] = [];
+      for (const entry of manifest.scripts) {
+        const candidate: LibraryScript = {
+          id: idForUrl(entry.url),
+          kind: "script",
+          name: entry.name,
+          source: { type: "url", url: entry.url },
+          savedOffline: false,
+          addedAt: importedAt,
+        };
+        try {
+          await rejectInvalidScript(candidate);
+        } catch (error) {
+          problems.push(error instanceof Error ? error.message : String(error));
+        }
+      }
+      if (problems.length > 0) {
+        throw new Error(
+          `Nothing was imported. ${problems.length === 1 ? "One script has" : `${problems.length} scripts have`} a problem:\n${problems.join("\n")}`,
+        );
+      }
 
       let next = persisted.filter(
         (item) => item.manifestUrl !== manifest.url || incomingIds.has(item.id),
