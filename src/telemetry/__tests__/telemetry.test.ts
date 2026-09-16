@@ -72,7 +72,7 @@ describe("Telemetry", () => {
   });
 
   it("reports the start and the end of a run with its counts", async () => {
-    const { telemetry, sent, store, at, advance } = setup();
+    const { telemetry, sent, at, advance } = setup();
     telemetry.configure({ enabled: true, testerLabel: "  Tester 1 " });
     const startedAt = at();
     telemetry.runStarted({ id: "run-1", startedAt, phases });
@@ -110,7 +110,6 @@ describe("Telemetry", () => {
       errorMessage: "boom",
       eventCount: 4,
     });
-    expect(await store.getItem("luciddream.telemetry.openRun.v1")).toBeNull();
   });
 
   it("keeps the install id stable across instances", async () => {
@@ -120,13 +119,13 @@ describe("Telemetry", () => {
     expect(await second.installId()).toBe(id);
   });
 
-  it("reports an unfinished run as interrupted on the next launch", async () => {
-    const { telemetry, deps, sent, advance, at } = setup({ result: "retry" });
+  it("reports a run the session layer closed as interrupted", async () => {
+    // Detection lives in src/session/run-recovery.ts and runs for every user;
+    // diagnostics only report what it found (AR-04).
+    const { telemetry, deps, sent, at } = setup({ result: "retry" });
     telemetry.configure({ enabled: true, testerLabel: "" });
     const startedAt = at();
     telemetry.runStarted({ id: "run-1", startedAt, phases });
-    advance(3 * 3_600_000);
-    telemetry.heartbeat();
     await telemetry.idle();
 
     // The process dies here. A new process starts with the same storage.
@@ -135,7 +134,14 @@ describe("Telemetry", () => {
       transport: async (events) => (sent.push(events), "sent"),
     });
     next.configure({ enabled: true, testerLabel: "" });
-    await next.recoverAfterLaunch();
+    await next.recoverAfterLaunch([
+      {
+        id: "run-1",
+        startedAt,
+        endedAt: startedAt + 3 * 3_600_000,
+        eventCount: 12,
+      },
+    ]);
 
     const end = sent.flat().find((event) => event.type === "run.end");
     expect(end?.run).toMatchObject({
@@ -143,7 +149,17 @@ describe("Telemetry", () => {
       endReason: "interrupted",
       endedAt: startedAt + 3 * 3_600_000,
       durationMs: 3 * 3_600_000,
+      eventCount: 12,
     });
+  });
+
+  it("reports nothing when the session layer found nothing", async () => {
+    const { telemetry, sent } = setup();
+    telemetry.configure({ enabled: true, testerLabel: "" });
+
+    await telemetry.recoverAfterLaunch([]);
+
+    expect(sent.flat()).toHaveLength(0);
   });
 
   it("reports a recorded fatal error as a crash of the open run", async () => {
@@ -160,7 +176,9 @@ describe("Telemetry", () => {
       transport: async (events) => (sent.push(events), "sent"),
     });
     next.configure({ enabled: true, testerLabel: "" });
-    await next.recoverAfterLaunch();
+    await next.recoverAfterLaunch([
+      { id: "run-1", startedAt: 0, endedAt: 1_000, eventCount: 0 },
+    ]);
 
     const delivered = sent.flat().filter((event) => event.type !== "run.start");
     expect(delivered.map((event) => event.type)).toEqual([
@@ -194,6 +212,5 @@ describe("Telemetry", () => {
     telemetry.configure({ enabled: false, testerLabel: "" });
     await telemetry.idle();
     expect(await store.getItem("luciddream.telemetry.outbox.v1")).toBeNull();
-    expect(await store.getItem("luciddream.telemetry.openRun.v1")).toBeNull();
   });
 });

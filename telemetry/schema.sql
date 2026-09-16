@@ -55,3 +55,13 @@ SELECT
 FROM events s
 LEFT JOIN events e ON e.run_id = s.run_id AND e.type = 'run.end'
 WHERE s.type = 'run.start';
+
+-- Per-installation daily ingest quota (telemetry/worker/index.js). Exists so a
+-- single misbehaving client cannot exhaust the D1 free-tier daily write
+-- allowance and silence everyone else's reports for that day.
+CREATE TABLE IF NOT EXISTS ingest_quota (
+  install_id TEXT NOT NULL,
+  day TEXT NOT NULL,              -- UTC date, YYYY-MM-DD
+  events INTEGER NOT NULL,
+  PRIMARY KEY (install_id, day)
+);

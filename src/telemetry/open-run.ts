@@ -1,12 +1,16 @@
-import type { KeyValueStore, RunInfo } from "./types";
+import type { KeyValueStore } from "./types";
 
 /**
- * Crash and kill detection without native code. While a run is active its
- * summary is kept on disk and refreshed as a heartbeat; a clean end removes
- * it. If the next launch still finds it, the previous process died mid-run.
+ * The one thing diagnostics still keep for themselves: the last fatal
+ * JavaScript error, recorded before the process dies and reported on the next
+ * launch.
+ *
+ * Kill detection used to live here too, as a second open-run marker beside
+ * the session layer's. It moved to src/session/run-recovery.ts, which runs for
+ * every user rather than only those who opted into diagnostics, and
+ * diagnostics now report from its result (architectural review AR-04).
  */
 
-const OPEN_RUN_KEY = "luciddream.telemetry.openRun.v1";
 const LAST_FATAL_KEY = "luciddream.telemetry.lastFatal.v1";
 
 export type LastFatal = { message: string; at: number; runId?: string };
@@ -42,13 +46,6 @@ async function remove(store: KeyValueStore, key: string): Promise<void> {
     // As above.
   }
 }
-
-export const readOpenRun = (store: KeyValueStore) =>
-  readJson<RunInfo>(store, OPEN_RUN_KEY);
-export const writeOpenRun = (store: KeyValueStore, run: RunInfo) =>
-  writeJson(store, OPEN_RUN_KEY, run);
-export const clearOpenRun = (store: KeyValueStore) =>
-  remove(store, OPEN_RUN_KEY);
 
 export const readLastFatal = (store: KeyValueStore) =>
   readJson<LastFatal>(store, LAST_FATAL_KEY);

@@ -1,12 +1,7 @@
 import type { EngineEvent } from "@/engine";
 
-import {
-  MAX_MESSAGE,
-  truncate,
-  type RunEndReason,
-  type RunInfo,
-  type RunPhaseInfo,
-} from "./types";
+import { redactMessage } from "./redact";
+import { type RunEndReason, type RunInfo, type RunPhaseInfo } from "./types";
 
 /** Folds a run's engine events into the few numbers diagnostics report.
  * Pure: no storage, no clock of its own. */
@@ -31,7 +26,8 @@ export class RunTracker {
     if (event.type === "play") this.playCount += 1;
     if (event.type === "error") {
       this.errorCount += 1;
-      this.lastErrorMessage = truncate(event.message, MAX_MESSAGE);
+      // Engine errors routinely embed a file path or the URL a user typed.
+      this.lastErrorMessage = redactMessage(event.message);
     }
   }
 

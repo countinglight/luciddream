@@ -1,17 +1,10 @@
 import type { EngineEvent } from "@/engine";
 
-import {
-  clearLastFatal,
-  clearOpenRun,
-  readLastFatal,
-  readOpenRun,
-  writeLastFatal,
-  writeOpenRun,
-} from "./open-run";
+import { clearLastFatal, readLastFatal, writeLastFatal } from "./open-run";
+import { redactMessage } from "./redact";
 import { Outbox, type Transport } from "./outbox";
 import { RunTracker } from "./run-tracker";
 import {
-  MAX_MESSAGE,
   TELEMETRY_SCHEMA_VERSION,
   truncate,
   type AppInfo,
@@ -25,8 +18,15 @@ import {
 } from "./types";
 
 const INSTALL_ID_KEY = "luciddream.telemetry.installId.v1";
-/** How often, at most, ordinary run events refresh the on-disk marker. */
-const MARKER_REFRESH_MS = 60_000;
+
+/** A night the session layer found abandoned at launch. Diagnostics report
+ * it; they no longer detect it (AR-04). */
+export type RecoveredRunInfo = {
+  id: string;
+  startedAt: number;
+  endedAt: number;
+  eventCount?: number;
+};
 
 export type TelemetryDeps = {
   store: KeyValueStore;
@@ -52,7 +52,10 @@ function errorMessage(error: unknown): string {
       : typeof error === "string"
         ? error
         : "Unknown error";
-  return truncate(message, MAX_MESSAGE);
+  // Redacted, not merely truncated: a path or URL is usually at the front of
+  // an error string, so truncation would have preserved exactly the part that
+  // must not leave the device (AR-16).
+  return redactMessage(message);
 }
 
 /**
@@ -66,7 +69,6 @@ export class Telemetry {
   private enabled = false;
   private testerLabel = "";
   private tracker: RunTracker | null = null;
-  private lastMarkerWrite = 0;
   private installIdPromise: Promise<string> | null = null;
   private chain: Promise<void> = Promise.resolve();
   private readonly outbox: Outbox | null;
@@ -97,7 +99,6 @@ export class Telemetry {
       const outbox = this.outbox;
       this.serial(async () => {
         await outbox?.clear();
-        await clearOpenRun(this.deps.store);
         await clearLastFatal(this.deps.store);
       });
     }
@@ -129,14 +130,19 @@ export class Telemetry {
     return this.chain;
   }
 
-  /** Call once per app launch, after preferences are loaded. Reports a run the
-   * previous process never finished, and a fatal error it recorded. */
-  recoverAfterLaunch(): Promise<void> {
+  /**
+   * Call once per app launch, with the runs the session layer closed as
+   * interrupted (src/session/run-recovery.ts).
+   *
+   * Diagnostics used to keep a second open-run marker of their own and detect
+   * this themselves, which meant a user without diagnostics saw nothing and
+   * both layers wrote a marker every minute. Detection is now always-on and
+   * lives with the run record; this reports it.
+   */
+  recoverAfterLaunch(interrupted: RecoveredRunInfo[] = []): Promise<void> {
     return this.serial(async () => {
       const { store } = this.deps;
-      const openRun = await readOpenRun(store);
       const fatal = await readLastFatal(store);
-      await clearOpenRun(store);
       await clearLastFatal(store);
       if (!this.active) return;
 
@@ -144,29 +150,30 @@ export class Telemetry {
         await this.enqueue(
           await this.event("app.crash", {
             at: fatal.at,
-            error: {
-              message: truncate(fatal.message, MAX_MESSAGE),
-              fatal: true,
-            },
+            error: { message: redactMessage(fatal.message), fatal: true },
           }),
         );
       }
-      if (openRun) {
-        const crashed = fatal !== null && fatal.at >= openRun.startedAt;
-        const endedAt = Math.max(
-          openRun.lastSeenAt ?? openRun.startedAt,
-          openRun.startedAt,
-        );
+
+      for (const recovered of interrupted) {
+        // A fatal JavaScript error recorded during this run means it crashed
+        // rather than simply vanished.
+        const crashed = fatal !== null && fatal.at >= recovered.startedAt;
         const run: RunInfo = {
-          ...openRun,
-          endedAt,
-          durationMs: endedAt - openRun.startedAt,
+          id: recovered.id,
+          startedAt: recovered.startedAt,
+          endedAt: recovered.endedAt,
+          lastSeenAt: recovered.endedAt,
+          durationMs: Math.max(0, recovered.endedAt - recovered.startedAt),
           endReason: crashed ? "crashed" : "interrupted",
-          ...(crashed
-            ? { errorMessage: truncate(fatal.message, MAX_MESSAGE) }
+          ...(recovered.eventCount !== undefined
+            ? { eventCount: recovered.eventCount }
             : {}),
+          ...(crashed ? { errorMessage: redactMessage(fatal.message) } : {}),
         };
-        await this.enqueue(await this.event("run.end", { at: endedAt, run }));
+        await this.enqueue(
+          await this.event("run.end", { at: recovered.endedAt, run }),
+        );
       }
       await this.deliver();
     });
@@ -190,10 +197,8 @@ export class Telemetry {
       })),
     );
     this.tracker = tracker;
-    this.lastMarkerWrite = this.deps.now();
     const info = tracker.snapshot(run.startedAt);
     this.serial(async () => {
-      await writeOpenRun(this.deps.store, info);
       await this.enqueue(
         await this.event("run.start", { at: run.startedAt, run: info }),
       );
@@ -202,19 +207,12 @@ export class Telemetry {
   }
 
   observe(event: EngineEvent): void {
-    const tracker = this.tracker;
-    if (!tracker) return;
-    tracker.observe(event);
-    if (event.type === "run.stop") return;
-    const now = this.deps.now();
-    if (now - this.lastMarkerWrite >= MARKER_REFRESH_MS)
-      this.writeMarker(tracker, now);
+    this.tracker?.observe(event);
   }
 
-  /** Refreshes the marker during long silent waits, when no events arrive. */
-  heartbeat(): void {
-    if (this.tracker) this.writeMarker(this.tracker, this.deps.now());
-  }
+  /** Kept so callers need not know that the open-run marker moved; the
+   * session layer refreshes it now. */
+  heartbeat(): void {}
 
   runEnded(endedAt: number, reason: RunEndReason): void {
     const tracker = this.tracker;
@@ -225,7 +223,6 @@ export class Telemetry {
       await this.enqueue(
         await this.event("run.end", { at: endedAt, run: info }),
       );
-      await clearOpenRun(this.deps.store);
       await this.deliver();
     });
   }
@@ -245,15 +242,6 @@ export class Telemetry {
   /** Tries to send whatever is queued. */
   flush(): Promise<void> {
     return this.serial(() => this.deliver());
-  }
-
-  private writeMarker(tracker: RunTracker, now: number): void {
-    this.lastMarkerWrite = now;
-    const info = tracker.snapshot(now);
-    this.serial(async () => {
-      // A run that ended while this write waited must not be resurrected.
-      if (this.tracker === tracker) await writeOpenRun(this.deps.store, info);
-    });
   }
 
   private async deliver(): Promise<void> {

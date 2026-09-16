@@ -4,6 +4,13 @@
 export const MAX_BODY_BYTES = 64 * 1024;
 export const MAX_EVENTS = 50;
 
+/** Events one installation may submit per UTC day before being refused.
+ * Generous: a night produces two events plus retries, so this allows for
+ * hundreds of nights' worth of noise before it bites. It exists so a single
+ * misbehaving or hostile client cannot exhaust the D1 free-tier daily write
+ * allowance and silence everyone else's reports for the day (AR-16). */
+export const DAILY_EVENT_QUOTA = 2_000;
+
 const EVENT_TYPES = new Set(["run.start", "run.end", "app.crash"]);
 const END_REASONS = new Set([
   "completed",
@@ -97,7 +104,72 @@ export function validateBatch(body) {
     const error = checkEvent(body.events[i], i);
     if (error) return { ok: false, error };
   }
-  return { ok: true, events: body.events };
+  // One batch comes from one device. Requiring that makes the per-install
+  // quota meaningful, and a batch mixing installs is not something the client
+  // can produce.
+  const installId = text(body.events[0].installId, 100);
+  if (body.events.some((event) => text(event.installId, 100) !== installId)) {
+    return { ok: false, error: "events must share one installId" };
+  }
+  return { ok: true, events: body.events, installId };
+}
+
+/**
+ * The event as it is stored in the `payload` column.
+ *
+ * Projected from known fields rather than stored as received. The previous
+ * `JSON.stringify(event)` retained whatever extra keys a client chose to send,
+ * so the database's contents were defined by the sender rather than by this
+ * schema — the diagnostics plan promises a fixed, small set of fields, and
+ * this is what makes that true rather than merely intended (AR-16, Codex
+ * "diagnostics security boundary").
+ */
+export function projectPayload(event) {
+  const run = isObject(event.run) ? event.run : null;
+  const error = isObject(event.error) ? event.error : null;
+  return {
+    v: 1,
+    id: text(event.id, 100),
+    type: event.type,
+    at: int(event.at),
+    installId: text(event.installId, 100),
+    testerLabel: text(event.testerLabel),
+    device: {
+      platform: text(event.device.platform, 20),
+      osVersion: text(event.device.osVersion, 40),
+      model: text(event.device.model),
+      manufacturer: text(event.device.manufacturer),
+    },
+    app: {
+      version: text(event.app.version, 40),
+      build: text(event.app.build, 40),
+      updateId: text(event.app.updateId, 100),
+      channel: text(event.app.channel, 40),
+    },
+    run: run
+      ? {
+          id: text(run.id, 100),
+          startedAt: int(run.startedAt),
+          endedAt: int(run.endedAt),
+          durationMs: int(run.durationMs),
+          lastSeenAt: int(run.lastSeenAt),
+          endReason: text(run.endReason, 20),
+          playCount: int(run.playCount),
+          eventCount: int(run.eventCount),
+          errorCount: int(run.errorCount),
+          errorMessage: text(run.errorMessage, 500),
+          phases: Array.isArray(run.phases)
+            ? run.phases.slice(0, 3).map((phase) => ({
+                label: text(isObject(phase) ? phase.label : null),
+                script: text(isObject(phase) ? phase.script : null),
+              }))
+            : null,
+        }
+      : null,
+    error: error
+      ? { message: text(error.message, 500), fatal: error.fatal === true }
+      : null,
+  };
 }
 
 /** One validated event as values in COLUMNS order. */
@@ -127,6 +199,6 @@ export function toRow(event, receivedAt) {
     int(run.playCount),
     int(run.errorCount),
     text(run.errorMessage ?? error.message, 500),
-    JSON.stringify(event).slice(0, 8000),
+    JSON.stringify(projectPayload(event)).slice(0, 8000),
   ];
 }
