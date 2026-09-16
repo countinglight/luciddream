@@ -350,35 +350,19 @@ shows a "Prototype" badge on Tonight (preview locally with `?variant=prototype`)
 origin and is separate from production. Retire the preview by deleting the Worker once the branch
 ships.
 
-## Beta diagnostics Worker (dormant)
+## Beta diagnostics Worker
 
-`luciddream-telemetry` receives the opt-in night summaries described in
-[doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md). It is a code Worker
-with a D1 database, fits the Workers Free plan, and **has not been created**. Until it exists and a
-build is given its URL, the app hides the feature and sends nothing.
-
-To create it, from a clean checkout:
+`luciddream-telemetry` receives the opt-in night summaries. It was created and deployed on
+2026-09-16 and is live at `https://luciddream-telemetry.countinglight.com`; no app build carries its
+address yet. Setup record, routine operations, queries and troubleshooting are all in
+[doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md) §7 and §8.
 
 ```bash
-npx wrangler@4.129.0 whoami
-npx wrangler@4.129.0 d1 create luciddream-telemetry
-```
-
-Paste the printed `database_id` into `wrangler.telemetry.jsonc`, commit it, then:
-
-```bash
-npm run telemetry:db:schema
 npm run deploy:telemetry
 ```
 
-`deploy:telemetry` refuses to run while the placeholder id is present, and runs `wrangler whoami`
-before deploying. Optionally set an ingest token with
-`npx wrangler@4.129.0 secret put INGEST_TOKEN -c wrangler.telemetry.jsonc`. Check
-`https://luciddream-telemetry.countinglight.com/v1/health`, then follow §7 of the design document to
-give builds the endpoint. Read results with `npm run telemetry:nights`.
-
-The same one-level-subdomain rule as the prototype applies: Universal SSL covers
-`luciddream-telemetry.countinglight.com`. Never run a bare `wrangler deploy` for it; the default
+It refuses a placeholder database id and runs `wrangler whoami` before deploying. Apply any schema
+change first with `npm run telemetry:db:schema`. Never run a bare `wrangler deploy` for it; the default
 configuration is the production web app.
 
 ## Manual deployment (fallback)

@@ -6,6 +6,10 @@ detail as implemented, and the full setup and operations procedure. The settled 
 [`doc/plans/luciddream-beta-telemetry.md`](../plans/luciddream-beta-telemetry.md); this document is
 the long form behind it.
 
+> **Later status (2026-09-16):** the service described here was created and deployed, and has since
+> been hardened. This record describes the session of 2026-09-13 as it was. For the current state
+> see [luciddream-beta-telemetry.md](../plans/luciddream-beta-telemetry.md).
+
 Status at the end of the session: **implemented, tested, committed, dormant.** No build carries an
 endpoint, no Cloudflare resource exists, nothing is sent.
 

@@ -158,11 +158,10 @@ with the release APK and the phone's battery setting for LucidDream set to Unres
 
 Nothing in this session touched Cloudflare, EAS, or any deploy path, per your instruction.
 
-- **Telemetry Worker**: hardened but still dormant. No `wrangler` command was run, no resource
-  created, and `deploy:telemetry`, `wrangler.telemetry.jsonc` and `scripts/check-telemetry-config.js`
-  are untouched. **One new setup step**: the per-install daily quota needs a new table, so
-  `npm run telemetry:db:schema` must be run before this Worker is deployed. The schema file is
-  idempotent, so re-running it is safe.
+- **Telemetry Worker**: created and deployed on 2026-09-16 with the owner's approval, including the
+  schema with the new quota table and an ingest token. The setup record is in
+  [luciddream-beta-telemetry.md §7.1](../plans/luciddream-beta-telemetry.md); connecting builds
+  (§7.2 there) is part of the EAS work.
 - **Cloudflare "Always Use HTTPS"** for `countinglight.com`. Plain `http://luciddream.countinglight.com/content/…`
   still answers 200 rather than redirecting. The app no longer accepts `http://` addresses (C6),
   so this only affects browsers, but it is the matching server-side setting. Dashboard: SSL/TLS →
@@ -187,6 +186,10 @@ without touching anything else. What it contains:
   since it lives in commit `19e1b63`.
 - Worker: payload projected from known fields rather than stored as received; body read with a cap;
   per-install daily quota answering 429.
+
+**Since 2026-09-16 the Worker from this commit is live.** Reverting `257bdbe` changes only the
+repository. The deployed Worker keeps the quota and payload projection until it is redeployed, and a
+Worker redeployed from the reverted code would still work against the current schema.
 
 ## 9. Minor inconsistencies, logged rather than fixed
 

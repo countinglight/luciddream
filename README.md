@@ -24,9 +24,10 @@ audio before starting one continuous session and one run log.
 - JSONL run logs, local run index, filtering, export, and simulated context
 - Light/dark/system themes and Android/iOS/web adapters
 - Static Expo web export and Cloudflare Workers Static Assets configuration
-- Opt-in beta diagnostics (night start/end, device, crashes) for iOS and Android, dormant until a
-  build is given an endpoint — see
-  [doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md)
+- Opt-in beta diagnostics (night start and end, device, crashes) for iOS and Android. The ingest
+  service is live; builds switch the feature on once they carry its address. Everything diagnostics
+  do, for testers and for operating the service, is in
+  [doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md).
 
 See [doc/plans/luciddream-v1-spec.md](doc/plans/luciddream-v1-spec.md) for the functional and
 engineering specification.

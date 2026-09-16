@@ -16,6 +16,14 @@
 - The date belongs in the document's title and header as well, in full (`2026-09-15`), so a reader
   who has only the file open knows when it was written.
 
+# Documentation coherence before master
+
+- Before work is pushed into `master`, the documents in `doc/plans/` and `doc/dev_process/` are
+  brought into a coherent state: no document contradicts the code or another current document.
+- A dated session or review record may describe the past; when it has been overtaken, it gets a short
+  dated pointer to the current source rather than a rewrite.
+- `doc/archive/` is excluded: it is not read for context and not checked for coherence.
+
 # Field evidence
 
 - Facts code cannot establish (device runs, installs, battery, tester feedback, store review) live in

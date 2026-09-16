@@ -507,7 +507,8 @@ and the privacy screen have all been through beta.
 
 ### 7.3 Work packages for the v1-to-v2 transition
 
-Beta diagnostics already exist in the v1 code, dormant
+Beta diagnostics exist in the v1 code, and their ingest service has been live since 2026-09-16;
+builds switch them on once they carry its address
 ([luciddream-beta-telemetry.md](luciddream-beta-telemetry.md)); switched on, they supply the field
 evidence for F2.7 and for the v3 triggers without asking testers.
 
