@@ -143,11 +143,15 @@ describe("NightSession", () => {
   });
 
   it("honours Stop while the night is still being prepared", async () => {
-    let releasePrepare: (() => void) | null = null;
+    // A holder, because TypeScript cannot see a closure assignment across an
+    // await and would narrow a plain `let` to never.
+    const control: { release: (() => void) | null } = { release: null };
     const prepare = jest.fn(
       (_plan: NightPlan, _store: unknown, signal: AbortSignal) =>
         new Promise<PreparedRun>((resolve, reject) => {
-          releasePrepare = () => {
+          control.release = () => {
+            // Rejects with a plain Error, not RunCancelledError, so this also
+            // covers preparation that fails *because* it was aborted.
             if (signal.aborted) reject(new Error("aborted"));
             else resolve(PREPARED);
           };
@@ -162,7 +166,7 @@ describe("NightSession", () => {
     await new Promise((resolve) => setImmediate(resolve));
 
     session.stop();
-    releasePrepare?.();
+    control.release?.();
     await started;
 
     expect(session.getSnapshot().status).toBe("stopped");

@@ -61,6 +61,15 @@ export async function startSession(
   const { name, phases, sourceMap, context, log, audioFocus } = options;
   const recording = options.voiceInterrupt === true;
 
+  // Android binds the media foreground service that keeps a night alive only
+  // for a player registered for lock-screen controls, and expo-audio requires
+  // exclusive focus for that registration to be honoured. So on Android the
+  // Audio focus setting cannot be applied: background playback wins over
+  // ducking, because without it the night stops after about three minutes.
+  // Recorded in the log rather than silently overridden.
+  const exclusiveRequired = Platform.OS === "android";
+  const effectiveFocus = exclusiveRequired ? "exclusive" : audioFocus;
+
   // Unwound in reverse on failure, and by releaseOnce on any exit.
   const rollback: (() => void | Promise<void>)[] = [];
   let released = false;
@@ -93,7 +102,8 @@ export async function startSession(
       // silent mode is load-bearing, not incidental. Leaving it implicit means a
       // future default change silences every run, invisibly and only on device.
       playsInSilentMode: true,
-      interruptionMode: audioFocus === "exclusive" ? "doNotMix" : "duckOthers",
+      interruptionMode:
+        effectiveFocus === "exclusive" ? "doNotMix" : "duckOthers",
       shouldPlayInBackground: true,
       // Voice interrupt meters the microphone all night with the screen locked.
       // Without `allowsRecording`, iOS refuses to start the recorder at all; it
@@ -122,8 +132,17 @@ export async function startSession(
       if (Platform.OS !== "web") throw error;
     }
 
-    const keepAlive: KeepAliveTrack = startKeepAliveTrack();
+    const keepAlive: KeepAliveTrack = startKeepAliveTrack({ title: name });
     rollback.push(() => keepAlive.stop());
+
+    if (exclusiveRequired && audioFocus !== "exclusive") {
+      log.log({
+        type: "log",
+        at: Date.now(),
+        message:
+          "Android needs exclusive audio focus to keep playing with the screen off, so the Audio focus setting was not applied tonight.",
+      });
+    }
 
     const notificationsReady = await ensureRunNotificationSetup().catch(
       () => false,
