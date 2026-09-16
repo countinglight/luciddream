@@ -32,7 +32,12 @@ export function configureNotificationHandler(): void {
   });
 }
 
-const CHANNEL_ID = "luciddream-run";
+/** Bumped from "luciddream-run" when the importance dropped to LOW: Android
+ * channel settings are fixed at creation, so an existing install would
+ * otherwise keep the old HIGH importance forever. The old channel is deleted
+ * in ensureRunNotificationSetup. */
+const CHANNEL_ID = "luciddream-run-v2";
+const LEGACY_CHANNEL_ID = "luciddream-run";
 const NOTIFICATION_ID = "luciddream-run-status";
 const CATEGORY_ID = "run-controls";
 export const STOP_ACTION_ID = "STOP";
@@ -49,9 +54,19 @@ export async function ensureRunNotificationSetup(): Promise<boolean> {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: "Run status",
-      importance: Notifications.AndroidImportance.HIGH,
+      // LOW, not HIGH: the run posts one notification update per engine
+      // event, all night. At HIGH importance each one is a heads-up banner
+      // that lights the screen in a dark bedroom — the opposite of what an
+      // overnight app should do. At LOW it sits silently in the shade and on
+      // the lock screen, and the Stop action still works.
+      importance: Notifications.AndroidImportance.LOW,
       sound: null,
+      enableVibrate: false,
+      showBadge: false,
     });
+    await Notifications.deleteNotificationChannelAsync(LEGACY_CHANNEL_ID).catch(
+      () => {},
+    );
   }
 
   await Notifications.setNotificationCategoryAsync(CATEGORY_ID, [
