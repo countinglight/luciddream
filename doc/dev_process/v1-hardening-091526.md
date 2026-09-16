@@ -109,6 +109,19 @@ git push origin v1-hardening
 
 ## 4. The one thing to read before shipping
 
+Two commits must travel together:
+
+- `52a5bdb` makes the keep-alive player register for Android lock-screen controls, which is what
+  binds expo-audio's media foreground service.
+- `7611178` stops holding the screen on.
+
+expo-audio's own types state that without that registration, **Android background playback stops
+after about three minutes** (an OS limitation). Nothing in the app had ever called it, which means
+the screen keep-awake was the only thing holding Android nights up. Taking the screen away without
+the service fix would kill nights within minutes.
+
+**Reverting `7611178` alone is safe. Reverting `52a5bdb` alone is not.**
+
 ## 5. Verify on a device before trusting a build
 
 Nothing in this section was verified. Unit tests and code review are all that stand behind it.
@@ -126,19 +139,6 @@ Nothing in this section was verified. Unit tests and code review are all that st
 
 You mentioned Android Studio is installed — D1, D2, D3, D6 and D7 are all reachable in an emulator.
 D4 and D8 need real hardware.
-
-Two commits must travel together:
-
-- `52a5bdb` makes the keep-alive player register for Android lock-screen controls, which is what
-  binds expo-audio's media foreground service.
-- `7611178` stops holding the screen on.
-
-expo-audio's own types state that without that registration, **Android background playback stops
-after about three minutes** (an OS limitation). Nothing in the app had ever called it, which means
-the screen keep-awake was the only thing holding Android nights up. Taking the screen away without
-the service fix would kill nights within minutes.
-
-**Reverting `7611178` alone is safe. Reverting `52a5bdb` alone is not.**
 
 ## 6. Decisions you still owe
 
