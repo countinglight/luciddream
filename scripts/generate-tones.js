@@ -10,21 +10,28 @@
  * Run with: node scripts/generate-tones.js
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 const SAMPLE_RATE = 44100;
-const OUT_DIR = path.join(__dirname, '..', 'assets', 'sounds');
+const OUT_DIR = path.join(__dirname, "..", "assets", "sounds");
 
 /** One sine partial: frequency in Hz, relative amplitude (0-1). */
-function tone(durationSeconds, partials, { attack = 0.005, decay = 'exp' } = {}) {
+function tone(
+  durationSeconds,
+  partials,
+  { attack = 0.005, decay = "exp" } = {},
+) {
   const sampleCount = Math.round(durationSeconds * SAMPLE_RATE);
   const samples = new Float32Array(sampleCount);
 
   for (let i = 0; i < sampleCount; i++) {
     const t = i / SAMPLE_RATE;
     const attackEnv = Math.min(1, t / attack);
-    const releaseEnv = decay === 'exp' ? Math.exp(-3.5 * (t / durationSeconds)) : 1 - t / durationSeconds;
+    const releaseEnv =
+      decay === "exp"
+        ? Math.exp(-3.5 * (t / durationSeconds))
+        : 1 - t / durationSeconds;
     const envelope = attackEnv * releaseEnv;
 
     let value = 0;
@@ -39,12 +46,17 @@ function tone(durationSeconds, partials, { attack = 0.005, decay = 'exp' } = {})
 
 /** Concatenate tone segments with silence gaps in between (seconds). */
 function sequence(parts) {
-  const total = parts.reduce((sum, p) => sum + p.samples.length + Math.round((p.gapAfter ?? 0) * SAMPLE_RATE), 0);
+  const total = parts.reduce(
+    (sum, p) =>
+      sum + p.samples.length + Math.round((p.gapAfter ?? 0) * SAMPLE_RATE),
+    0,
+  );
   const out = new Float32Array(total);
   let offset = 0;
   for (const part of parts) {
     out.set(part.samples, offset);
-    offset += part.samples.length + Math.round((part.gapAfter ?? 0) * SAMPLE_RATE);
+    offset +=
+      part.samples.length + Math.round((part.gapAfter ?? 0) * SAMPLE_RATE);
   }
   return out;
 }
@@ -65,10 +77,10 @@ function writeWavFile(filePath, floatSamples) {
   const dataSize = numSamples * bytesPerSample;
   const buffer = Buffer.alloc(44 + dataSize);
 
-  buffer.write('RIFF', 0, 'ascii');
+  buffer.write("RIFF", 0, "ascii");
   buffer.writeUInt32LE(36 + dataSize, 4);
-  buffer.write('WAVE', 8, 'ascii');
-  buffer.write('fmt ', 12, 'ascii');
+  buffer.write("WAVE", 8, "ascii");
+  buffer.write("fmt ", 12, "ascii");
   buffer.writeUInt32LE(16, 16); // fmt chunk size
   buffer.writeUInt16LE(1, 20); // PCM
   buffer.writeUInt16LE(1, 22); // mono
@@ -76,7 +88,7 @@ function writeWavFile(filePath, floatSamples) {
   buffer.writeUInt32LE(SAMPLE_RATE * bytesPerSample, 28); // byte rate
   buffer.writeUInt16LE(bytesPerSample, 32); // block align
   buffer.writeUInt16LE(16, 34); // bits per sample
-  buffer.write('data', 36, 'ascii');
+  buffer.write("data", 36, "ascii");
   buffer.writeUInt32LE(dataSize, 40);
 
   for (let i = 0; i < numSamples; i++) {
@@ -85,7 +97,9 @@ function writeWavFile(filePath, floatSamples) {
   }
 
   fs.writeFileSync(filePath, buffer);
-  console.log(`wrote ${path.relative(process.cwd(), filePath)} (${(buffer.length / 1024).toFixed(1)} KB)`);
+  console.log(
+    `wrote ${path.relative(process.cwd(), filePath)} (${(buffer.length / 1024).toFixed(1)} KB)`,
+  );
 }
 
 const SOUNDS = {
@@ -93,19 +107,44 @@ const SOUNDS = {
   chime: () =>
     normalize(
       sequence([
-        { samples: tone(0.35, [[880, 1], [1318.5, 0.4]]), gapAfter: 0.05 },
-        { samples: tone(0.5, [[1318.5, 1], [1760, 0.3]]) },
-      ])
+        {
+          samples: tone(0.35, [
+            [880, 1],
+            [1318.5, 0.4],
+          ]),
+          gapAfter: 0.05,
+        },
+        {
+          samples: tone(0.5, [
+            [1318.5, 1],
+            [1760, 0.3],
+          ]),
+        },
+      ]),
     ),
   // Single low, long-ringing bell.
-  bell: () => normalize(tone(1.4, [[329.6, 1], [493.9, 0.5], [659.3, 0.25]], { decay: 'exp' })),
+  bell: () =>
+    normalize(
+      tone(
+        1.4,
+        [
+          [329.6, 1],
+          [493.9, 0.5],
+          [659.3, 0.25],
+        ],
+        { decay: "exp" },
+      ),
+    ),
   // Urgent double-beep.
   alert: () =>
     normalize(
       sequence([
-        { samples: tone(0.15, [[988, 1]], { attack: 0.002, decay: 'linear' }), gapAfter: 0.08 },
-        { samples: tone(0.15, [[988, 1]], { attack: 0.002, decay: 'linear' }) },
-      ])
+        {
+          samples: tone(0.15, [[988, 1]], { attack: 0.002, decay: "linear" }),
+          gapAfter: 0.08,
+        },
+        { samples: tone(0.15, [[988, 1]], { attack: 0.002, decay: "linear" }) },
+      ]),
     ),
 };
 

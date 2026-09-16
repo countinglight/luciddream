@@ -8,34 +8,29 @@
 /** A duration, normalized to milliseconds. */
 export type DurationMs = number;
 
-export type ComparatorOp = 'eq' | 'ne' | 'lt' | 'lte' | 'gt' | 'gte';
+export type ComparatorOp = "eq" | "ne" | "lt" | "lte" | "gt" | "gte";
 
 /** Fields a condition can read. See conditions.ts for how each is sourced. */
 export type ConditionField =
-  | 'elapsed'
-  | 'clock'
-  | 'iteration'
-  | 'hr'
-  | 'hrv'
-  | 'rem'
-  | 'sleepStage';
+  "elapsed" | "clock" | "iteration" | "hr" | "hrv" | "rem" | "sleepStage";
 
 export type FieldCondition = {
-  kind: 'field';
+  kind: "field";
   field: ConditionField;
   comparator: ComparatorOp;
   /** Already normalized — durations are parsed to ms, "HH:MM" kept as-is. */
   value: number | string | boolean;
 };
 
-export type AllCondition = { kind: 'all'; conditions: Condition[] };
-export type AnyCondition = { kind: 'any'; conditions: Condition[] };
-export type NotCondition = { kind: 'not'; condition: Condition };
+export type AllCondition = { kind: "all"; conditions: Condition[] };
+export type AnyCondition = { kind: "any"; conditions: Condition[] };
+export type NotCondition = { kind: "not"; condition: Condition };
 
-export type Condition = FieldCondition | AllCondition | AnyCondition | NotCondition;
+export type Condition =
+  FieldCondition | AllCondition | AnyCondition | NotCondition;
 
 export type PlayStatement = {
-  kind: 'play';
+  kind: "play";
   signal: string;
   /** Multiplies the enclosing scope's gain. Defaults to 1. */
   gain?: number;
@@ -46,44 +41,44 @@ export type PlayStatement = {
 };
 
 export type WaitStatement = {
-  kind: 'wait';
+  kind: "wait";
   duration: DurationMs;
 };
 
 export type RepeatStatement = {
-  kind: 'repeat';
-  count: number | 'infinite';
+  kind: "repeat";
+  count: number | "infinite";
   /** Evaluated before each iteration, including the first. */
   until?: Condition;
   body: Statement[];
 };
 
 export type IfStatement = {
-  kind: 'if';
+  kind: "if";
   condition: Condition;
   then: Statement[];
   else?: Statement[];
 };
 
 export type WithStatement = {
-  kind: 'with';
+  kind: "with";
   gain?: number;
   rate?: number;
   body: Statement[];
 };
 
 export type SetStatement = {
-  kind: 'set';
+  kind: "set";
   volume?: number;
 };
 
 export type LogStatement = {
-  kind: 'log';
+  kind: "log";
   message: string;
 };
 
 export type StopStatement = {
-  kind: 'stop';
+  kind: "stop";
 };
 
 export type Statement =
@@ -108,12 +103,12 @@ export type Script = {
  * tell statements apart, and here so the set stays defined next to the types
  * it corresponds to. */
 export const STATEMENT_KINDS = [
-  'play',
-  'wait',
-  'repeat',
-  'if',
-  'with',
-  'set',
-  'log',
-  'stop',
+  "play",
+  "wait",
+  "repeat",
+  "if",
+  "with",
+  "set",
+  "log",
+  "stop",
 ] as const;

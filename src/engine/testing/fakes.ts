@@ -1,4 +1,12 @@
-import type { AudioPort, ContextSnapshot, ContextPort, EngineEvent, LogPort, PlaybackHandle, PlayOptions } from '../ports';
+import type {
+  AudioPort,
+  ContextSnapshot,
+  ContextPort,
+  EngineEvent,
+  LogPort,
+  PlaybackHandle,
+  PlayOptions,
+} from "../ports";
 
 export type RecordedPlay = { signal: string; opts: PlayOptions };
 
@@ -44,18 +52,19 @@ export class RecordingLogPort implements LogPort {
  * ScriptedContextProvider (src/runtime) without depending on that module —
  * engine/ stays self-contained per spec §4.1. */
 export class FakeContextProvider implements ContextPort {
-  private timeline: { at: number; snapshot: Omit<ContextSnapshot, 'at'> }[] = [];
-  private current: Omit<ContextSnapshot, 'at'> = {};
+  private timeline: { at: number; snapshot: Omit<ContextSnapshot, "at"> }[] =
+    [];
+  private current: Omit<ContextSnapshot, "at"> = {};
 
   constructor(private readonly now: () => number) {}
 
-  set(snapshot: Omit<ContextSnapshot, 'at'>): void {
+  set(snapshot: Omit<ContextSnapshot, "at">): void {
     this.current = snapshot;
   }
 
   /** Registers a snapshot that becomes current once `now()` reaches `at`.
    * Entries are applied in the order their `at` has passed, latest wins. */
-  scheduleAt(at: number, snapshot: Omit<ContextSnapshot, 'at'>): void {
+  scheduleAt(at: number, snapshot: Omit<ContextSnapshot, "at">): void {
     this.timeline.push({ at, snapshot });
     this.timeline.sort((a, b) => a.at - b.at);
   }

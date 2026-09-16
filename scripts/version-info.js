@@ -17,7 +17,8 @@ const { COUNTER_ENV, resolveVersionInfo } = require("./build-number");
 
 function main() {
   const { version, counter, buildNumber } = resolveVersionInfo();
-  const isLocal = process.env[COUNTER_ENV] === undefined || process.env[COUNTER_ENV] === "";
+  const isLocal =
+    process.env[COUNTER_ENV] === undefined || process.env[COUNTER_ENV] === "";
 
   if (process.argv.includes("--json")) {
     process.stdout.write(
@@ -26,9 +27,15 @@ function main() {
     return;
   }
 
-  console.log(`version      ${version}      (package.json — iOS CFBundleShortVersionString, Android versionName)`);
-  console.log(`buildNumber  ${buildNumber}   (iOS CFBundleVersion, Android versionCode)`);
-  console.log(`counter      ${counter}${isLocal ? `        (${COUNTER_ENV} unset — local build)` : `       (from ${COUNTER_ENV})`}`);
+  console.log(
+    `version      ${version}      (package.json — iOS CFBundleShortVersionString, Android versionName)`,
+  );
+  console.log(
+    `buildNumber  ${buildNumber}   (iOS CFBundleVersion, Android versionCode)`,
+  );
+  console.log(
+    `counter      ${counter}${isLocal ? `        (${COUNTER_ENV} unset — local build)` : `       (from ${COUNTER_ENV})`}`,
+  );
 
   if (isLocal) {
     console.log(

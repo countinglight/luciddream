@@ -342,39 +342,39 @@ function PhaseRow({
           pressed && !disabled && styles.pressed,
         ]}
       >
-      <View style={styles.nodeWrap}>
-        <View
-          style={[
-            styles.node,
-            script
-              ? {
-                  backgroundColor: color,
-                  boxShadow: `0 0 10px ${withAlpha(color, 0.7)}`,
-                }
-              : {
-                  borderWidth: 2,
-                  borderStyle: "dashed",
-                  borderColor: withAlpha(color, 0.75),
-                  backgroundColor: theme.backgroundElement,
-                },
-          ]}
-        />
-      </View>
-      <View style={styles.rowText}>
-        <ThemedText
-          type="eyebrow"
-          style={{ color }}
-        >{`0${index + 1} · ${label}`}</ThemedText>
-        {script ? (
-          <ThemedText type="defaultSemiBold" numberOfLines={1}>
-            {script.name}
-          </ThemedText>
-        ) : (
-          <ThemedText themeColor="textSecondary">
-            {index === 0 ? "Add a script · optional" : "Add a script"}
-          </ThemedText>
-        )}
-      </View>
+        <View style={styles.nodeWrap}>
+          <View
+            style={[
+              styles.node,
+              script
+                ? {
+                    backgroundColor: color,
+                    boxShadow: `0 0 10px ${withAlpha(color, 0.7)}`,
+                  }
+                : {
+                    borderWidth: 2,
+                    borderStyle: "dashed",
+                    borderColor: withAlpha(color, 0.75),
+                    backgroundColor: theme.backgroundElement,
+                  },
+            ]}
+          />
+        </View>
+        <View style={styles.rowText}>
+          <ThemedText
+            type="eyebrow"
+            style={{ color }}
+          >{`0${index + 1} · ${label}`}</ThemedText>
+          {script ? (
+            <ThemedText type="defaultSemiBold" numberOfLines={1}>
+              {script.name}
+            </ThemedText>
+          ) : (
+            <ThemedText themeColor="textSecondary">
+              {index === 0 ? "Add a script · optional" : "Add a script"}
+            </ThemedText>
+          )}
+        </View>
       </Pressable>
       {script ? (
         <IconButton

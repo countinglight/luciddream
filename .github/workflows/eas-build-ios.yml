@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: 'eas.json build profile'
+        description: "eas.json build profile"
         required: true
         default: ios-testflight
         type: choice

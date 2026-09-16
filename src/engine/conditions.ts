@@ -1,4 +1,4 @@
-import type { Condition, ConditionField, ComparatorOp } from './ast';
+import type { Condition, ConditionField, ComparatorOp } from "./ast";
 
 /** Everything a condition might read, already flattened into one object —
  * elapsed/clock/iteration come from the engine itself, the rest from a
@@ -22,19 +22,23 @@ export type ConditionEvalResult = {
   missingFields: ConditionField[];
 };
 
-function compare(op: ComparatorOp, actual: number | string | boolean, expected: number | string | boolean): boolean {
+function compare(
+  op: ComparatorOp,
+  actual: number | string | boolean,
+  expected: number | string | boolean,
+): boolean {
   switch (op) {
-    case 'eq':
+    case "eq":
       return actual === expected;
-    case 'ne':
+    case "ne":
       return actual !== expected;
-    case 'lt':
+    case "lt":
       return actual < expected;
-    case 'lte':
+    case "lte":
       return actual <= expected;
-    case 'gt':
+    case "gt":
       return actual > expected;
-    case 'gte':
+    case "gte":
       return actual >= expected;
   }
 }
@@ -42,20 +46,26 @@ function compare(op: ComparatorOp, actual: number | string | boolean, expected: 
 /** Pure, synchronous, and total: every valid Condition produces a result for
  * every ConditionContext, never throwing. This is what makes it exhaustively
  * unit-testable without any ports. */
-export function evaluateCondition(condition: Condition, ctx: ConditionContext): ConditionEvalResult {
+export function evaluateCondition(
+  condition: Condition,
+  ctx: ConditionContext,
+): ConditionEvalResult {
   switch (condition.kind) {
-    case 'field': {
+    case "field": {
       const actual = ctx[condition.field];
       if (actual === undefined) {
         return { value: false, missingFields: [condition.field] };
       }
-      return { value: compare(condition.comparator, actual, condition.value), missingFields: [] };
+      return {
+        value: compare(condition.comparator, actual, condition.value),
+        missingFields: [],
+      };
     }
-    case 'not': {
+    case "not": {
       const inner = evaluateCondition(condition.condition, ctx);
       return { value: !inner.value, missingFields: inner.missingFields };
     }
-    case 'all': {
+    case "all": {
       const missing: ConditionField[] = [];
       let value = true;
       for (const sub of condition.conditions) {
@@ -65,7 +75,7 @@ export function evaluateCondition(condition: Condition, ctx: ConditionContext): 
       }
       return { value, missingFields: missing };
     }
-    case 'any': {
+    case "any": {
       const missing: ConditionField[] = [];
       let value = false;
       for (const sub of condition.conditions) {

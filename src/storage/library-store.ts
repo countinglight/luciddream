@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { LibraryItem } from './library-types';
+import type { LibraryItem } from "./library-types";
 
-const STORAGE_KEY = 'luciddream.library.v1';
+const STORAGE_KEY = "luciddream.library.v1";
 
 /** Persisted metadata only — the actual signal/script content lives in the
  * file store (library-content.ts). Bundled items aren't persisted here at
@@ -25,7 +25,10 @@ export async function saveLibraryItems(items: LibraryItem[]): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
-export function upsertItem(items: LibraryItem[], item: LibraryItem): LibraryItem[] {
+export function upsertItem(
+  items: LibraryItem[],
+  item: LibraryItem,
+): LibraryItem[] {
   const index = items.findIndex((existing) => existing.id === item.id);
   if (index === -1) return [...items, item];
   const next = items.slice();

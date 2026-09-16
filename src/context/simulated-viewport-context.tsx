@@ -1,5 +1,5 @@
-import { createContext, useContext, type PropsWithChildren } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { createContext, useContext, type PropsWithChildren } from "react";
+import { useWindowDimensions } from "react-native";
 
 type ViewportSize = { width: number; height: number };
 

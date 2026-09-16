@@ -61,10 +61,14 @@ function parseCounter(raw) {
 
   const counter = Number(raw);
   if (!Number.isInteger(counter) || counter < 0) {
-    throw new Error(`${COUNTER_ENV} must be a non-negative integer; got "${raw}".`);
+    throw new Error(
+      `${COUNTER_ENV} must be a non-negative integer; got "${raw}".`,
+    );
   }
   if (counter > COUNTER_MAX) {
-    throw new Error(`${COUNTER_ENV} must be <= ${COUNTER_MAX}; got ${counter}.`);
+    throw new Error(
+      `${COUNTER_ENV} must be <= ${COUNTER_MAX}; got ${counter}.`,
+    );
   }
 
   return counter;

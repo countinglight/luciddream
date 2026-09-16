@@ -12,13 +12,13 @@ control, instrument-style labels, colour that carries meaning, a practice histor
 
 ## Structure
 
-| Before (tabs) | After |
-|---|---|
-| Home | **Tonight** — the only home screen: night dial, three-phase timeline, volume, *Begin the night* |
-| Run (pushed) | **Sleeping** while a run is active; **Good morning** once it ends |
-| Library tab | **Library** sheet (top-right books icon) |
-| Log tab | **Nights** sheet (moon icon) with a night detail sheet |
-| Settings tab | **Settings** sheet (sliders icon) |
+| Before (tabs) | After                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| Home          | **Tonight** — the only home screen: night dial, three-phase timeline, volume, _Begin the night_ |
+| Run (pushed)  | **Sleeping** while a run is active; **Good morning** once it ends                               |
+| Library tab   | **Library** sheet (top-right books icon)                                                        |
+| Log tab       | **Nights** sheet (moon icon) with a night detail sheet                                          |
+| Settings tab  | **Settings** sheet (sliders icon)                                                               |
 
 No bottom tab bar. Sheets are `presentation: 'modal'` stack screens over Tonight.
 
@@ -27,7 +27,7 @@ No bottom tab bar. Sheets are `presentation: 'modal'` stack screens over Tonight
 - Palette from the owl painting and the website (`site/assets/css/site.css`): ink, night slate,
   periwinkle, chalk. Tokens live in `src/constants/theme.ts`; light and dark share every key.
 - One colour per phase, dusk → deep night → dawn: violet, cobalt, amber. Used on the dial, the
-  timeline nodes, the *Begin* gradient, phase bars in Nights and Good morning.
+  timeline nodes, the _Begin_ gradient, phase bars in Nights and Good morning.
 - Type: system serif for screen titles, letter-spaced monospace "eyebrow" labels, system sans body.
 - The owl painting (`assets/images/owl.png`) as a medallion at the centre of the dial and on
   Good morning / empty states.
@@ -41,11 +41,11 @@ No bottom tab bar. Sheets are `presentation: 'modal'` stack screens over Tonight
 - **Stop requires a ~2 s press-and-hold**; screen readers get a direct activate action.
 - Tap anywhere on Sleeping to show recent activity. The web `?demo=lock` controls moved here.
 - **Good morning** summarises duration, time range, per-phase bar, cues played, and asks
-  *Did you have a lucid dream?* (Yes / Not sure / No).
+  _Did you have a lucid dream?_ (Yes / Not sure / No).
 - **Nights** adds a Monday–Sunday strip (completed / stopped / lucid). A night belongs to the
   evening it started (starts before noon count as the previous night).
 - **Settings** gains Appearance → Theme (System / Light / Dark), listed in spec §2.3 but not built
-  before. Logging and Simulated context moved under a collapsed *Advanced* section.
+  before. Logging and Simulated context moved under a collapsed _Advanced_ section.
 
 ## New storage
 

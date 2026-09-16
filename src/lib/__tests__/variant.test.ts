@@ -2,9 +2,9 @@ import { isPrototypeHost } from "../variant";
 
 describe("isPrototypeHost", () => {
   it("recognises the prototype custom domain and workers.dev address", () => {
-    expect(
-      isPrototypeHost("luciddream-prototype.countinglight.com", ""),
-    ).toBe(true);
+    expect(isPrototypeHost("luciddream-prototype.countinglight.com", "")).toBe(
+      true,
+    );
     expect(
       isPrototypeHost("luciddream-prototype.example.workers.dev", ""),
     ).toBe(true);

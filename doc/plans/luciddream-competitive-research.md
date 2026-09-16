@@ -37,14 +37,14 @@ This review examines official product sites, current store listings, vendor docu
 
 The comparison uses the following capability layers:
 
-| Layer | User need | Representative capabilities |
-| --- | --- | --- |
-| Capture | Preserve a fragile memory quickly | Voice notes, transcription, wearable shortcut, offline draft |
-| Reflection | Understand a growing personal archive | Search, tags, recurring motifs, user-led interpretation |
-| Preparation | Build a lucid-dream or incubation practice | Intentions, MILD or SSILD guidance, reality checks, cue conditioning |
-| Night execution | Deliver an intended experience while the user sleeps | Soundscapes, scheduled cues, volume changes, wake-back-to-bed alarms |
-| Responsive intervention | Act on evidence about the current sleep period | Movement-based estimates, wearables, EEG staging, awakening detection |
-| Learning | Discover what helps this person | Cue-to-report correlation, baselines, comparisons, uncertainty-aware adaptation |
+| Layer                   | User need                                            | Representative capabilities                                                     |
+| ----------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Capture                 | Preserve a fragile memory quickly                    | Voice notes, transcription, wearable shortcut, offline draft                    |
+| Reflection              | Understand a growing personal archive                | Search, tags, recurring motifs, user-led interpretation                         |
+| Preparation             | Build a lucid-dream or incubation practice           | Intentions, MILD or SSILD guidance, reality checks, cue conditioning            |
+| Night execution         | Deliver an intended experience while the user sleeps | Soundscapes, scheduled cues, volume changes, wake-back-to-bed alarms            |
+| Responsive intervention | Act on evidence about the current sleep period       | Movement-based estimates, wearables, EEG staging, awakening detection           |
+| Learning                | Discover what helps this person                      | Cue-to-report correlation, baselines, comparisons, uncertainty-aware adaptation |
 
 The final layer is especially important. Personalization can mean merely generating text that mentions the user's history. In this paper, **adaptive learning** has a narrower meaning: changing a future protocol because prior execution and outcome data provide a reason to do so.
 
@@ -152,17 +152,17 @@ A 2024 study by Konkoly and colleagues provides a direct phone-based precedent. 
 
 The following matrix reflects public documentation rather than hands-on verification. “Some” indicates a partial, ambiguous, or adjacent capability.
 
-| Product | Fast voice capture | Longitudinal patterns | Lucid training | Flexible timed audio | Responsive cueing | Dedicated EEG | Outcome-linked learning |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| DreamStream | Yes | Yes | Some | Pre-sleep only | No evidence | No | No evidence |
-| Oneiros | Yes; Wear OS | Yes | Some | No evidence | No evidence | No | No evidence |
-| Sovanna | Claimed | Yes | No evidence | Post-dream narration | No evidence | No | No evidence |
-| Oniri | Yes | Yes | Yes | Yes | Cycle-timed | No | No evidence |
-| Ludin | No journal focus | No | Cue conditioning | Yes | Time/WBTB based | No | No evidence |
-| Dream:ON | Text diary | Aggregate analysis | Some | Soundscapes | Movement based | No | No personal adaptation shown |
-| Sleep as Android | Limited dream focus | Sleep trends | Some | Yes | Movement/wearable estimate | No | No dream-semantic learning |
-| OneiroLink | Limited | No evidence | Yes | Yes | EEG-estimated stages | Yes | No longitudinal content learning shown |
-| Proposed LucidDream | Yes | Yes | Yes | Core | Progressive/optional | Optional in v3 | Core long-term direction |
+| Product             |  Fast voice capture | Longitudinal patterns |   Lucid training | Flexible timed audio |          Responsive cueing |  Dedicated EEG |                Outcome-linked learning |
+| ------------------- | ------------------: | --------------------: | ---------------: | -------------------: | -------------------------: | -------------: | -------------------------------------: |
+| DreamStream         |                 Yes |                   Yes |             Some |       Pre-sleep only |                No evidence |             No |                            No evidence |
+| Oneiros             |        Yes; Wear OS |                   Yes |             Some |          No evidence |                No evidence |             No |                            No evidence |
+| Sovanna             |             Claimed |                   Yes |      No evidence | Post-dream narration |                No evidence |             No |                            No evidence |
+| Oniri               |                 Yes |                   Yes |              Yes |                  Yes |                Cycle-timed |             No |                            No evidence |
+| Ludin               |    No journal focus |                    No | Cue conditioning |                  Yes |            Time/WBTB based |             No |                            No evidence |
+| Dream:ON            |          Text diary |    Aggregate analysis |             Some |          Soundscapes |             Movement based |             No |           No personal adaptation shown |
+| Sleep as Android    | Limited dream focus |          Sleep trends |             Some |                  Yes | Movement/wearable estimate |             No |             No dream-semantic learning |
+| OneiroLink          |             Limited |           No evidence |              Yes |                  Yes |       EEG-estimated stages |            Yes | No longitudinal content learning shown |
+| Proposed LucidDream |                 Yes |                   Yes |              Yes |                 Core |       Progressive/optional | Optional in v3 |               Core long-term direction |
 
 No reviewed product clearly provides all of the following as one coherent experience:
 
@@ -233,6 +233,6 @@ Product sources document advertised behavior and positioning; they do not indepe
 9. Sleep as Android. “Lucid Dreaming.” https://sleep.urbandroid.org/docs/sleep/lucid_dreaming.html
 10. Enchanted Wave. “Shop.” https://www.enchantedwave.com/shop
 11. OneiroLink. “Brain-sensing Technology for Lucid Dreaming.” https://oneirolink.wixsite.com/oneirolink
-12. Konkoly, K. R., Appel, K., Chabani, E., et al. (2021). “Real-time dialogue between experimenters and dreamers during REM sleep.” *Current Biology*, 31(7). https://doi.org/10.1016/j.cub.2021.01.026
-13. Ebrahimi, F., Akbarian, S., Barba, C., et al. (2023). “Dreamento: an open-source dream engineering toolbox for sleep EEG wearables.” *SoftwareX*, 21, 101595. https://doi.org/10.1016/j.softx.2023.101595 — source: https://github.com/dreamento/dreamento
-14. Konkoly, K. R., et al. (2024). “Provoking lucid dreams at home with sensory cues paired with pre-sleep cognitive training.” *Consciousness and Cognition*, 125, 103759. https://doi.org/10.1016/j.concog.2024.103759 — accessible record: https://pubmed.ncbi.nlm.nih.gov/39278157/
+12. Konkoly, K. R., Appel, K., Chabani, E., et al. (2021). “Real-time dialogue between experimenters and dreamers during REM sleep.” _Current Biology_, 31(7). https://doi.org/10.1016/j.cub.2021.01.026
+13. Ebrahimi, F., Akbarian, S., Barba, C., et al. (2023). “Dreamento: an open-source dream engineering toolbox for sleep EEG wearables.” _SoftwareX_, 21, 101595. https://doi.org/10.1016/j.softx.2023.101595 — source: https://github.com/dreamento/dreamento
+14. Konkoly, K. R., et al. (2024). “Provoking lucid dreams at home with sensory cues paired with pre-sleep cognitive training.” _Consciousness and Cognition_, 125, 103759. https://doi.org/10.1016/j.concog.2024.103759 — accessible record: https://pubmed.ncbi.nlm.nih.gov/39278157/

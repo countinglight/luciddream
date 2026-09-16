@@ -13,12 +13,12 @@ actually build from.
 The rough requirements left four implementation-defining choices open. Each was a genuine fork with
 different cost/complexity trade-offs, so they were put to Vlad before drafting rather than assumed.
 
-| # | Question | Options presented | Answer | Decision |
-|---|---|---|---|---|
-| D1 | Script language: Lua / real JS / own DSL? | (a) YAML doc that *is* the AST, tiny pure-TS interpreter (b) embedded Lua via native module (c) sandboxed JS via QuickJS | "If conditionals and looping primitives can be encoded in option 1 (YAML AST), then this is my choice for POC v1." | YAML-as-AST. No parser to maintain, no native dependency, no sandbox — confirmed loops/conditionals are expressible as node types before locking it in. |
-| D2 | How much background capability, given the app runs all night screen-off? | (a) Foreground service + background audio + wake lock (b) foreground-only + keep-awake (c) local notifications as the timer | "Foreground service + background audio (Recommended)" | Foreground service. Local notifications can't drive loops/conditionals; foreground-only risks the run dying on any interruption. |
-| D3 | How real should wearable conditionals be in v1? | (a) interface + mock/manual provider (b) real Android Health Connect (c) defer entirely to v2 | "Interface + mock/manual provider (Recommended)" | Interface + mock. Flagged that Health Connect data arrives in post-sync batches, so near-real-time triggering may not be achievable even in v2 — worth knowing before building around it. |
-| D4 (initial) | Distribution pipeline for the APK? | (a) EAS cloud build → GitHub Release (b) self-hosted Gradle build in Actions (c) both | "EAS build (option 1) — do I need to pay for a new account?" | EAS → GitHub Release. Checked Expo's current pricing rather than assuming: free plan covers 15 Android builds per billing cycle, low-priority queue, 1 concurrency — confirmed no payment needed since releases only build on tags, not every push. |
+| #            | Question                                                                 | Options presented                                                                                                           | Answer                                                                                                             | Decision                                                                                                                                                                                                                                            |
+| ------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1           | Script language: Lua / real JS / own DSL?                                | (a) YAML doc that _is_ the AST, tiny pure-TS interpreter (b) embedded Lua via native module (c) sandboxed JS via QuickJS    | "If conditionals and looping primitives can be encoded in option 1 (YAML AST), then this is my choice for POC v1." | YAML-as-AST. No parser to maintain, no native dependency, no sandbox — confirmed loops/conditionals are expressible as node types before locking it in.                                                                                             |
+| D2           | How much background capability, given the app runs all night screen-off? | (a) Foreground service + background audio + wake lock (b) foreground-only + keep-awake (c) local notifications as the timer | "Foreground service + background audio (Recommended)"                                                              | Foreground service. Local notifications can't drive loops/conditionals; foreground-only risks the run dying on any interruption.                                                                                                                    |
+| D3           | How real should wearable conditionals be in v1?                          | (a) interface + mock/manual provider (b) real Android Health Connect (c) defer entirely to v2                               | "Interface + mock/manual provider (Recommended)"                                                                   | Interface + mock. Flagged that Health Connect data arrives in post-sync batches, so near-real-time triggering may not be achievable even in v2 — worth knowing before building around it.                                                           |
+| D4 (initial) | Distribution pipeline for the APK?                                       | (a) EAS cloud build → GitHub Release (b) self-hosted Gradle build in Actions (c) both                                       | "EAS build (option 1) — do I need to pay for a new account?"                                                       | EAS → GitHub Release. Checked Expo's current pricing rather than assuming: free plan covers 15 Android builds per billing cycle, low-priority queue, 1 concurrency — confirmed no payment needed since releases only build on tags, not every push. |
 
 Two issues found while reading the existing skeleton to ground the spec in reality, fixed in the same
 pass:
@@ -44,8 +44,8 @@ with no real boundary. Applied, and recorded as a standing convention in memory.
 
 ## Round 3 — iOS distribution follow-up
 
-Asked independently, ahead of formally scoping iOS in: *"what is the equivalent of an APK for iOS
-sideloading, assuming binaries are distributed directly to users?"*
+Asked independently, ahead of formally scoping iOS in: _"what is the equivalent of an APK for iOS
+sideloading, assuming binaries are distributed directly to users?"_
 
 Researched current (2026) Apple distribution mechanics rather than answering from pre-2026-01
 knowledge, since this materially affects a recommendation:
@@ -63,8 +63,8 @@ lose access. Vlad then asked for this to be formalized in the spec.
 
 ## Round 4 — Adding iOS to v1 scope
 
-Instruction: *"add proper iOS/TestFlight section to the spec, update target requirements to both iOS
-and Android."*
+Instruction: _"add proper iOS/TestFlight section to the spec, update target requirements to both iOS
+and Android."_
 
 Added to the spec: §6.2 (iOS — TestFlight) with the TestFlight-vs-Ad-Hoc comparison and decision,
 one-time Apple Developer Program setup steps, a shared versioning/build-budget section, two new CI
@@ -86,21 +86,21 @@ found on a URL is available with no network on a future night. Added as §5.5 in
 layout, no auto-eviction in v1) and as a Library-screen action.
 
 **2. No folder-watching, ever.** The original assumption had left "watching a whole folder for
-changes" as a possible v2 nice-to-have. Vlad: *"I don't want dynamic folder watching even in future
-releases, scratch this altogether. Unnecessary complication."* Removed from scope permanently, not
+changes" as a possible v2 nice-to-have. Vlad: _"I don't want dynamic folder watching even in future
+releases, scratch this altogether. Unnecessary complication."_ Removed from scope permanently, not
 deferred — signals and scripts are always added one file at a time.
 
 **3. Voice control to stop or quiet playback for a half-asleep user.** Asked to analyze feasibility,
 or alternatively add a "quieter verb interpretation." Options weighed:
 
-| Approach | Verdict |
-|---|---|
-| Cloud speech-to-text | Rejected — needs network overnight, sends bedroom audio off-device. |
+| Approach                                                            | Verdict                                                                                                                               |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Cloud speech-to-text                                                | Rejected — needs network overnight, sends bedroom audio off-device.                                                                   |
 | OS on-demand recognizer (Android `SpeechRecognizer` / iOS `Speech`) | Rejected for v1 — built for short user-initiated sessions, not multi-hour continuous listening; iOS restricts background mic heavily. |
-| Dedicated offline keyword-spotter (e.g. Porcupine) | Real v2 candidate, but a new native/commercially-licensed dependency — too much for a POC. |
-| On-device voice-activity level detection (no transcription) | **Chosen for v1** — reuses `expo-audio`'s existing metering, zero new dependencies. |
+| Dedicated offline keyword-spotter (e.g. Porcupine)                  | Real v2 candidate, but a new native/commercially-licensed dependency — too much for a POC.                                            |
+| On-device voice-activity level detection (no transcription)         | **Chosen for v1** — reuses `expo-audio`'s existing metering, zero new dependencies.                                                   |
 
-Decision (D5): v1 detects sustained loud input near the device and responds with the *gentle*
+Decision (D5): v1 detects sustained loud input near the device and responds with the _gentle_
 action only — pause + lower volume, then auto-resume — never a full stop, since a level threshold
 can't distinguish an actual "stop" from snoring or a partner talking. This is literally the "quieter
 verb interpretation" Vlad asked about: every trigger maps to the gentle outcome; true word-level
@@ -133,13 +133,13 @@ Following this review, Vlad asked that the specification document be split: a cl
 meeting-style Q&A content, and this process log capturing the interaction history separately under
 `doc/dev_process/`.
 
-
 # Design session 2026-09-05 - prep for Cloudflare
 
 Implementation report (Sol 5.6 Medium)
 
 mplemented on vlads-dev. No Cloudflare account changes or deployment were performed.
 Three-phase run changes:
+
 - Fixed phases: Pre-sleep Training → Early Sleep → Wake Up.
 - Training may be empty.
 - Early Sleep or Wake Up may be empty, but not both.
@@ -152,7 +152,7 @@ Three-phase run changes:
 - Normal completion advances; stop:, errors, and manual Stop terminate the entire run.
 - Browser wake-lock denial now degrades safely instead of preventing web execution.
 - Narrow-screen web navigation no longer overflows.
-Cloudflare support:
+  Cloudflare support:
 - Added [wrangler.jsonc](/Users/vlads/ws/git/vlads/luciddream/wrangler.jsonc) for luciddream-web and luciddream.countinglight.com.
 - Added production web build/preview/deploy scripts.
 - Added public CORS and cache rules.
@@ -160,7 +160,8 @@ Cloudflare support:
 - Added the complete operational procedure to [BUILD.md](/Users/vlads/ws/git/vlads/luciddream/BUILD.md).
 - Updated [README.md](/Users/vlads/ws/git/vlads/luciddream/README.md) and the [v1 specification](/Users/vlads/ws/git/vlads/luciddream/doc/plans/luciddream-v1-spec.md).
 - Restored package-lock.json exactly as requested.
-Your next Cloudflare steps are:
+  Your next Cloudflare steps are:
+
 1. Commit and push these changes.
 2. Create/push the deploy branch using the commands in BUILD.md.
 3. In Cloudflare, choose Workers & Pages → Create application → Import a repository.
@@ -175,8 +176,9 @@ Your next Cloudflare steps are:
    - Build variable: NODE_VERSION=22
 6. Confirm no existing DNS record occupies luciddream.countinglight.com.
 7. Deploy and verify the application and content URLs listed in BUILD.md.
-Cloudflare will create the Custom Domain DNS record and TLS certificate from the committed configuration. Cloudflare Git integration, Custom Domains.
-Verification completed:
+   Cloudflare will create the Custom Domain DNS record and TLS certificate from the committed configuration. Cloudflare Git integration, Custom Domains.
+   Verification completed:
+
 - Lint passed.
 - TypeScript passed.
 - 22 suites / 158 tests passed.

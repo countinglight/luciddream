@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren } from "react";
 
 /** No-op on native — device-frame previewing only makes sense on the web
  * build, where the browser window can be much wider than a phone. See

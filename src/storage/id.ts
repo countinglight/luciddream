@@ -8,7 +8,7 @@ function hashString(input: string): string {
     hash ^= input.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193);
   }
-  return (hash >>> 0).toString(16).padStart(8, '0');
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 /** Same URL added twice yields the same id — added-from-URL items are

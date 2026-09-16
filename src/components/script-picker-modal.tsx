@@ -1,12 +1,12 @@
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { IconButton } from '@/components/icon-button';
-import { Icon } from '@/components/icons';
-import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, withAlpha } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import type { LibraryScript } from '@/storage/library-types';
+import { IconButton } from "@/components/icon-button";
+import { Icon } from "@/components/icons";
+import { ThemedText } from "@/components/themed-text";
+import { MaxContentWidth, Radius, withAlpha } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
+import type { LibraryScript } from "@/storage/library-types";
 
 type ScriptPickerModalProps = {
   visible: boolean;
@@ -25,8 +25,10 @@ type ScriptPickerModalProps = {
 };
 
 function sourceLabel(script: LibraryScript): string {
-  const origin = script.manifestUrl ? 'extension' : script.source.type;
-  return script.source.type === 'url' && !script.savedOffline ? `${origin} · not saved offline` : origin;
+  const origin = script.manifestUrl ? "extension" : script.source.type;
+  return script.source.type === "url" && !script.savedOffline
+    ? `${origin} · not saved offline`
+    : origin;
 }
 
 /** Bottom sheet for choosing one phase's script: a radio list with a ▶ preview
@@ -40,7 +42,7 @@ export function ScriptPickerModal({
   selectedId,
   onSelect,
   onClose,
-  emptyLabel = 'Empty',
+  emptyLabel = "Empty",
   emptyHint,
   onPreview,
   previewingId,
@@ -58,18 +60,35 @@ export function ScriptPickerModal({
     <View
       style={[
         styles.radio,
-        selected ? { backgroundColor: accent, borderColor: accent } : { borderColor: theme.textMuted },
-      ]}>
+        selected
+          ? { backgroundColor: accent, borderColor: accent }
+          : { borderColor: theme.textMuted },
+      ]}
+    >
       {selected && <Icon name="check" color={theme.sheet} size={12} />}
     </View>
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close script picker" />
-        <View style={[styles.sheet, { backgroundColor: theme.sheet, borderColor: theme.border }]}>
-          <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityLabel="Close script picker"
+        />
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: theme.sheet, borderColor: theme.border },
+          ]}
+        >
+          <SafeAreaView edges={["bottom"]} style={styles.safeArea}>
             <View style={[styles.grabber, { backgroundColor: theme.border }]} />
             <View style={styles.header}>
               <View style={styles.titles}>
@@ -85,7 +104,10 @@ export function ScriptPickerModal({
               </IconButton>
             </View>
 
-            <ScrollView contentContainerStyle={styles.list} style={styles.scroll}>
+            <ScrollView
+              contentContainerStyle={styles.list}
+              style={styles.scroll}
+            >
               <Pressable
                 onPress={() => choose(null)}
                 accessibilityRole="button"
@@ -95,10 +117,15 @@ export function ScriptPickerModal({
                   styles.emptyOption,
                   { borderColor: selectedId === null ? accent : theme.border },
                   pressed && styles.pressed,
-                ]}>
+                ]}
+              >
                 {radio(selectedId === null)}
                 <View style={styles.optionText}>
-                  <ThemedText themeColor={selectedId === null ? 'text' : 'textSecondary'}>{emptyLabel}</ThemedText>
+                  <ThemedText
+                    themeColor={selectedId === null ? "text" : "textSecondary"}
+                  >
+                    {emptyLabel}
+                  </ThemedText>
                   {emptyHint ? (
                     <ThemedText type="eyebrow" themeColor="textMuted">
                       {emptyHint}
@@ -117,17 +144,31 @@ export function ScriptPickerModal({
                     style={[
                       styles.option,
                       selected
-                        ? { borderColor: accent, backgroundColor: withAlpha(accent, 0.14) }
-                        : { borderColor: theme.border, backgroundColor: theme.backgroundElement },
-                    ]}>
+                        ? {
+                            borderColor: accent,
+                            backgroundColor: withAlpha(accent, 0.14),
+                          }
+                        : {
+                            borderColor: theme.border,
+                            backgroundColor: theme.backgroundElement,
+                          },
+                    ]}
+                  >
                     <Pressable
                       onPress={() => choose(script.id)}
                       accessibilityRole="button"
                       accessibilityState={{ selected }}
-                      style={({ pressed }) => [styles.optionPick, pressed && styles.pressed]}>
+                      style={({ pressed }) => [
+                        styles.optionPick,
+                        pressed && styles.pressed,
+                      ]}
+                    >
                       {radio(selected)}
                       <View style={styles.optionText}>
-                        <ThemedText type={selected ? 'defaultSemiBold' : 'default'} numberOfLines={1}>
+                        <ThemedText
+                          type={selected ? "defaultSemiBold" : "default"}
+                          numberOfLines={1}
+                        >
                           {script.name}
                         </ThemedText>
                         <ThemedText type="eyebrow" themeColor="textSecondary">
@@ -138,12 +179,19 @@ export function ScriptPickerModal({
                     {onPreview && (
                       <IconButton
                         label={`Preview ${script.name}`}
-                        tone={selected ? 'tinted' : 'soft'}
+                        tone={selected ? "tinted" : "soft"}
                         color={accent}
                         onPress={() => onPreview(script)}
                         loading={previewingId === script.id}
-                        disabled={previewingId != null && previewingId !== script.id}>
-                        <Icon name="play" color={selected ? accent : theme.text} size={14} />
+                        disabled={
+                          previewingId != null && previewingId !== script.id
+                        }
+                      >
+                        <Icon
+                          name="play"
+                          color={selected ? accent : theme.text}
+                          size={14}
+                        />
                       </IconButton>
                     )}
                   </View>
@@ -155,7 +203,11 @@ export function ScriptPickerModal({
               <Pressable
                 onPress={onManageLibrary}
                 accessibilityRole="button"
-                style={({ pressed }) => [styles.manage, pressed && styles.pressed]}>
+                style={({ pressed }) => [
+                  styles.manage,
+                  pressed && styles.pressed,
+                ]}
+              >
                 <ThemedText type="defaultSemiBold" themeColor="tint">
                   Manage library
                 </ThemedText>
@@ -172,14 +224,14 @@ export function ScriptPickerModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(5,6,15,0.55)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(5,6,15,0.55)",
   },
   sheet: {
-    maxHeight: '84%',
-    width: '100%',
+    maxHeight: "84%",
+    width: "100%",
     maxWidth: MaxContentWidth,
-    alignSelf: 'center',
+    alignSelf: "center",
     borderTopLeftRadius: Radius.sheet,
     borderTopRightRadius: Radius.sheet,
     borderTopWidth: 1,
@@ -192,15 +244,15 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   grabber: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: 36,
     height: 5,
     borderRadius: 3,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   titles: {
@@ -214,8 +266,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 14,
     minHeight: 64,
     paddingLeft: 14,
@@ -226,13 +278,13 @@ const styles = StyleSheet.create({
   },
   optionPick: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 14,
     minHeight: 48,
   },
   emptyOption: {
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   optionText: {
     flex: 1,
@@ -243,16 +295,16 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   pressed: {
     opacity: 0.75,
   },
   manage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     minHeight: 44,
   },

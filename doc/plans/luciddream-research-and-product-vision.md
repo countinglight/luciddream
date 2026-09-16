@@ -31,14 +31,14 @@ Scientific sources include reviews, controlled experiments, observational studie
 
 Throughout this paper, distinguish:
 
-| Category | Meaning |
-| --- | --- |
-| Established phenomenon | Supported existence of an experience or capability under studied conditions; not necessarily reliable access for everyone |
-| Promising empirical result | A useful finding with limitations in sample, replication, design, or generalizability |
-| Observational evidence | Associations and descriptions that do not establish causation |
-| Practice tradition | Experiential or instructional material that may inspire design without proving effectiveness |
-| Product hypothesis | A proposed way software could meet a need; requires user research and evaluation |
-| Frontier speculation | A possibility whose practical reliability or usefulness has not been established |
+| Category                   | Meaning                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Established phenomenon     | Supported existence of an experience or capability under studied conditions; not necessarily reliable access for everyone |
+| Promising empirical result | A useful finding with limitations in sample, replication, design, or generalizability                                     |
+| Observational evidence     | Associations and descriptions that do not establish causation                                                             |
+| Practice tradition         | Experiential or instructional material that may inspire design without proving effectiveness                              |
+| Product hypothesis         | A proposed way software could meet a need; requires user research and evaluation                                          |
+| Frontier speculation       | A possibility whose practical reliability or usefulness has not been established                                          |
 
 Do not equate a reported lucid dream with physiological verification, an association with a causal effect, a vendor claim with independent validation, or a laboratory demonstration with reliable unattended home use.
 
@@ -46,15 +46,15 @@ Do not equate a reported lucid dream with physiological verification, an associa
 
 Lucid dreaming means recognizing that one is dreaming **while the dream is happening**. It does not necessarily include control. Someone may recognize a nightmare as a dream while struggling to change it. Agency, awareness, and control should therefore be measured separately.[1]
 
-| Goal | User's question | Potential app contribution |
-| --- | --- | --- |
-| Dream recall | Can I remember more? | Capture, attention, retrieval habits |
-| Lucid awareness | Can I recognize that I am dreaming? | Intention, prospective memory, recognition exercises |
-| Dream agency | Can I make deliberate choices? | Remembering and acting on an intention |
-| Dream control | Can I change what happens? | Experiments with expectations and techniques |
-| Dream incubation | Can I dream about a subject? | Thematic preparation and cues |
-| Reflection | What does this experience mean to me? | Personal associations and longitudinal review |
-| Research | What can I learn reliably about dreaming? | Consistent protocols and interpretable records |
+| Goal             | User's question                           | Potential app contribution                           |
+| ---------------- | ----------------------------------------- | ---------------------------------------------------- |
+| Dream recall     | Can I remember more?                      | Capture, attention, retrieval habits                 |
+| Lucid awareness  | Can I recognize that I am dreaming?       | Intention, prospective memory, recognition exercises |
+| Dream agency     | Can I make deliberate choices?            | Remembering and acting on an intention               |
+| Dream control    | Can I change what happens?                | Experiments with expectations and techniques         |
+| Dream incubation | Can I dream about a subject?              | Thematic preparation and cues                        |
+| Reflection       | What does this experience mean to me?     | Personal associations and longitudinal review        |
+| Research         | What can I learn reliably about dreaming? | Consistent protocols and interpretable records       |
 
 An ordinary dream may be memorable, creatively useful, emotionally significant, or scientifically informative. The product should avoid treating every non-lucid night as failure.
 
@@ -72,14 +72,14 @@ This supports the possibility of an active sleeping participant in an experiment
 
 A 2023 systematic review examined 19 studies covering 14 induction techniques. Much of the evidence came from small studies with methodological limitations.[3] Induction deserves serious attention, but no universal success promise follows from this literature.
 
-| Approach | Basic idea | Candidate software support |
-| --- | --- | --- |
-| MILD: mnemonic induction of lucid dreams | Rehearse remembering to recognize a future dream, often using a recalled dream | Guided intention and visualization using a journal entry |
-| SSILD: senses-initiated lucid dreaming | Cycle attention through visual, auditory, and bodily sensations before returning to sleep | Guided attention practice |
-| WBTB: wake back to bed | Wake during the night, practice, and return to sleep | Intentional wake-and-return session support |
-| Reality testing | Practice examining whether an experience could be a dream | Thoughtful exercises with modest effectiveness claims |
-| TLR: targeted lucidity reactivation | Associate a cue with a lucid mindset before sleep and replay it during sleep | Link preparation and nighttime audio as one learning protocol |
-| TDI: targeted dream incubation | Introduce a theme around sleep onset to influence imagery | Creative naps and thematic exploration |
+| Approach                                 | Basic idea                                                                                | Candidate software support                                    |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| MILD: mnemonic induction of lucid dreams | Rehearse remembering to recognize a future dream, often using a recalled dream            | Guided intention and visualization using a journal entry      |
+| SSILD: senses-initiated lucid dreaming   | Cycle attention through visual, auditory, and bodily sensations before returning to sleep | Guided attention practice                                     |
+| WBTB: wake back to bed                   | Wake during the night, practice, and return to sleep                                      | Intentional wake-and-return session support                   |
+| Reality testing                          | Practice examining whether an experience could be a dream                                 | Thoughtful exercises with modest effectiveness claims         |
+| TLR: targeted lucidity reactivation      | Associate a cue with a lucid mindset before sleep and replay it during sleep              | Link preparation and nighttime audio as one learning protocol |
+| TDI: targeted dream incubation           | Introduce a theme around sleep onset to influence imagery                                 | Creative naps and thematic exploration                        |
 
 TDI addresses dream content rather than necessarily inducing lucidity. WBTB is a context or enabling procedure often combined with another technique, rather than an equivalent standalone cognitive exercise.
 
@@ -125,12 +125,12 @@ An observational study of community posts identified recreation, creativity, reh
 
 Popular and contemplative literature broadens the question from how to become lucid to what someone might do with the experience.
 
-| Work | Perspective in reviewed author/publisher material | Design possibilities |
-| --- | --- | --- |
-| Stephen LaBerge and Howard Rheingold, *Exploring the World of Lucid Dreaming* | Practical training, dream signs, adventures, problem-solving, self-exploration | Progressive curriculum, exercises connected to actual dreams, intention library [15] |
-| Robert Waggoner, *Lucid Dreaming: Gateway to the Inner Self* | Exploring dream figures and experiences beyond scenery control | Encounter journals, open-ended inquiry, personally meaningful questions [16] |
-| Andrew Holecek, *Dream Yoga* | Contemplative practice connecting waking and dreaming awareness | Meditation pathways, observation, reflection across day and night [17] |
-| Charlie Morley, *Dreams of Awakening* | Western lucid-dream practice alongside Tibetan Buddhist perspectives | Guided courses, teacher-supported practice, motivation and integration [18] |
+| Work                                                                          | Perspective in reviewed author/publisher material                              | Design possibilities                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Stephen LaBerge and Howard Rheingold, _Exploring the World of Lucid Dreaming_ | Practical training, dream signs, adventures, problem-solving, self-exploration | Progressive curriculum, exercises connected to actual dreams, intention library [15] |
+| Robert Waggoner, _Lucid Dreaming: Gateway to the Inner Self_                  | Exploring dream figures and experiences beyond scenery control                 | Encounter journals, open-ended inquiry, personally meaningful questions [16]         |
+| Andrew Holecek, _Dream Yoga_                                                  | Contemplative practice connecting waking and dreaming awareness                | Meditation pathways, observation, reflection across day and night [17]               |
+| Charlie Morley, _Dreams of Awakening_                                         | Western lucid-dream practice alongside Tibetan Buddhist perspectives           | Guided courses, teacher-supported practice, motivation and integration [18]          |
 
 These traditions suggest adventure, creativity, contemplation, reflection, and investigation as different relationships with dreaming. Experiential, spiritual, and therapeutic claims should remain distinguishable from controlled scientific evidence.
 
@@ -244,16 +244,16 @@ AI could ask “What does this place remind you of?” and show the user's own e
 
 Features below reflect reviewed documentation, not testing or independent efficacy verification. Recheck availability before making integration or purchasing decisions.
 
-| Tool/project | Documented direction | Strategic relevance |
-| --- | --- | --- |
-| Oniri | Voice/text journaling, transcription, AI analysis, patterns, techniques, audio cues [19] | Journaling and general guidance are an existing competitive category |
-| Lucid Scribe | Guided techniques, journaling, dream-sign detection, research modules, advertised REM-device integrations [20] | Close comparison for an ambitious enthusiast product |
-| Northwestern lucid app | Smartphone training paired with nighttime cues [5,21] | Direct precedent for the central training-and-cue interaction |
-| Dormio / Dormio Light | Incubation, prompts, awakenings, verbal reports; sensor-free web variant [7–9] | Creative naps and remote studies |
-| Dreamento | Open-source Python toolbox for sleep EEG wearables, sleep scoring, stimulation, annotations, analysis [22] | Potential interoperability reference for v3 |
-| DreamBank | Searchable dream-report collections, including formally coded material [23] | Longitudinal exploration and research datasets |
-| REMspace LucidMe | App-connected dream-mask ecosystem [24] | Existing direction for hardware cue delivery |
-| Prophetic | Ultrasound devices marketed to influence dreaming; reviewed site advertised future shipping dates [25] | Frontier to watch; commercial claims remain separate from independently established efficacy |
+| Tool/project           | Documented direction                                                                                           | Strategic relevance                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Oniri                  | Voice/text journaling, transcription, AI analysis, patterns, techniques, audio cues [19]                       | Journaling and general guidance are an existing competitive category                         |
+| Lucid Scribe           | Guided techniques, journaling, dream-sign detection, research modules, advertised REM-device integrations [20] | Close comparison for an ambitious enthusiast product                                         |
+| Northwestern lucid app | Smartphone training paired with nighttime cues [5,21]                                                          | Direct precedent for the central training-and-cue interaction                                |
+| Dormio / Dormio Light  | Incubation, prompts, awakenings, verbal reports; sensor-free web variant [7–9]                                 | Creative naps and remote studies                                                             |
+| Dreamento              | Open-source Python toolbox for sleep EEG wearables, sleep scoring, stimulation, annotations, analysis [22]     | Potential interoperability reference for v3                                                  |
+| DreamBank              | Searchable dream-report collections, including formally coded material [23]                                    | Longitudinal exploration and research datasets                                               |
+| REMspace LucidMe       | App-connected dream-mask ecosystem [24]                                                                        | Existing direction for hardware cue delivery                                                 |
+| Prophetic              | Ultrasound devices marketed to influence dreaming; reviewed site advertised future shipping dates [25]         | Frontier to watch; commercial claims remain separate from independently established efficacy |
 
 **Competitive inference:** “Journal plus AI interpretation plus reminders” offers limited differentiation. A stronger opportunity is to connect preparation, execution, reported experience, and learning from results exceptionally well. This is a strategic inference from the reviewed landscape, not a market-size or demand estimate.
 
@@ -361,13 +361,13 @@ Research has decoded categories of visual imagery around sleep onset from fMRI.[
 
 ## 10. Audience choices and discovery priorities
 
-| Initial audience | Product emphasis | Meaningful outcome |
-| --- | --- | --- |
-| Curious beginner | Recall and guided practice | Dreams remembered and worthwhile experiences |
-| Committed enthusiast | Personalization and experiments | Better understanding of what helps |
-| Creative practitioner | Incubation and capture | Material used in waking creative work |
-| Researcher | Protocols and reliable records | Usable, reproducible observations |
-| Clinician and patient | Supervised nightmare work | Reduced distress and improved functioning |
+| Initial audience      | Product emphasis                | Meaningful outcome                           |
+| --------------------- | ------------------------------- | -------------------------------------------- |
+| Curious beginner      | Recall and guided practice      | Dreams remembered and worthwhile experiences |
+| Committed enthusiast  | Personalization and experiments | Better understanding of what helps           |
+| Creative practitioner | Incubation and capture          | Material used in waking creative work        |
+| Researcher            | Protocols and reliable records  | Usable, reproducible observations            |
+| Clinician and patient | Supervised nightmare work       | Reduced distress and improved functioning    |
 
 **Current strategic recommendation:** Start with beginners and committed enthusiasts, with research-quality records underneath. Consider creative incubation and research collaboration as early expansions of the broader horizon. This is a recommendation for discussion, not an approved change to release scope.
 
@@ -494,13 +494,13 @@ A helpful-sounding question can introduce details the person did not report. Ini
 
 ### 12.8 Recommended learning sequence
 
-| Stage | Candidate project | Main learning objective |
-| --- | --- | --- |
-| 1 | Recording to transcript to structured entry | AI APIs and reliable outputs |
-| 2 | Search and questions about the archive | Retrieval and grounded answers |
-| 3 | Natural-language protocol drafting with validation | Tool calling and correction loops |
-| 4 | Weekly experiment investigator | Agent orchestration and evaluation |
-| 5 | Bounded personalization | Decision policies and longitudinal evaluation |
+| Stage | Candidate project                                  | Main learning objective                       |
+| ----- | -------------------------------------------------- | --------------------------------------------- |
+| 1     | Recording to transcript to structured entry        | AI APIs and reliable outputs                  |
+| 2     | Search and questions about the archive             | Retrieval and grounded answers                |
+| 3     | Natural-language protocol drafting with validation | Tool calling and correction loops             |
+| 4     | Weekly experiment investigator                     | Agent orchestration and evaluation            |
+| 5     | Bounded personalization                            | Decision policies and longitudinal evaluation |
 
 The morning interviewer can follow reliable capture if user research supports its value. The literature scout can be explored independently as an internal tool.
 
@@ -520,64 +520,64 @@ The detailed scenarios and frontier concepts are intentionally retained even whe
 
 References were consulted during the September 7, 2026 research session. Links point to papers, author/institutional copies, or official product and publisher pages. Dates are given where established in the reviewed material. Product and publisher sources describe offerings or books; they do not independently validate efficacy.
 
-**[1] Scientific review.** *The clinical neuroscience of lucid dreaming* (2025). Neuroscience & Biobehavioral Reviews. https://doi.org/10.1016/j.neubiorev.2025.106011  
+**[1] Scientific review.** _The clinical neuroscience of lucid dreaming_ (2025). Neuroscience & Biobehavioral Reviews. https://doi.org/10.1016/j.neubiorev.2025.106011  
 Use: conceptual distinctions, clinical context, and cautions about oversimplified neural explanations.
 
-**[2] Primary experimental study.** Konkoly et al. (2021). *Real-time dialogue between experimenters and dreamers during REM sleep.* Current Biology. https://doi.org/10.1016/j.cub.2021.01.026  
+**[2] Primary experimental study.** Konkoly et al. (2021). _Real-time dialogue between experimenters and dreamers during REM sleep._ Current Biology. https://doi.org/10.1016/j.cub.2021.01.026  
 Use: laboratory evidence of limited two-way communication; not a demonstration of reliable consumer conversation.
 
-**[3] Systematic review.** Tan and Fan (2023). *A systematic review of new empirical data on lucid dream induction techniques.* Journal of Sleep Research, 32(3), e13786. https://doi.org/10.1111/jsr.13786  
+**[3] Systematic review.** Tan and Fan (2023). _A systematic review of new empirical data on lucid dream induction techniques._ Journal of Sleep Research, 32(3), e13786. https://doi.org/10.1111/jsr.13786  
 Use: induction evidence and methodological limitations across 19 studies.
 
-**[4] Primary field study.** *Findings From the International Lucid Dream Induction Study* (2020). Frontiers in Psychology. https://doi.org/10.3389/fpsyg.2020.01746  
+**[4] Primary field study.** _Findings From the International Lucid Dream Induction Study_ (2020). Frontiers in Psychology. https://doi.org/10.3389/fpsyg.2020.01746  
 Use: MILD, SSILD, reality testing, recall, and returning to sleep. Conclusions are specific to the tested procedures.
 
-**[5] Primary smartphone study.** Konkoly et al. (2024). *Provoking lucid dreams at home with sensory cues paired with pre-sleep cognitive training.* Consciousness and Cognition, 125, 103759. https://doi.org/10.1016/j.concog.2024.103759  
+**[5] Primary smartphone study.** Konkoly et al. (2024). _Provoking lucid dreams at home with sensory cues paired with pre-sleep cognitive training._ Consciousness and Cognition, 125, 103759. https://doi.org/10.1016/j.concog.2024.103759  
 Accessible record: https://pubmed.ncbi.nlm.nih.gov/39278157/  
 Use: the closest research precedent for the training-and-audio product concept.
 
-**[6] Preprint; version-sensitive.** Picard-Deland et al. *Inducing lucid dreaming with multisensory stimulation: a preregistered multi-center study.* https://doi.org/10.1101/2024.06.21.600133  
+**[6] Preprint; version-sensitive.** Picard-Deland et al. _Inducing lucid dreaming with multisensory stimulation: a preregistered multi-center study._ https://doi.org/10.1101/2024.06.21.600133  
 Reviewed abstract: https://sciety.org/articles/activity/10.1101/2024.06.21.600133  
-Earlier versions used the title *Highly effective verified lucid dream induction using combined cognitive-sensory training and wearable EEG: a multi-centre study*. Use the current version when updating claims. The reviewed 60-participant abstract reported no clear induction benefit of REM cueing over the sham condition.
+Earlier versions used the title _Highly effective verified lucid dream induction using combined cognitive-sensory training and wearable EEG: a multi-centre study_. Use the current version when updating claims. The reviewed 60-participant abstract reported no clear induction benefit of REM cueing over the sham condition.
 
-**[7] Primary device/protocol study.** Haar Horowitz et al. (2020). *Dormio: A targeted dream incubation device.* Consciousness and Cognition, 83, 102938. https://doi.org/10.1016/j.concog.2020.102938  
+**[7] Primary device/protocol study.** Haar Horowitz et al. (2020). _Dormio: A targeted dream incubation device._ Consciousness and Cognition, 83, 102938. https://doi.org/10.1016/j.concog.2020.102938  
 Accessible record: https://pubmed.ncbi.nlm.nih.gov/32480292/  
 Use: sleep-onset prompts, incubation, and report capture.
 
-**[8] Primary creativity experiment.** *Targeted dream incubation at sleep onset increases post-sleep creative performance* (2023). Scientific Reports. https://www.nature.com/articles/s41598-023-31361-w  
+**[8] Primary creativity experiment.** _Targeted dream incubation at sleep onset increases post-sleep creative performance_ (2023). Scientific Reports. https://www.nature.com/articles/s41598-023-31361-w  
 Use: theme-related creativity findings from a constrained experiment, not general problem-solving efficacy.
 
-**[9] Primary remote-tool study.** Bellaiche et al. (2024). *Targeted dream incubation at a distance: the development of a remote and sensor-free tool for incubating hypnagogic dreams and mind-wandering.* Frontiers in Sleep. https://doi.org/10.3389/frsle.2024.1258345  
+**[9] Primary remote-tool study.** Bellaiche et al. (2024). _Targeted dream incubation at a distance: the development of a remote and sensor-free tool for incubating hypnagogic dreams and mind-wandering._ Frontiers in Sleep. https://doi.org/10.3389/frsle.2024.1258345  
 Associated tool linked by the paper: https://christinatchen.github.io/dormio/timer.html  
 Use: Dormio Light and accessible remote experimentation.
 
-**[10] Clinical position summary.** American Academy of Sleep Medicine (2018). *New position paper recommends treatments for adult nightmare disorder.* https://aasm.org/new-position-paper-recommends-treatment-options-for-nightmare-disorder-in-adults/  
+**[10] Clinical position summary.** American Academy of Sleep Medicine (2018). _New position paper recommends treatments for adult nightmare disorder._ https://aasm.org/new-position-paper-recommends-treatment-options-for-nightmare-disorder-in-adults/  
 Use: distinguish recommended imagery rehearsal therapy from lucid-dreaming therapy classified as “may be used” for nightmare disorder.
 
-**[11] Randomized workshop study.** *Decreased PTSD symptoms following a lucid dreaming workshop: A randomized controlled study* (2025). European Journal of Trauma & Dissociation, 9, 100510. https://doi.org/10.1016/j.ejtd.2025.100510  
+**[11] Randomized workshop study.** _Decreased PTSD symptoms following a lucid dreaming workshop: A randomized controlled study_ (2025). European Journal of Trauma & Dissociation, 9, 100510. https://doi.org/10.1016/j.ejtd.2025.100510  
 Reviewed publisher record: https://www.em-consulte.com/article/1715476/decreased-ptsd-symptoms-following-a-lucid-dreaming  
 Use: promising bundled intervention; does not isolate lucidity as the causal mechanism.
 
-**[12] Primary pilot study.** Schädlich, Erlacher, and Schredl (2017). *Improvement of darts performance following lucid dream practice depends on the number of distractions while rehearsing within the dream: a sleep laboratory pilot study.* https://www.dreamscience.org/wp-content/uploads/2019/03/Schadlich-et-al-2017-Lucid-Dream-Practice-Improves-Performance.pdf  
+**[12] Primary pilot study.** Schädlich, Erlacher, and Schredl (2017). _Improvement of darts performance following lucid dream practice depends on the number of distractions while rehearsing within the dream: a sleep laboratory pilot study._ https://www.dreamscience.org/wp-content/uploads/2019/03/Schadlich-et-al-2017-Lucid-Dream-Practice-Improves-Performance.pdf  
 Use: preliminary motor-rehearsal evidence and practical difficulty carrying out dream tasks.
 
-**[13] Observational community study.** Mallett et al. (2022). *Benefits and concerns of seeking and experiencing lucid dreams: benefits are tied to successful induction and dream control.* SLEEP Advances, 3(1), zpac027. https://doi.org/10.1093/sleepadvances/zpac027  
+**[13] Observational community study.** Mallett et al. (2022). _Benefits and concerns of seeking and experiencing lucid dreams: benefits are tied to successful induction and dream control._ SLEEP Advances, 3(1), zpac027. https://doi.org/10.1093/sleepadvances/zpac027  
 Use: motivations, reported benefits, unwanted experiences, and the distinction between induction and control; not causal or population-incidence evidence.
 
-**[14] Scientific perspective.** Soffer-Dudek (2020; volume labeled 2019). *Are Lucid Dreams Good for Us? Are We Asking the Right Question? A Call for Caution in Lucid Dream Research.* Frontiers in Neuroscience. https://doi.org/10.3389/fnins.2019.01423  
+**[14] Scientific perspective.** Soffer-Dudek (2020; volume labeled 2019). _Are Lucid Dreams Good for Us? Are We Asking the Right Question? A Call for Caution in Lucid Dream Research._ Frontiers in Neuroscience. https://doi.org/10.3389/fnins.2019.01423  
 Use: unresolved questions about induction, sleep, and mental health, not proof of universal harm.
 
-**[15] Popular practical literature.** LaBerge and Rheingold. *Exploring the World of Lucid Dreaming.* Author/institute contents: https://lucidity.com/EWLD-contents.html  
+**[15] Popular practical literature.** LaBerge and Rheingold. _Exploring the World of Lucid Dreaming._ Author/institute contents: https://lucidity.com/EWLD-contents.html  
 Publisher: https://www.penguinrandomhouse.com/books/96900/exploring-the-world-of-lucid-dreaming-by-stephen-laberge-phd-and-howard-rheingold/  
 Use: curriculum and motivation ideas; reviewed contents and publisher description.
 
-**[16] Popular experiential literature.** Waggoner. *Lucid Dreaming: Gateway to the Inner Self.* Publisher: https://redwheelweiser.com/book/lucid-dreaming-9781930491144/  
+**[16] Popular experiential literature.** Waggoner. _Lucid Dreaming: Gateway to the Inner Self._ Publisher: https://redwheelweiser.com/book/lucid-dreaming-9781930491144/  
 Use: exploration beyond deliberate scenery control; reviewed publisher description.
 
-**[17] Contemplative literature.** Holecek. *Dream Yoga.* Publisher: https://us.macmillan.com/books/9781622035519/dreamyoga/  
+**[17] Contemplative literature.** Holecek. _Dream Yoga._ Publisher: https://us.macmillan.com/books/9781622035519/dreamyoga/  
 Use: contemplative pathways; reviewed publisher description, not scientific validation of spiritual claims.
 
-**[18] Popular/contemplative literature.** Morley. *Dreams of Awakening*, revised edition. Publisher: https://shop.hayhouse.com/products/dreams-of-awakening-revised-edition  
+**[18] Popular/contemplative literature.** Morley. _Dreams of Awakening_, revised edition. Publisher: https://shop.hayhouse.com/products/dreams-of-awakening-revised-edition  
 Use: teaching and integration perspectives; reviewed publisher description.
 
 **[19] Official commercial documentation.** Oniri. https://www.oniri.io/  
@@ -589,7 +589,7 @@ Use: enthusiast features and advertised integrations; availability and claims re
 **[21] Institutional project page.** Northwestern Cognitive Neuroscience Laboratory, lucid app. https://pallerlab.psych.northwestern.edu/dream.html  
 Use: project provenance and app access; the scientific findings are in [5].
 
-**[22] Research software paper and source.** *Dreamento: an open-source dream engineering toolbox for sleep EEG wearables* (2023). SoftwareX. https://doi.org/10.1016/j.softx.2023.101595  
+**[22] Research software paper and source.** _Dreamento: an open-source dream engineering toolbox for sleep EEG wearables_ (2023). SoftwareX. https://doi.org/10.1016/j.softx.2023.101595  
 Repository: https://github.com/dreamento/dreamento  
 Use: real-time/offline sleep analysis, stimulation, annotations, and interoperability ideas.
 
@@ -603,43 +603,41 @@ Use: app-connected mask ecosystem; vendor documentation is not independent effic
 **[25] Official commercial documentation.** Prophetic. https://www.prophetic.com/  
 Use: frontier commercial direction. The reviewed September 2026 page advertised Dual and Phase products with future shipping dates. Recheck current status; do not infer established safety or effectiveness from marketing.
 
-**[26] Research database paper.** Wong et al. (2025). *A dream EEG and mentation database.* Nature Communications, 16, 7495. https://www.nature.com/articles/s41467-025-61945-1  
+**[26] Research database paper.** Wong et al. (2025). _A dream EEG and mentation database._ Nature Communications, 16, 7495. https://www.nature.com/articles/s41467-025-61945-1  
 Use: shared EEG and reported-experience infrastructure; adjacent to, not identical with, a lucid-dream intervention dataset.
 
-**[27] Primary neural-decoding study.** Horikawa, Tamaki, Miyawaki, and Kamitani (2013). *Neural decoding of visual imagery during sleep.* Science, 340, 639–642. https://pubmed.ncbi.nlm.nih.gov/23558170/  
+**[27] Primary neural-decoding study.** Horikawa, Tamaki, Miyawaki, and Kamitani (2013). _Neural decoding of visual imagery during sleep._ Science, 340, 639–642. https://pubmed.ncbi.nlm.nih.gov/23558170/  
 Lab publication page: https://kamitani-lab.ist.i.kyoto-u.ac.jp/publications/2013-horikawa-dream-decoding/  
 Use: sleep-onset imagery-category decoding; does not establish consumer dream-video recording.
 
-**[28] Methodological review.** *Methodological Recommendations to Control for Factors Influencing Dream and Nightmare Recall in Clinical and Experimental Studies of Dreaming* (2020). Frontiers in Neurology. https://doi.org/10.3389/fneur.2020.00724  
+**[28] Methodological review.** _Methodological Recommendations to Control for Factors Influencing Dream and Nightmare Recall in Clinical and Experimental Studies of Dreaming_ (2020). Frontiers in Neurology. https://doi.org/10.3389/fneur.2020.00724  
 Use: minimizing report delay and accounting for collection conditions; supports immediate capture without proving the benefit of continuous recording specifically.
 
-**[29] Speech-recognition research preprint.** *Investigation of Whisper ASR Hallucinations Induced by Non-Speech Audio* (2025). https://arxiv.org/abs/2501.11378  
+**[29] Speech-recognition research preprint.** _Investigation of Whisper ASR Hallucinations Induced by Non-Speech Audio_ (2025). https://arxiv.org/abs/2501.11378  
 Use: motivates checking uncertain transcripts against original audio. Does not establish error rates for this app's recordings.
 
-**[30] Theoretical and methodological paper.** *The route to recall a dream: theoretical considerations and methodological implications* (2022). https://pubmed.ncbi.nlm.nih.gov/35960337/  
+**[30] Theoretical and methodological paper.** _The route to recall a dream: theoretical considerations and methodological implications_ (2022). https://pubmed.ncbi.nlm.nih.gov/35960337/  
 Use: distinguish dream production, encoding, and retrieval when interpreting changes in recorded reports.
 
-**[31] Official API documentation.** OpenAI, *File transcription*. https://developers.openai.com/api/docs/guides/speech-to-text  
+**[31] Official API documentation.** OpenAI, _File transcription_. https://developers.openai.com/api/docs/guides/speech-to-text  
 Use: audio-to-text API learning opportunity; consulted September 7, 2026. No model or provider is selected by this paper.
 
-**[32] Official API documentation.** OpenAI, *Structured model outputs*. https://developers.openai.com/api/docs/guides/structured-outputs  
+**[32] Official API documentation.** OpenAI, _Structured model outputs_. https://developers.openai.com/api/docs/guides/structured-outputs  
 Use: schema-constrained output; structural conformance does not guarantee factual correctness.
 
-**[33] Official API documentation.** OpenAI, *File search*. https://developers.openai.com/api/docs/guides/tools-file-search  
+**[33] Official API documentation.** OpenAI, _File search_. https://developers.openai.com/api/docs/guides/tools-file-search  
 Use: an example of retrieval capabilities for grounded archive exploration.
 
-**[34] Official API documentation.** OpenAI, *Function calling*. https://developers.openai.com/api/docs/guides/function-calling  
+**[34] Official API documentation.** OpenAI, _Function calling_. https://developers.openai.com/api/docs/guides/function-calling  
 Use: model-requested operations with application-controlled execution and returned tool results.
 
-**[35] Official API documentation.** OpenAI, *Agents SDK*. https://developers.openai.com/api/docs/guides/agents  
+**[35] Official API documentation.** OpenAI, _Agents SDK_. https://developers.openai.com/api/docs/guides/agents  
 Use: agent orchestration and tracing as learning opportunities. Recheck current documentation before implementation.
 
+Wilder ideas:
 
-Wilder ideas: 
+"DeepDream" like raw audio generation https://research.google/pubs/audio-deepdream-optimizing-raw-audio-with-convolutional-networks/
 
-"DeepDream" like raw audio generation https://research.google/pubs/audio-deepdream-optimizing-raw-audio-with-convolutional-networks/ 
-
-2017	Rhys, P., 2017. Granular Synthesis as Fractal Micropolyphony. Proceedings of the 2017 International Computer Music Conference, Shanghai, pp.20-23.2016	Rhys, P., 2016. Smart Interfaces for Granular Synthesis of Sound by Fractal Organization. Computer Music Journal, 40(3), 58-67
+2017 Rhys, P., 2017. Granular Synthesis as Fractal Micropolyphony. Proceedings of the 2017 International Computer Music Conference, Shanghai, pp.20-23.2016 Rhys, P., 2016. Smart Interfaces for Granular Synthesis of Sound by Fractal Organization. Computer Music Journal, 40(3), 58-67
 
 https://vimeo.com/13541969
-

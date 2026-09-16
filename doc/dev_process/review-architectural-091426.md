@@ -154,22 +154,22 @@ decision · P0 (docs)
 v2 §4.2 makes the whole package release-blocking (D14). The table maps each item, plus the related
 context and data items, to v1 as it is today.
 
-| v2 item | v1 today | What makes it harder | Into v1? | Findings |
-| --- | --- | --- | --- | --- |
-| F2.1 Checkpoint and resume | Recursive async interpreter; phase position in closures; scripts read from the library at Begin | No savable position; script version not pinned; no entry point before the UI mounts | No; pin the script through the run manifest (P1) | AR-06, AR-07, AR-10 |
-| F2.2 Append-only log | Whole file rewritten per event | File store port has no append; the native API has one | Yes (P0) | AR-03 |
-| F2.3 Android alarm module | Lifecycle in a React hook; the next cue time exists only inside a running `wait` | No headless start path; no scheduled-time records | No | AR-06, AR-08, AR-13 |
-| F2.4 Night ambience | Fixed 0.01 loop outside the audio port; no setting, not logged | Ambience invisible to settings and log | Only if R-005 shows iPhone nights dying | AR-11 |
-| F2.5 Cue-time notifications | No schedule projection | Future cue times unknown at Begin | No; the engine's virtual clock makes a projector cheap in v2 | AR-13 |
-| F2.6 Audio route handling | A failing play ends the night; a missing finish status hangs it | Terminate-on-error policy; no timeouts; players created mid-night | Preload and timeouts (P1); skip-and-log needs a decision | AR-09 |
-| F2.7 Validation gate | Diagnostics dormant; logs carry no device or build | A shared log cannot answer R-001 | Run manifest (P1) | AR-05, AR-10 |
-| F2.8 Battery per night | No battery module | Needs `expo-battery`, a native dependency | Only if a native build is planned anyway; it answers R-002 | AR-10 |
-| F2.9 Honest interruptions | Detection only in optional diagnostics; dead runs show "running" | Recovery is not part of the run record | Local part (P0) | AR-04 |
-| F3.1 Unknown condition semantics | Boolean plus a list of missing fields | Contained in `conditions.ts` | No; a deliberate semantic change (D19) | AR-22, AR-23 |
-| F3.2 Sound level source | Metering inside a React hook | Microphone pipeline tied to the UI tree (v3 §2.11) | No | AR-06 |
-| F3.5 Observation schema | Snapshot with no per-field time or provenance | Field list repeated in six files | No | AR-22 |
-| F4.3 Night bundle | JSONL of engine events | Not self-describing | Manifest (P1); bundle in v2 | AR-10, AR-18 |
-| F6.3 Delete everything | Deletion code in screens | Misses logs and recordings; no storage inventory | Fix both leaks (P0) | AR-01, AR-02 |
+| v2 item                          | v1 today                                                                                        | What makes it harder                                                                | Into v1?                                                     | Findings            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------------------- |
+| F2.1 Checkpoint and resume       | Recursive async interpreter; phase position in closures; scripts read from the library at Begin | No savable position; script version not pinned; no entry point before the UI mounts | No; pin the script through the run manifest (P1)             | AR-06, AR-07, AR-10 |
+| F2.2 Append-only log             | Whole file rewritten per event                                                                  | File store port has no append; the native API has one                               | Yes (P0)                                                     | AR-03               |
+| F2.3 Android alarm module        | Lifecycle in a React hook; the next cue time exists only inside a running `wait`                | No headless start path; no scheduled-time records                                   | No                                                           | AR-06, AR-08, AR-13 |
+| F2.4 Night ambience              | Fixed 0.01 loop outside the audio port; no setting, not logged                                  | Ambience invisible to settings and log                                              | Only if R-005 shows iPhone nights dying                      | AR-11               |
+| F2.5 Cue-time notifications      | No schedule projection                                                                          | Future cue times unknown at Begin                                                   | No; the engine's virtual clock makes a projector cheap in v2 | AR-13               |
+| F2.6 Audio route handling        | A failing play ends the night; a missing finish status hangs it                                 | Terminate-on-error policy; no timeouts; players created mid-night                   | Preload and timeouts (P1); skip-and-log needs a decision     | AR-09               |
+| F2.7 Validation gate             | Diagnostics dormant; logs carry no device or build                                              | A shared log cannot answer R-001                                                    | Run manifest (P1)                                            | AR-05, AR-10        |
+| F2.8 Battery per night           | No battery module                                                                               | Needs `expo-battery`, a native dependency                                           | Only if a native build is planned anyway; it answers R-002   | AR-10               |
+| F2.9 Honest interruptions        | Detection only in optional diagnostics; dead runs show "running"                                | Recovery is not part of the run record                                              | Local part (P0)                                              | AR-04               |
+| F3.1 Unknown condition semantics | Boolean plus a list of missing fields                                                           | Contained in `conditions.ts`                                                        | No; a deliberate semantic change (D19)                       | AR-22, AR-23        |
+| F3.2 Sound level source          | Metering inside a React hook                                                                    | Microphone pipeline tied to the UI tree (v3 §2.11)                                  | No                                                           | AR-06               |
+| F3.5 Observation schema          | Snapshot with no per-field time or provenance                                                   | Field list repeated in six files                                                    | No                                                           | AR-22               |
+| F4.3 Night bundle                | JSONL of engine events                                                                          | Not self-describing                                                                 | Manifest (P1); bundle in v2                                  | AR-10, AR-18        |
+| F6.3 Delete everything           | Deletion code in screens                                                                        | Misses logs and recordings; no storage inventory                                    | Fix both leaks (P0)                                          | AR-01, AR-02        |
 
 **AR-06 The night is owned by a React hook.** High · L · Medium risk · P2, with two S symptom fixes
 in P1
@@ -248,24 +248,24 @@ preload and timeout; the skip policy is a decision
 
 ### 3.3 Adherence to the v1 spec
 
-| Spec | Status | Note |
-| --- | --- | --- |
-| §1 and §2.2 step 6: the log includes context readings | Not met | Only missing readings are logged; values read and branches taken are not (AR-13) |
-| §2.2 step 3: validate and resolve before resources | Met | [use-session.ts:191-219](../../src/hooks/use-session.ts#L191-L219) |
-| §2.3 running screen: next scheduled event | Not met | Not shown on Sleeping; the redesign note says every v1 function is kept (AR-13) |
-| §2.3 Log: delete and delete all | Partly | Log files remain (AR-01) |
-| §2.4 a malformed script never crashes | Met | Parse errors name the failing node |
-| §2.4 eight-hour run; battery under 8 % | Unverified | E-002 passed without screen state or battery (R-002, R-004) |
-| §3.3 a missing reading evaluates false | Met | Replaced by v2 F3.1 |
-| §4.1 the engine imports nothing from siblings | Met, weakly enforced | AR-19 |
-| §4.2 absolute deadlines, cooperative stop | Met | [clock.ts:13-25](../../src/session/clock.ts#L13-L25) |
-| §4.2 serialisable execution state | Not met | AR-07 |
-| §4.4 partial wake lock | Not as described | AR-05 |
-| §4.4 battery-optimisation exemption screen | Not built | Already recorded in E-002 |
-| §4.5 save offline | Met in intent | Offline state is a stored flag, not a filesystem check; no `meta.json` sidecar |
-| §4.6 no audio stored | Not met | AR-02 |
-| §4.7 adapter tests and Run-screen smoke tests | Partly | Only the audio adapter and the Library screen have tests |
-| §6 CI gate and release workflows | Partly | AR-25 |
+| Spec                                                  | Status               | Note                                                                             |
+| ----------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------- |
+| §1 and §2.2 step 6: the log includes context readings | Not met              | Only missing readings are logged; values read and branches taken are not (AR-13) |
+| §2.2 step 3: validate and resolve before resources    | Met                  | [use-session.ts:191-219](../../src/hooks/use-session.ts#L191-L219)               |
+| §2.3 running screen: next scheduled event             | Not met              | Not shown on Sleeping; the redesign note says every v1 function is kept (AR-13)  |
+| §2.3 Log: delete and delete all                       | Partly               | Log files remain (AR-01)                                                         |
+| §2.4 a malformed script never crashes                 | Met                  | Parse errors name the failing node                                               |
+| §2.4 eight-hour run; battery under 8 %                | Unverified           | E-002 passed without screen state or battery (R-002, R-004)                      |
+| §3.3 a missing reading evaluates false                | Met                  | Replaced by v2 F3.1                                                              |
+| §4.1 the engine imports nothing from siblings         | Met, weakly enforced | AR-19                                                                            |
+| §4.2 absolute deadlines, cooperative stop             | Met                  | [clock.ts:13-25](../../src/session/clock.ts#L13-L25)                             |
+| §4.2 serialisable execution state                     | Not met              | AR-07                                                                            |
+| §4.4 partial wake lock                                | Not as described     | AR-05                                                                            |
+| §4.4 battery-optimisation exemption screen            | Not built            | Already recorded in E-002                                                        |
+| §4.5 save offline                                     | Met in intent        | Offline state is a stored flag, not a filesystem check; no `meta.json` sidecar   |
+| §4.6 no audio stored                                  | Not met              | AR-02                                                                            |
+| §4.7 adapter tests and Run-screen smoke tests         | Partly               | Only the audio adapter and the Library screen have tests                         |
+| §6 CI gate and release workflows                      | Partly               | AR-25                                                                            |
 
 ### 3.4 The night record against the product vision
 
@@ -482,32 +482,32 @@ Medium).
 About a day and a half in total. Do item 1 before item 4, because the recovery record appends to an
 existing log.
 
-| # | Item | Findings | v2 item | Effort | Risk |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Append-only JSONL log | AR-03 | F2.2 | S | Low |
-| 2 | Delete removes log files; remove orphaned logs at launch | AR-01 | F6.3 | S | Low |
-| 3 | Delete the voice-interrupt recording after each night and on recovery | AR-02 | F6.3 | S | Low |
-| 4 | Close unfinished runs as interrupted at launch, for every user | AR-04 | F2.9 | M | Low |
-| 5 | Engine import allowlist | AR-19 | §1.4 maintainability | S | None |
-| 6 | Correct spec §4.4, iOS plan D4 and code comments about keep-awake | AR-05 | F2.7 | S | None |
+| #   | Item                                                                  | Findings | v2 item              | Effort | Risk |
+| --- | --------------------------------------------------------------------- | -------- | -------------------- | ------ | ---- |
+| 1   | Append-only JSONL log                                                 | AR-03    | F2.2                 | S      | Low  |
+| 2   | Delete removes log files; remove orphaned logs at launch              | AR-01    | F6.3                 | S      | Low  |
+| 3   | Delete the voice-interrupt recording after each night and on recovery | AR-02    | F6.3                 | S      | Low  |
+| 4   | Close unfinished runs as interrupted at launch, for every user        | AR-04    | F2.9                 | M      | Low  |
+| 5   | Engine import allowlist                                               | AR-19    | §1.4 maintainability | S      | None |
+| 6   | Correct spec §4.4, iOS plan D4 and code comments about keep-awake     | AR-05    | F2.7                 | S      | None |
 
 ### 4.2 P1: into v1 as the release window allows
 
 In order of value.
 
-| # | Item | Findings | v2 item | Effort | Risk |
-| --- | --- | --- | --- | --- | --- |
-| 7 | Run manifest as the first log record; structured phases in the run index | AR-10 | F2.1, F2.7, F4.3 | M | Low |
-| 8 | Session records for duck and resume, a write-failure count, per-run sequence numbers | AR-11 | F3.5 | S | Low |
-| 9 | Create players during preflight; time out playback completion | AR-09 | F2.6 | S | Low |
-| 10 | Elapsed ticker only while the app is active | AR-24 | §1.4 power | S | Low |
-| 11 | Honour Stop while preparing; reset run state when a start fails | AR-06 | §1.4 reliability | S | Low |
-| 12 | Composition module for services | AR-08 | F2.3 | S | Low |
-| 13 | Engine child-statement walker | AR-21 | F5.1, F5.5 | S | Low |
-| 14 | HTTPS-only URL imports | AR-14 | G1 | S | Low |
-| 15 | Apply decisions 2 and 4: logging toggles, preset defaults | AR-12, AR-20 | §1.4 honesty | S | Low |
-| 16 | Docs: spec §4.2 execution state, §3.3 clock across midnight, §2.3 next event and §1 context readings, README Structure | AR-07, AR-13, AR-18, AR-23 | F6.2 | S | None |
-| 17 | Web security headers, deploy guards, remove `reset-project` | AR-17, AR-25 | G6 | S | None |
+| #   | Item                                                                                                                   | Findings                   | v2 item          | Effort | Risk |
+| --- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------- | ------ | ---- |
+| 7   | Run manifest as the first log record; structured phases in the run index                                               | AR-10                      | F2.1, F2.7, F4.3 | M      | Low  |
+| 8   | Session records for duck and resume, a write-failure count, per-run sequence numbers                                   | AR-11                      | F3.5             | S      | Low  |
+| 9   | Create players during preflight; time out playback completion                                                          | AR-09                      | F2.6             | S      | Low  |
+| 10  | Elapsed ticker only while the app is active                                                                            | AR-24                      | §1.4 power       | S      | Low  |
+| 11  | Honour Stop while preparing; reset run state when a start fails                                                        | AR-06                      | §1.4 reliability | S      | Low  |
+| 12  | Composition module for services                                                                                        | AR-08                      | F2.3             | S      | Low  |
+| 13  | Engine child-statement walker                                                                                          | AR-21                      | F5.1, F5.5       | S      | Low  |
+| 14  | HTTPS-only URL imports                                                                                                 | AR-14                      | G1               | S      | Low  |
+| 15  | Apply decisions 2 and 4: logging toggles, preset defaults                                                              | AR-12, AR-20               | §1.4 honesty     | S      | Low  |
+| 16  | Docs: spec §4.2 execution state, §3.3 clock across midnight, §2.3 next event and §1 context readings, README Structure | AR-07, AR-13, AR-18, AR-23 | F6.2             | S      | None |
+| 17  | Web security headers, deploy guards, remove `reset-project`                                                            | AR-17, AR-25               | G6               | S      | None |
 
 Conditional items from the hardening list:
 
@@ -530,14 +530,14 @@ Conditional items from the hardening list:
 
 ### 4.4 Decisions needed
 
-| # | Question | Options | Recommendation |
-| --- | --- | --- | --- |
-| 1 | Does a failed cue end the night? (AR-09) | End the run, as spec §2.2 says; or log it and continue, as F2.6 implies | Log and continue, with a failure count in the stop record |
-| 2 | What do logging toggles control? (AR-12) | What is recorded, per the original requirements; or only what is shown and exported | Record everything and filter on display and export; if toggles keep filtering the record, always record errors |
-| 3 | Should a running night hold the screen on? (AR-05) | Keep; release once running; web only | Keep until R-004 and R-005 are answered, then decide |
-| 4 | Which period-preset defaults are intended? (AR-20) | Seconds, as the app has; minutes, as the engine and fixtures have | Minutes for real nights; a demo script can use literal seconds |
-| 5 | How do clock conditions treat midnight? (AR-23) | Night timeline with the noon boundary; explicit wrap syntax | Night timeline, matching how Nights assigns a night |
-| 6 | How does a night resume? (AR-07) | Saved cursor, per the F2.1 wording; catch-up replay | Spike both at v2 start; replay is cheaper while conditions are time-only |
+| #   | Question                                           | Options                                                                             | Recommendation                                                                                                 |
+| --- | -------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 1   | Does a failed cue end the night? (AR-09)           | End the run, as spec §2.2 says; or log it and continue, as F2.6 implies             | Log and continue, with a failure count in the stop record                                                      |
+| 2   | What do logging toggles control? (AR-12)           | What is recorded, per the original requirements; or only what is shown and exported | Record everything and filter on display and export; if toggles keep filtering the record, always record errors |
+| 3   | Should a running night hold the screen on? (AR-05) | Keep; release once running; web only                                                | Keep until R-004 and R-005 are answered, then decide                                                           |
+| 4   | Which period-preset defaults are intended? (AR-20) | Seconds, as the app has; minutes, as the engine and fixtures have                   | Minutes for real nights; a demo script can use literal seconds                                                 |
+| 5   | How do clock conditions treat midnight? (AR-23)    | Night timeline with the noon boundary; explicit wrap syntax                         | Night timeline, matching how Nights assigns a night                                                            |
+| 6   | How does a night resume? (AR-07)                   | Saved cursor, per the F2.1 wording; catch-up replay                                 | Spike both at v2 start; replay is cheaper while conditions are time-only                                       |
 
 ### 4.5 Field evidence
 

@@ -25,11 +25,11 @@ on:
     tags:
       # Both spellings in use: the plan's `v0.6.0` and the bare `0.5.1` the
       # first releases were cut with. The version check below strips a `v`.
-      - 'v*'
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - "v*"
+      - "[0-9]+.[0-9]+.[0-9]+"
   schedule:
     # 09:00 UTC on the 1st of each month.
-    - cron: '0 9 1 * *'
+    - cron: "0 9 1 * *"
   workflow_dispatch:
 
 # A tag push and a scheduled run must never build concurrently — two uploads

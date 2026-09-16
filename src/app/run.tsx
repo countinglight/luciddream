@@ -1,7 +1,14 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button } from "@/components/button";
@@ -14,14 +21,30 @@ import { PhaseBar } from "@/components/phase-bar";
 import { SegmentedControl } from "@/components/segmented-control";
 import { Surface } from "@/components/surface";
 import { ThemedText } from "@/components/themed-text";
-import { Fonts, MaxContentWidth, NightColors, phaseColors } from "@/constants/theme";
+import {
+  Fonts,
+  MaxContentWidth,
+  NightColors,
+  phaseColors,
+} from "@/constants/theme";
 import { useSessionContext } from "@/context/session-context";
 import { useSettings } from "@/context/settings-context";
 import { useRunEvents } from "@/hooks/use-run-events";
 import { useTheme } from "@/hooks/use-theme";
 import { isLockDemo } from "@/lib/demo-mode";
-import { formatAgo, formatClock, formatHuman, formatLongDate, formatTimeOfDay } from "@/lib/format-time";
-import { loadLucidNotes, LUCID_OPTIONS, saveLucidNote, type LucidAnswer } from "@/lib/lucid-notes";
+import {
+  formatAgo,
+  formatClock,
+  formatHuman,
+  formatLongDate,
+  formatTimeOfDay,
+} from "@/lib/format-time";
+import {
+  loadLucidNotes,
+  LUCID_OPTIONS,
+  saveLucidNote,
+  type LucidAnswer,
+} from "@/lib/lucid-notes";
 import { countPlays, parseRunName, phaseSegments } from "@/lib/nights";
 import { RUN_PHASES } from "@/lib/run-phases";
 import { describeEvent } from "@/logging";
@@ -44,7 +67,10 @@ export default function RunScreen() {
   }, [session.status]);
 
   if (session.status === "idle") return null;
-  const finished = session.status === "completed" || session.status === "stopped" || session.status === "error";
+  const finished =
+    session.status === "completed" ||
+    session.status === "stopped" ||
+    session.status === "error";
   return finished ? <MorningView /> : <SleepingView />;
 }
 
@@ -102,7 +128,9 @@ function SleepingView() {
   const clock = formatClock(session.phaseElapsedMs);
   const now = (session.startedAt ?? 0) + session.elapsedMs;
   const lastAt = session.lastEvent?.at;
-  const voiceText = simulatedNoiseActive ? "Noise detected — resuming soon…" : "Listening · gentle";
+  const voiceText = simulatedNoiseActive
+    ? "Noise detected — resuming soon…"
+    : "Listening · gentle";
 
   if (lockDemoEnabled && simulatedLocked && running) {
     return (
@@ -110,15 +138,30 @@ function SleepingView() {
         <StatusBar style="light" />
         <Text style={styles.nightEyebrow}>SIMULATED LOCK SCREEN</Text>
         <Text style={styles.lockTitle}>LucidDream is running</Text>
-        <Text style={styles.nightText}>{session.activePhaseLabel ?? "Preparing phases"}</Text>
-        <Text style={styles.nightDim}>{session.activeScriptName ?? session.scriptName}</Text>
-        <Text style={styles.nightDim}>Total {formatHuman(session.elapsedMs)}</Text>
-        {session.currentStepText && <Text style={styles.nightDim}>{session.currentStepText}</Text>}
+        <Text style={styles.nightText}>
+          {session.activePhaseLabel ?? "Preparing phases"}
+        </Text>
+        <Text style={styles.nightDim}>
+          {session.activeScriptName ?? session.scriptName}
+        </Text>
+        <Text style={styles.nightDim}>
+          Total {formatHuman(session.elapsedMs)}
+        </Text>
+        {session.currentStepText && (
+          <Text style={styles.nightDim}>{session.currentStepText}</Text>
+        )}
         <View style={styles.lockActions}>
           <NightButton label="Stop run" onPress={stopRun} />
-          <NightButton label="Wake / Unlock" onPress={() => setSimulatedLocked(false)} />
           <NightButton
-            label={simulatedNoiseActive ? "Noise detected — resuming soon…" : "Simulate loud noise"}
+            label="Wake / Unlock"
+            onPress={() => setSimulatedLocked(false)}
+          />
+          <NightButton
+            label={
+              simulatedNoiseActive
+                ? "Noise detected — resuming soon…"
+                : "Simulate loud noise"
+            }
             onPress={simulateLoudNoise}
             disabled={simulatedNoiseActive}
           />
@@ -134,7 +177,11 @@ function SleepingView() {
     <View style={styles.nightRoot}>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safeArea}>
-        <Pressable accessible={false} style={styles.nightPress} onPress={() => setShowActivity((shown) => !shown)}>
+        <Pressable
+          accessible={false}
+          style={styles.nightPress}
+          onPress={() => setShowActivity((shown) => !shown)}
+        >
           <Text style={[styles.nightEyebrow, styles.centered]}>
             {activeIndex === null
               ? "PREPARING THE NIGHT"
@@ -142,8 +189,16 @@ function SleepingView() {
           </Text>
 
           <View style={styles.dialWrap}>
-            <NightDial size={272} phases={phases} progress={session.phaseElapsedMs / SLEEP_CYCLE_MS % 1} ringColor={NightColors.ring}>
-              <Text style={styles.clock} accessibilityLabel={`${formatHuman(session.phaseElapsedMs)} in this phase`}>
+            <NightDial
+              size={272}
+              phases={phases}
+              progress={(session.phaseElapsedMs / SLEEP_CYCLE_MS) % 1}
+              ringColor={NightColors.ring}
+            >
+              <Text
+                style={styles.clock}
+                accessibilityLabel={`${formatHuman(session.phaseElapsedMs)} in this phase`}
+              >
                 {clock.value}
               </Text>
               <Text style={styles.clockUnit}>{clock.unit.toUpperCase()}</Text>
@@ -161,7 +216,9 @@ function SleepingView() {
             </Text>
             <Text style={styles.nightFaintMono}>
               {`TOTAL ${formatHuman(session.elapsedMs).toUpperCase()}`}
-              {session.startedAt ? ` · STARTED ${formatTimeOfDay(session.startedAt).toUpperCase()}` : ""}
+              {session.startedAt
+                ? ` · STARTED ${formatTimeOfDay(session.startedAt).toUpperCase()}`
+                : ""}
             </Text>
           </View>
 
@@ -173,7 +230,10 @@ function SleepingView() {
           )}
 
           {showActivity && (
-            <ScrollView style={styles.activity} contentContainerStyle={styles.activityContent}>
+            <ScrollView
+              style={styles.activity}
+              contentContainerStyle={styles.activityContent}
+            >
               {session.recentEvents.length === 0 ? (
                 <Text style={styles.nightFaint}>No activity yet.</Text>
               ) : (
@@ -186,13 +246,25 @@ function SleepingView() {
             </ScrollView>
           )}
 
-          {session.errorMessage && <Text style={[styles.nightText, styles.centered]}>{session.errorMessage}</Text>}
+          {session.errorMessage && (
+            <Text style={[styles.nightText, styles.centered]}>
+              {session.errorMessage}
+            </Text>
+          )}
 
           {lockDemoEnabled && (
             <View style={styles.demoRow}>
-              <NightButton label="Simulate Lock" onPress={() => setSimulatedLocked(true)} disabled={!running} />
               <NightButton
-                label={simulatedNoiseActive ? "Noise detected — resuming soon…" : "Simulate loud noise"}
+                label="Simulate Lock"
+                onPress={() => setSimulatedLocked(true)}
+                disabled={!running}
+              />
+              <NightButton
+                label={
+                  simulatedNoiseActive
+                    ? "Noise detected — resuming soon…"
+                    : "Simulate loud noise"
+                }
                 onPress={simulateLoudNoise}
                 disabled={!running || simulatedNoiseActive}
               />
@@ -213,7 +285,9 @@ function SleepingView() {
             accessibilityRole="button"
             style={styles.activityToggle}
           >
-            <Text style={styles.nightFaintMono}>{showActivity ? "HIDE ACTIVITY" : "TAP ANYWHERE TO SEE ACTIVITY"}</Text>
+            <Text style={styles.nightFaintMono}>
+              {showActivity ? "HIDE ACTIVITY" : "TAP ANYWHERE TO SEE ACTIVITY"}
+            </Text>
           </Pressable>
         </Pressable>
       </SafeAreaView>
@@ -221,13 +295,24 @@ function SleepingView() {
   );
 }
 
-function NightButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+function NightButton({
+  label,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.nightButton, (pressed || disabled) && styles.dimmed]}
+      style={({ pressed }) => [
+        styles.nightButton,
+        (pressed || disabled) && styles.dimmed,
+      ]}
     >
       <Text style={styles.nightText}>{label}</Text>
     </Pressable>
@@ -253,13 +338,20 @@ function MorningView() {
     };
   }, [runId]);
 
-  const endedAt = session.endedAt ?? (session.startedAt ?? 0) + session.elapsedMs;
-  const duration = session.startedAt ? endedAt - session.startedAt : session.elapsedMs;
+  const endedAt =
+    session.endedAt ?? (session.startedAt ?? 0) + session.elapsedMs;
+  const duration = session.startedAt
+    ? endedAt - session.startedAt
+    : session.elapsedMs;
   const segments = events ? phaseSegments(events) : [];
   const cues = events ? countPlays(events) : session.playCount;
   const endHour = new Date(endedAt).getHours();
   const title =
-    session.status === "error" ? "The night hit a snag" : endHour >= 4 && endHour < 12 ? "Good morning" : "Night complete";
+    session.status === "error"
+      ? "The night hit a snag"
+      : endHour >= 4 && endHour < 12
+        ? "Good morning"
+        : "Night complete";
   const outcome =
     session.status === "completed"
       ? "all phases completed"
@@ -276,22 +368,37 @@ function MorningView() {
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       <NightSky />
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.morningContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.morningContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.morningHero}>
-            <OwlAvatar size={84} borderColor={theme.backgroundElement} glowColor={theme.phase3} />
+            <OwlAvatar
+              size={84}
+              borderColor={theme.backgroundElement}
+              glowColor={theme.phase3}
+            />
             <ThemedText type="eyebrow" style={{ color: theme.phase3 }}>
               {formatLongDate(endedAt)}
             </ThemedText>
-            <ThemedText type="title" style={styles.centered} accessibilityRole="header">
+            <ThemedText
+              type="title"
+              style={styles.centered}
+              accessibilityRole="header"
+            >
               {title}
             </ThemedText>
           </View>
 
           <Surface style={styles.summary}>
             <View style={styles.summaryHead}>
-              <Text style={[styles.duration, { color: theme.text }]}>{formatHuman(duration)}</Text>
+              <Text style={[styles.duration, { color: theme.text }]}>
+                {formatHuman(duration)}
+              </Text>
               <ThemedText type="small" themeColor="textSecondary">
-                {session.startedAt ? `${formatTimeOfDay(session.startedAt)} → ${formatTimeOfDay(endedAt)} · ` : ""}
+                {session.startedAt
+                  ? `${formatTimeOfDay(session.startedAt)} → ${formatTimeOfDay(endedAt)} · `
+                  : ""}
                 {outcome}
               </ThemedText>
             </View>
@@ -306,7 +413,11 @@ function MorningView() {
                 />
                 <View style={styles.segmentLabels}>
                   {segments.map((segment) => (
-                    <ThemedText key={segment.phaseIndex} type="eyebrow" style={{ color: colors[segment.phaseIndex] }}>
+                    <ThemedText
+                      key={segment.phaseIndex}
+                      type="eyebrow"
+                      style={{ color: colors[segment.phaseIndex] }}
+                    >
                       {`${RUN_PHASES[segment.phaseIndex]?.label ?? "Phase"} · ${formatHuman(segment.durationMs)}`}
                     </ThemedText>
                   ))}
@@ -320,15 +431,25 @@ function MorningView() {
           </Surface>
 
           {session.errorMessage && (
-            <ThemedText type="small" themeColor="danger" style={styles.centered}>
+            <ThemedText
+              type="small"
+              themeColor="danger"
+              style={styles.centered}
+            >
               {session.errorMessage}
             </ThemedText>
           )}
 
           {runId && (
             <Surface style={styles.lucidCard}>
-              <ThemedText type="heading">Did you have a lucid dream?</ThemedText>
-              <SegmentedControl options={LUCID_OPTIONS} value={lucid} onChange={chooseLucid} />
+              <ThemedText type="heading">
+                Did you have a lucid dream?
+              </ThemedText>
+              <SegmentedControl
+                options={LUCID_OPTIONS}
+                value={lucid}
+                onChange={chooseLucid}
+              />
               <ThemedText type="small" themeColor="textMuted">
                 Saved with this night in Nights.
               </ThemedText>
@@ -339,11 +460,21 @@ function MorningView() {
             {runId && (
               <Button
                 label="View the night"
-                onPress={() => router.replace({ pathname: "/nights", params: { run: runId } })}
+                onPress={() =>
+                  router.replace({
+                    pathname: "/nights",
+                    params: { run: runId },
+                  })
+                }
                 style={styles.flex}
               />
             )}
-            <Button label="Done" variant="primary" onPress={() => router.replace("/")} style={styles.flex} />
+            <Button
+              label="Done"
+              variant="primary"
+              onPress={() => router.replace("/")}
+              style={styles.flex}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>

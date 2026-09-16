@@ -1,4 +1,4 @@
-name: Customer Breathing Cluster 
+name: Customer Breathing Cluster
 version: 1
 volume: 0.6
 
@@ -13,4 +13,3 @@ body:
           - wait: $short
           - play: sleepbreath
           - wait: $short
-

@@ -1,6 +1,19 @@
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, Settings, type ThemePreference } from '@/lib/settings';
+import {
+  DEFAULT_SETTINGS,
+  loadSettings,
+  saveSettings,
+  Settings,
+  type ThemePreference,
+} from "@/lib/settings";
 
 type SettingsContextValue = {
   settings: Settings;
@@ -44,11 +57,12 @@ export function SettingsProvider({ children }: PropsWithChildren) {
 /** Safe outside a SettingsProvider (component tests render themed components
  * bare), where it falls back to following the device. */
 export function useThemePreference(): ThemePreference {
-  return useContext(SettingsContext)?.settings.themePreference ?? 'system';
+  return useContext(SettingsContext)?.settings.themePreference ?? "system";
 }
 
 export function useSettings() {
   const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error('useSettings must be used within a SettingsProvider');
+  if (!ctx)
+    throw new Error("useSettings must be used within a SettingsProvider");
   return ctx;
 }

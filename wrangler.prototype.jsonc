@@ -4,12 +4,12 @@
   "name": "luciddream-prototype",
   "compatibility_date": "2026-09-05",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
   },
   "routes": [
     {
       "pattern": "luciddream-prototype.countinglight.com",
-      "custom_domain": true
-    }
-  ]
+      "custom_domain": true,
+    },
+  ],
 }

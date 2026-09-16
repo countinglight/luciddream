@@ -18,14 +18,14 @@ learned into timed scripts. v3 closes the loop **within a night**: the phone rea
 happening while the user sleeps. Everything in this document exists to make that possible, or to
 make it safe.
 
-| Capability | v2 (shipped before v3 starts) | v3 |
-| --- | --- | --- |
-| Wearables | Historical import into the night bundle (HealthKit, Health Connect, Oura) | Live observations, native watch apps, in-dream signalling experiments |
-| Script conditions | Time-based in practice; on-device sources (movement, sound level); conditionals supported and dormant for wearables | Live wearable conditions with true/false/unknown semantics |
-| Session runtime | TypeScript engine, hardened (checkpoint/resume, append-only log, Android alarm module, night ambience) | Native session host if v2 field evidence shows the JS runtime cannot meet the overnight gate |
-| Audio | Pre-rendered softening, fades, quiet ambience | Live DSP only where a v3 feature needs modulation during playback |
-| Host | Local service on the user's machine | Hosted service, if user feedback justifies it (decision deferred; see v2 plan §5.8) |
-| Voice | Level-based gentle interrupt | Offline keyword spotting, if the gentle interrupt earns its keep |
+| Capability        | v2 (shipped before v3 starts)                                                                                       | v3                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Wearables         | Historical import into the night bundle (HealthKit, Health Connect, Oura)                                           | Live observations, native watch apps, in-dream signalling experiments                        |
+| Script conditions | Time-based in practice; on-device sources (movement, sound level); conditionals supported and dormant for wearables | Live wearable conditions with true/false/unknown semantics                                   |
+| Session runtime   | TypeScript engine, hardened (checkpoint/resume, append-only log, Android alarm module, night ambience)              | Native session host if v2 field evidence shows the JS runtime cannot meet the overnight gate |
+| Audio             | Pre-rendered softening, fades, quiet ambience                                                                       | Live DSP only where a v3 feature needs modulation during playback                            |
+| Host              | Local service on the user's machine                                                                                 | Hosted service, if user feedback justifies it (decision deferred; see v2 plan §5.8)          |
+| Voice             | Level-based gentle interrupt                                                                                        | Offline keyword spotting, if the gentle interrupt earns its keep                             |
 
 ### 1.1 Triggers that pull v3 work forward into a v2.x
 
@@ -97,17 +97,17 @@ The v1 source provides useful boundaries and tests, but does not establish all-n
 The v2 hardening package addresses the first three rows in TypeScript; the remaining consequences
 stand.
 
-| Existing component | Evidence | Architectural consequence |
-| --- | --- | --- |
-| [Engine ports](../../src/engine/ports.ts) and [interpreter](../../src/engine/interpreter.ts) | Engine is independent of RN/Expo, with loops, conditions and effect scopes | Preserve concepts, semantics and deterministic fixtures |
-| [Real clock](../../src/session/clock.ts) | JS setTimeout and promises drive waits | Native audio alone leaves JS in the decision path |
-| [Session](../../src/session/session.ts) and [keep-alive track](../../src/session/keep-alive-track.ts) | JS orchestration and a low-amplitude loop span silent gaps | Replace assumed keep-alive behavior with an explicitly validated native lifecycle |
-| [Wake lock](../../src/session/wake-lock.ts) | Calls expo-keep-awake despite a comment describing a partial CPU wake lock | Screen-awake behavior is not evidence of screen-off CPU execution [R4] |
-| [Context providers](../../src/runtime/context-providers.ts) | Manual and scripted values; snapshot has one timestamp | Real observations require per-measurement age, provenance and quality |
-| [Conditions](../../src/engine/conditions.ts) | Negation can turn an unavailable comparison into true | Introduce explicit unknown semantics before wearable conditions (scheduled for v2) |
-| [Audio adapter](../../src/audio/expo-audio-port.ts) | One reused player per signal; gain and playback rate | Specify voices, overlap, cancellation and effect semantics |
-| [Voice hook](../../src/hooks/use-voice-interrupt.ts) | React hooks consume metering updates | Overnight detection belongs with native session ownership |
-| [JSONL logger](../../src/logging/jsonl-log-port.ts) | Rewrites accumulated content for each event | Use append-oriented persistence (scheduled for v2 in TypeScript) |
+| Existing component                                                                                    | Evidence                                                                   | Architectural consequence                                                          |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [Engine ports](../../src/engine/ports.ts) and [interpreter](../../src/engine/interpreter.ts)          | Engine is independent of RN/Expo, with loops, conditions and effect scopes | Preserve concepts, semantics and deterministic fixtures                            |
+| [Real clock](../../src/session/clock.ts)                                                              | JS setTimeout and promises drive waits                                     | Native audio alone leaves JS in the decision path                                  |
+| [Session](../../src/session/session.ts) and [keep-alive track](../../src/session/keep-alive-track.ts) | JS orchestration and a low-amplitude loop span silent gaps                 | Replace assumed keep-alive behavior with an explicitly validated native lifecycle  |
+| [Wake lock](../../src/session/wake-lock.ts)                                                           | Calls expo-keep-awake despite a comment describing a partial CPU wake lock | Screen-awake behavior is not evidence of screen-off CPU execution [R4]             |
+| [Context providers](../../src/runtime/context-providers.ts)                                           | Manual and scripted values; snapshot has one timestamp                     | Real observations require per-measurement age, provenance and quality              |
+| [Conditions](../../src/engine/conditions.ts)                                                          | Negation can turn an unavailable comparison into true                      | Introduce explicit unknown semantics before wearable conditions (scheduled for v2) |
+| [Audio adapter](../../src/audio/expo-audio-port.ts)                                                   | One reused player per signal; gain and playback rate                       | Specify voices, overlap, cancellation and effect semantics                         |
+| [Voice hook](../../src/hooks/use-voice-interrupt.ts)                                                  | React hooks consume metering updates                                       | Overnight detection belongs with native session ownership                          |
+| [JSONL logger](../../src/logging/jsonl-log-port.ts)                                                   | Rewrites accumulated content for each event                                | Use append-oriented persistence (scheduled for v2 in TypeScript)                   |
 
 The existing virtual-clock tests remain valuable for semantic verification. They cannot demonstrate
 battery behavior, background runtime, sensor delivery or audible latency on physical devices.
@@ -130,12 +130,12 @@ A freshness rule, cooldown or effect algorithm can therefore be implemented once
 supply observations and audio/device services through common contracts. Separate adapters and
 platform tests remain necessary. Sharing reduces duplicated behavior, not all platform engineering.
 
-| Option | Benefit | Cost | Position |
-| --- | --- | --- | --- |
-| Shared C++ execution/DSP core, Swift/Kotlin hosts | One implementation of semantics and audio math | Native builds, FFI, memory and thread discipline | Preferred prototype if DSP is substantial |
-| KMP execution core, separate audio processing | Shared interpreter and sensor policy in Kotlin | Apple integration plus a DSP solution | Strong alternative if orchestration dominates |
-| Separate Swift/Kotlin engines | Direct platform tooling | Two semantic implementations plus the existing TS web engine | Consider only for a deliberately tiny core |
-| TS interpreter with native ports | Smallest immediate migration | JS continuations still decide when and what to execute | Transitional option; this is where v2 lands |
+| Option                                            | Benefit                                        | Cost                                                         | Position                                      |
+| ------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| Shared C++ execution/DSP core, Swift/Kotlin hosts | One implementation of semantics and audio math | Native builds, FFI, memory and thread discipline             | Preferred prototype if DSP is substantial     |
+| KMP execution core, separate audio processing     | Shared interpreter and sensor policy in Kotlin | Apple integration plus a DSP solution                        | Strong alternative if orchestration dominates |
+| Separate Swift/Kotlin engines                     | Direct platform tooling                        | Two semantic implementations plus the existing TS web engine | Consider only for a deliberately tiny core    |
+| TS interpreter with native ports                  | Smallest immediate migration                   | JS continuations still decide when and what to execute       | Transitional option; this is where v2 lands   |
 
 Rust is another possible shared core through bindings; choose it only if expertise or dependencies
 justify it. Avoid introducing both KMP and C++ shared-core toolchains initially without a concrete
@@ -163,15 +163,15 @@ flowchart TD
     Core -->|"Session snapshots"| UI
 ```
 
-| Responsibility | Shared behavior | Platform-specific mechanism |
-| --- | --- | --- |
-| Script execution | Loops, scopes, phase transitions, cancellation and condition semantics | Runtime hosting and wakeup scheduling |
-| Cue decisions | Freshness, quality, cooldowns, gain limits and eligibility | Delivery to audio or supported haptics |
-| Audio | Mixing, envelopes, effect order and custom DSP | Audio device I/O, focus, routing and suitable decoding |
-| Wearables | Observation schema, normalization and decision rules | HealthKit, Health Services, Bluetooth, watch transport and permissions |
-| Persistence | Event/checkpoint schemas and recovery policy | Durable local storage access |
-| Phone/web | UI, YAML parsing, library, ordinary HTTP and settings | Existing platform adapters where needed |
-| Watch apps | Protocol and selected portable logic | SwiftUI/watchOS and Kotlin/Wear OS UI and lifecycle |
+| Responsibility   | Shared behavior                                                        | Platform-specific mechanism                                            |
+| ---------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Script execution | Loops, scopes, phase transitions, cancellation and condition semantics | Runtime hosting and wakeup scheduling                                  |
+| Cue decisions    | Freshness, quality, cooldowns, gain limits and eligibility             | Delivery to audio or supported haptics                                 |
+| Audio            | Mixing, envelopes, effect order and custom DSP                         | Audio device I/O, focus, routing and suitable decoding                 |
+| Wearables        | Observation schema, normalization and decision rules                   | HealthKit, Health Services, Bluetooth, watch transport and permissions |
+| Persistence      | Event/checkpoint schemas and recovery policy                           | Durable local storage access                                           |
+| Phone/web        | UI, YAML parsing, library, ordinary HTTP and settings                  | Existing platform adapters where needed                                |
+| Watch apps       | Protocol and selected portable logic                                   | SwiftUI/watchOS and Kotlin/Wear OS UI and lifecycle                    |
 
 The phone is the primary full-session host. A watch should not duplicate the full phone engine by
 default. Time-sensitive watch-local behavior may reuse a bounded subset of portable policy when its
@@ -198,12 +198,12 @@ Capability requirements must distinguish mandatory inputs from optional ones wit
 
 Expose coarse operations such as:
 
-| Operation | Contract |
-| --- | --- |
-| start(plan) | Validate and accept a session, return its run identity; distinguish acceptance from later completion |
-| stop(runId) | Idempotently cancel waits and pending cues, stop active output and release resources |
-| getSnapshot(runId) | Return authoritative state, active phase, progress and interruption/availability status |
-| subscribe(runId, afterSequence) | Observe events and recover gaps from persisted sequence numbers |
+| Operation                       | Contract                                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| start(plan)                     | Validate and accept a session, return its run identity; distinguish acceptance from later completion |
+| stop(runId)                     | Idempotently cancel waits and pending cues, stop active output and release resources                 |
+| getSnapshot(runId)              | Return authoritative state, active phase, progress and interruption/availability status              |
+| subscribe(runId, afterSequence) | Observe events and recover gaps from persisted sequence numbers                                      |
 
 The native host must progress without JS callbacks for waits, decisions, playback completion, sensor
 processing or Stop handling. UI subscriptions can disappear without owning or terminating a run.
@@ -270,13 +270,13 @@ morning correlation, baselines and retrospective analysis (v2 uses only this). L
 only the metrics and delivery behavior actually available during a session. A history provider must
 not advertise a live-stage capability merely because its records contain sleep stages.
 
-| Integration | Intended architectural role | Constraint |
-| --- | --- | --- |
-| iPhone HealthKit | Historical health records and stored-sample observation | Delivery frequency is a maximum frequency, not a latency guarantee [R7] |
-| Android Health Connect | Cross-vendor record import and historical analysis | Background reads require permission and available records; synchronization is not a live sensor subscription [R8, R9] |
-| Native Apple Watch app | Controls, haptics and supported sensor sessions | Smart-alarm extended runtime is a 30-minute window, not evidence of all-night REM access [R10] |
-| Native Wear OS app | Health Services and device controls | Passive background service delivery is batched at unpredictable intervals [R11, R12] |
-| Oura cloud API | Sleep reports and retrospective correlation | Sleep synchronization requires opening the Oura app; webhooks do not remove upstream sync delay [R13] |
+| Integration            | Intended architectural role                             | Constraint                                                                                                            |
+| ---------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| iPhone HealthKit       | Historical health records and stored-sample observation | Delivery frequency is a maximum frequency, not a latency guarantee [R7]                                               |
+| Android Health Connect | Cross-vendor record import and historical analysis      | Background reads require permission and available records; synchronization is not a live sensor subscription [R8, R9] |
+| Native Apple Watch app | Controls, haptics and supported sensor sessions         | Smart-alarm extended runtime is a 30-minute window, not evidence of all-night REM access [R10]                        |
+| Native Wear OS app     | Health Services and device controls                     | Passive background service delivery is batched at unpredictable intervals [R11, R12]                                  |
+| Oura cloud API         | Sleep reports and retrospective correlation             | Sleep synchronization requires opening the Oura app; webhooks do not remove upstream sync delay [R13]                 |
 
 Use health stores and direct integrations together where they serve different purposes. Ordinary
 Oura HTTP integration does not inherently require Swift/Kotlin; a native ring adapter would require
@@ -301,15 +301,15 @@ are useful comparison data, not definitive ground truth.
 Each observation must carry enough information to determine what was measured and whether it is
 usable now. The conceptual schema includes:
 
-| Field group | Required meaning |
-| --- | --- |
-| Identity | Source, device, metric and observation identity for deduplication |
-| Time | Measurement instant or interval, receipt time, and relevant clock uncertainty |
-| Value | Typed value, units, aggregation window and metric definition, especially for HRV |
-| Availability | Available, missing, stale, disconnected or unsupported; distinguish these where known |
-| Quality | Quality indicators and optional confidence when a source actually provides it |
-| Provenance | Vendor-reported measurement/stage versus application-derived estimate and model version |
-| Eligibility | Expiry/freshness policy and whether the observation is usable for live decisions |
+| Field group  | Required meaning                                                                        |
+| ------------ | --------------------------------------------------------------------------------------- |
+| Identity     | Source, device, metric and observation identity for deduplication                       |
+| Time         | Measurement instant or interval, receipt time, and relevant clock uncertainty           |
+| Value        | Typed value, units, aggregation window and metric definition, especially for HRV        |
+| Availability | Available, missing, stale, disconnected or unsupported; distinguish these where known   |
+| Quality      | Quality indicators and optional confidence when a source actually provides it           |
+| Provenance   | Vendor-reported measurement/stage versus application-derived estimate and model version |
+| Eligibility  | Expiry/freshness policy and whether the observation is usable for live decisions        |
 
 Freshness is based on measurement time, not the moment a snapshot is requested. Preserve historical
 intervals and handle duplicate/out-of-order data without making old data current. Provider capability
@@ -377,12 +377,12 @@ service; an Ubuntu orchestration job does not mean Apple compilation happens on 
 
 ### 2.14 Migration sequence and acceptance gates
 
-| Stage | Deliverable | Exit evidence |
-| --- | --- | --- |
-| A. Feasibility | Representative Apple and Android watch/phone probes; prototype shared-core build | Measured delivery age/gaps, battery use and supported runtime on both platforms; working bindings on both mobile platforms |
-| B. Native session ownership | Existing semantics with simple audio and explicit session API | Screen-off overnight run, UI reconnection, native Stop and interruption handling |
-| C. Live integration and optional DSP | Validated Apple and Android sensor paths; selected effects if scoped | Sensor-to-cue timing and selected audio behavior meet declared tolerances on physical devices; parity gaps documented |
-| D. Broader support | Additional devices or stage-based experiments | Per-device capability evidence and appropriate estimator validation before claims of support |
+| Stage                                | Deliverable                                                                      | Exit evidence                                                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| A. Feasibility                       | Representative Apple and Android watch/phone probes; prototype shared-core build | Measured delivery age/gaps, battery use and supported runtime on both platforms; working bindings on both mobile platforms |
+| B. Native session ownership          | Existing semantics with simple audio and explicit session API                    | Screen-off overnight run, UI reconnection, native Stop and interruption handling                                           |
+| C. Live integration and optional DSP | Validated Apple and Android sensor paths; selected effects if scoped             | Sensor-to-cue timing and selected audio behavior meet declared tolerances on physical devices; parity gaps documented      |
+| D. Broader support                   | Additional devices or stage-based experiments                                    | Per-device capability evidence and appropriate estimator validation before claims of support                               |
 
 (The former stage "historical integration" is delivered in v2.)
 

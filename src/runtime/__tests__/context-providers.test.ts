@@ -1,14 +1,17 @@
-import { ManualContextProvider, ScriptedContextProvider } from '../context-providers';
+import {
+  ManualContextProvider,
+  ScriptedContextProvider,
+} from "../context-providers";
 
-describe('ManualContextProvider', () => {
-  it('returns an empty snapshot until values are set', async () => {
+describe("ManualContextProvider", () => {
+  it("returns an empty snapshot until values are set", async () => {
     const provider = new ManualContextProvider();
     const snapshot = await provider.snapshot();
     expect(snapshot.hr).toBeUndefined();
     expect(snapshot.rem).toBeUndefined();
   });
 
-  it('reflects whatever was last set', async () => {
+  it("reflects whatever was last set", async () => {
     const provider = new ManualContextProvider();
     provider.set({ rem: true, hr: 55 });
     expect(await provider.snapshot()).toMatchObject({ rem: true, hr: 55 });
@@ -20,15 +23,15 @@ describe('ManualContextProvider', () => {
   });
 });
 
-describe('ScriptedContextProvider', () => {
-  it('has no values before the first timeline entry', async () => {
+describe("ScriptedContextProvider", () => {
+  it("has no values before the first timeline entry", async () => {
     let now = 1000;
     const provider = new ScriptedContextProvider(() => now);
     const snapshot = await provider.snapshot();
     expect(snapshot.rem).toBeUndefined();
   });
 
-  it('applies the entry whose offset has passed, latest wins', async () => {
+  it("applies the entry whose offset has passed, latest wins", async () => {
     let now = 1000;
     const provider = new ScriptedContextProvider(() => now);
     provider.at(0, { rem: false }).at(5000, { rem: true, hr: 55 });
@@ -39,7 +42,7 @@ describe('ScriptedContextProvider', () => {
     expect(await provider.snapshot()).toMatchObject({ rem: true, hr: 55 });
   });
 
-  it('accepts entries added out of order', async () => {
+  it("accepts entries added out of order", async () => {
     let now = 1000;
     const provider = new ScriptedContextProvider(() => now);
     provider.at(10_000, { hrv: 10 }).at(0, { hrv: 1 }).at(5_000, { hrv: 5 });

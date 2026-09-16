@@ -80,7 +80,10 @@ export function phaseColors(theme: ThemeColors): [string, string, string] {
 }
 
 /** `#rrggbb` → `rgba(...)`; anything else is returned unchanged. */
-export function withAlpha(color: string | undefined, alpha: number): string | undefined {
+export function withAlpha(
+  color: string | undefined,
+  alpha: number,
+): string | undefined {
   if (typeof color !== "string" || !/^#[0-9a-f]{6}$/i.test(color)) return color;
   const r = parseInt(color.slice(1, 3), 16);
   const g = parseInt(color.slice(3, 5), 16);
@@ -97,12 +100,17 @@ function backgroundImage(value: string): ViewStyle {
     : { experimental_backgroundImage: value };
 }
 
-export function linearGradient(colors: readonly string[], angle = "90deg"): ViewStyle {
+export function linearGradient(
+  colors: readonly string[],
+  angle = "90deg",
+): ViewStyle {
   return backgroundImage(`linear-gradient(${angle}, ${colors.join(", ")})`);
 }
 
 export function radialGlow(color: string, at = "50% 28%"): ViewStyle {
-  return backgroundImage(`radial-gradient(circle at ${at}, ${color}, transparent 62%)`);
+  return backgroundImage(
+    `radial-gradient(circle at ${at}, ${color}, transparent 62%)`,
+  );
 }
 
 export const Fonts = Platform.select({
