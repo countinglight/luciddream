@@ -437,6 +437,39 @@ From a Windows command prompt, after `npm run android:apk:release`:
 The APK filename tracks `version` in `package.json` through
 `plugins/withCanonicalVersion.js`, so it changes with each version bump.
 
+## Android emulator
+
+`scripts/android-emulator.js` creates, boots and inspects a local emulator using only the Android
+SDK tools Android Studio already installed. Nothing is downloaded, and every `adb` call targets the
+emulator (`adb -e`), so a phone plugged in at the same time is never touched.
+
+| Command                            | What it does                                                                                         |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `npm run emulator:plan`            | Shows what it found and would do: SDK, system image, whether the emulator exists. Changes nothing.   |
+| `npm run emulator:start`           | Creates an emulator named `luciddream` if missing, boots it, waits until Android is ready.           |
+| `npm run android:emulator`         | `emulator:start`, then builds and installs the debug app. Needs Metro, like `npm run android`.       |
+| `npm run android:emulator:release` | `emulator:start`, then a release build that runs without Metro.                                      |
+| `npm run emulator:check`           | Boot state, Doze state, whether the app is installed, and whether its foreground service is running. |
+| `npm run emulator:doze`            | Screen off, battery unplugged, forced into deep Doze.                                                |
+| `npm run emulator:wake`            | Undoes `emulator:doze`.                                                                              |
+
+The emulator is created from the newest stable Google APIs image installed. Preview images such as
+`android-Tiramisu` are skipped. Set `LUCIDDREAM_AVD` to use an emulator you created yourself.
+
+**Checking that a night survives Doze (D1 in the hardening summary):** start a night in the app, lock
+it with `npm run emulator:doze`, wait through a silent stretch, then run `npm run emulator:check`.
+`Foreground service: RUNNING` is the result you want. Without it, Android stops background playback
+after about three minutes.
+
+`android:apk:release` builds only ARM architectures and will not install on an x86_64 emulator; use
+`android:emulator:release` for a release build on the emulator. A full eight-hour night still belongs
+on a phone, with the release APK.
+
+**If creating the emulator fails**, the usual cause is Java: `avdmanager` needs a JDK. The script
+borrows Android Studio's bundled one when `JAVA_HOME` is unset, and says so if it cannot find it. The
+fallback is to create an emulator named `luciddream` in Android Studio's Device Manager; the other
+commands then work as normal.
+
 ## Device smoke flows (Maestro)
 
 Flows live in [`.maestro/`](.maestro/README.md) and cover launch, the three sheets, a night that
@@ -451,7 +484,8 @@ Maestro is a standalone binary, not an npm dependency, so none of this changes t
 npm run android:apk:debug
 ```
 
-Start an emulator from Android Studio's Device Manager, install the APK, then run the flows. Maestro
+Start the emulator and install the app with `npm run android:emulator` (see "Android emulator" above),
+then run the flows. Maestro
 installs under WSL on Windows:
 
 ```bash

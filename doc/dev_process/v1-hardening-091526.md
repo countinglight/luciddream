@@ -138,7 +138,10 @@ Nothing in this section was verified. Unit tests and code review are all that st
 | **D8** | **Battery over a full night**, now that the screen is off.                                                                                                                                                                        | Spec §2.4 targets under 8 %; the previous figure was measured (if at all) with the screen on.                                                                        | R-002                                |
 
 You mentioned Android Studio is installed — D1, D2, D3, D6 and D7 are all reachable in an emulator.
-D4 and D8 need real hardware.
+D4 and D8 need real hardware. Added 2026-09-16: `npm run android:emulator` creates, boots and installs
+on an emulator, and `npm run emulator:doze` plus `npm run emulator:check` cover D1's Doze and
+foreground-service question. See BUILD.md, "Android emulator". A full night still goes on a phone,
+with the release APK and the phone's battery setting for LucidDream set to Unrestricted.
 
 ## 6. Decisions you still owe
 
