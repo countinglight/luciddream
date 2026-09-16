@@ -1,9 +1,9 @@
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
 /** A single tag so this session's wake lock can't collide with, or be
  * accidentally released by, some unrelated `useKeepAwake()` call elsewhere
  * in the app. */
-const TAG = 'luciddream-run';
+const TAG = "luciddream-run";
 
 /** Holds a partial CPU wake lock for the run's duration (spec §4.4) — keeps
  * timers firing with the screen off. Call `release` in every exit path

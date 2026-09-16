@@ -1,10 +1,16 @@
-import { createContext, useContext, type PropsWithChildren } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  type PropsWithChildren,
+} from "react";
 
-import { useLibrary } from '@/context/library-context';
-import { useSettings } from '@/context/settings-context';
-import { useSession } from '@/hooks/use-session';
-import { useTelemetryLifecycle } from '@/hooks/use-telemetry';
-import { useVoiceInterrupt } from '@/hooks/use-voice-interrupt';
+import { useLibrary } from "@/context/library-context";
+import { useSettings } from "@/context/settings-context";
+import { useSession } from "@/hooks/use-session";
+import { useTelemetryLifecycle } from "@/hooks/use-telemetry";
+import { useVoiceInterrupt } from "@/hooks/use-voice-interrupt";
+import { getContextProvider } from "@/runtime/services";
 
 type SessionContextValue = ReturnType<typeof useSession>;
 
@@ -20,18 +26,36 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const { signals } = useLibrary();
   const session = useSession(signals);
 
+  // Drives conditionals from the Settings screen's "Simulated context" panel
+  // live, including mid-run (spec §4.3). "none" is the Settings UI's way of
+  // saying "no sleep-stage reading" — ManualContextProvider (and the engine
+  // beyond it) only knows `undefined` for that. The provider itself is owned
+  // by the composition root, so a run can read context without the React tree.
+  useEffect(() => {
+    const { sleepStage, ...rest } = settings.simulatedContext;
+    getContextProvider().set({
+      ...rest,
+      sleepStage: sleepStage === "none" ? undefined : sleepStage,
+    });
+  }, [settings.simulatedContext]);
+
   useTelemetryLifecycle(settings.diagnostics, isLoaded);
 
   useVoiceInterrupt(
-    settings.voiceInterrupt === 'gentle' && session.status === 'running',
+    settings.voiceInterrupt === "gentle" && session.status === "running",
     session.handleVoiceInterrupt,
   );
 
-  return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={session}>
+      {children}
+    </SessionContext.Provider>
+  );
 }
 
 export function useSessionContext() {
   const ctx = useContext(SessionContext);
-  if (!ctx) throw new Error('useSessionContext must be used within a SessionProvider');
+  if (!ctx)
+    throw new Error("useSessionContext must be used within a SessionProvider");
   return ctx;
 }

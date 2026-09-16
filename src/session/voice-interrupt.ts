@@ -1,4 +1,4 @@
-export type VoiceInterruptEvent = 'trigger' | 'resume';
+export type VoiceInterruptEvent = "trigger" | "resume";
 
 export type VoiceInterruptConfig = {
   /** dBFS threshold above which a sample counts as "loud." expo-audio's
@@ -33,14 +33,16 @@ export class VoiceInterruptDetector {
   private loudSince: number | null = null;
   private triggeredAt: number | null = null;
 
-  constructor(private readonly config: VoiceInterruptConfig = DEFAULT_VOICE_INTERRUPT_CONFIG) {}
+  constructor(
+    private readonly config: VoiceInterruptConfig = DEFAULT_VOICE_INTERRUPT_CONFIG,
+  ) {}
 
   feed(meteringDb: number, atMs: number): VoiceInterruptEvent | null {
     if (this.triggeredAt !== null) {
       if (atMs - this.triggeredAt >= this.config.holdMs) {
         this.triggeredAt = null;
         this.loudSince = null;
-        return 'resume';
+        return "resume";
       }
       return null;
     }
@@ -57,7 +59,7 @@ export class VoiceInterruptDetector {
 
     if (atMs - this.loudSince >= this.config.sustainMs) {
       this.triggeredAt = atMs;
-      return 'trigger';
+      return "trigger";
     }
 
     return null;

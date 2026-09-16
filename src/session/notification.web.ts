@@ -3,7 +3,7 @@
  * expo-notifications on web logs a "push token listener not supported"
  * warning at load. These no-ops keep the same API without that import. */
 
-export const STOP_ACTION_ID = 'STOP';
+export const STOP_ACTION_ID = "STOP";
 
 export function configureNotificationHandler(): void {}
 
@@ -11,7 +11,10 @@ export async function ensureRunNotificationSetup(): Promise<boolean> {
   return false;
 }
 
-export async function showOrUpdateRunNotification(scriptName: string, stepText: string): Promise<void> {
+export async function showOrUpdateRunNotification(
+  scriptName: string,
+  stepText: string,
+): Promise<void> {
   void scriptName;
   void stepText;
 }

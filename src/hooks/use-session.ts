@@ -1,27 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { AppState } from "react-native";
 
-import {
-  collectSignalNames,
-  ExpoAudioPort,
-  firstSignalName,
-  resolveSignalMap,
-} from "@/audio";
-import { getFileStore } from "@/runtime/services";
+import { ExpoAudioPort, firstSignalName, resolveSignalMap } from "@/audio";
 import { useSettings } from "@/context/settings-context";
-import { parseScript, type EngineEvent, type LogPort } from "@/engine";
-import {
-  describeEvent,
-  FanOutLogPort,
-  FilteringLogPort,
-  JsonlLogPort,
-} from "@/logging";
-import { loadRunIndex, saveRunIndex, upsertRun } from "@/logging/run-index";
-import { ManualContextProvider } from "@/runtime/context-providers";
-import {
-  startSession,
-  type SessionController,
-  type SessionPhase,
-} from "@/session";
+import { parseScript } from "@/engine";
+import { describeEvent } from "@/logging";
+import { getFileStore, getNightSession } from "@/runtime/services";
+import type { NightSessionSnapshot } from "@/session/night-session";
 import type { VoiceInterruptEvent } from "@/session/voice-interrupt";
 import type { LibraryScript, LibrarySignal } from "@/storage/library-types";
 import { resolveScriptText } from "@/storage/scripts";
@@ -30,7 +21,6 @@ import { telemetry } from "@/telemetry";
 export type SessionStatus =
   "idle" | "starting" | "running" | "completed" | "stopped" | "error";
 
-const MAX_RECENT_EVENTS = 6;
 /** Refreshes the diagnostics open-run marker through long silent waits, so an
  * interrupted night reports an end time within this margin. */
 const TELEMETRY_HEARTBEAT_MS = 5 * 60_000;
@@ -41,287 +31,120 @@ export type SelectedRunPhase = {
   script: LibraryScript | null;
 };
 
-function generateRunId(): string {
-  return `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+/** The service distinguishes `preparing` from `stopping`, which the screens
+ * do not need: both are moments the user sees as "the night is coming up" or
+ * "the night is still here". Collapsing them here keeps one vocabulary in the
+ * UI while the service keeps the precise one for its own tests and for v2. */
+function toScreenStatus(status: NightSessionSnapshot["status"]): SessionStatus {
+  switch (status) {
+    case "preparing":
+      return "starting";
+    case "stopping":
+      return "running";
+    default:
+      return status;
+  }
 }
 
-async function persistRunStart(
-  id: string,
-  scriptName: string,
-  startedAt: number,
-): Promise<void> {
-  const runs = await loadRunIndex();
-  await saveRunIndex(
-    upsertRun(runs, { id, scriptName, startedAt, eventCount: 0 }),
-  );
-}
+/** Elapsed time is derived from the start timestamp and only re-rendered
+ * while the app is actually in front of someone. The session context used to
+ * tick every second for the whole night with the screen off, re-rendering the
+ * provider and everything under it for eight hours (architectural review
+ * AR-24). */
+function useElapsed(startedAt: number | null, active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
 
-async function persistRunEnd(
-  id: string,
-  scriptName: string,
-  startedAt: number,
-  event: Extract<EngineEvent, { type: "run.stop" }>,
-  eventCount: number,
-): Promise<void> {
-  const runs = await loadRunIndex();
-  await saveRunIndex(
-    upsertRun(runs, {
-      id,
-      scriptName,
-      startedAt,
-      endedAt: event.at,
-      eventCount,
-      reason: event.reason,
-    }),
-  );
+  useEffect(() => {
+    if (!active || startedAt === null) return;
+
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (timer === null) {
+        setNow(Date.now());
+        timer = setInterval(() => setNow(Date.now()), 1000);
+      }
+    };
+    const stop = () => {
+      if (timer !== null) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+
+    if (AppState.currentState === "active") start();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") start();
+      else stop();
+    });
+
+    return () => {
+      stop();
+      subscription.remove();
+    };
+  }, [active, startedAt]);
+
+  return startedAt === null ? 0 : Math.max(0, now - startedAt);
 }
 
 /**
- * The M3 replacement for the M2-era `useScriptRun`: runs a library script
- * through `session.startSession` (foreground service keep-alive, wake lock,
- * notification, JSONL logging) instead of calling the engine's `runScript`
- * directly. See src/session/session.ts for what wiring that adds.
+ * React's view of the night. All ownership lives in the NightSession service
+ * (src/session/night-session.ts); this hook subscribes to its snapshots and
+ * adds only what is genuinely presentational.
  */
 export function useSession(signals: LibrarySignal[]) {
   const { settings } = useSettings();
-  const [status, setStatus] = useState<SessionStatus>("idle");
-  const [scriptName, setScriptName] = useState<string | null>(null);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [phaseElapsedMs, setPhaseElapsedMs] = useState(0);
-  const [activePhaseLabel, setActivePhaseLabel] = useState<string | null>(null);
-  const [activeScriptName, setActiveScriptName] = useState<string | null>(null);
-  const [lastEvent, setLastEvent] = useState<EngineEvent | null>(null);
-  const [recentEvents, setRecentEvents] = useState<EngineEvent[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [runId, setRunId] = useState<string | null>(null);
-  const [activePhaseIndex, setActivePhaseIndex] = useState<number | null>(null);
-  const [playCount, setPlayCount] = useState(0);
-  const [endedAt, setEndedAt] = useState<number | null>(null);
+  const session = useMemo(() => getNightSession(), []);
 
-  const sessionRef = useRef<SessionController | null>(null);
-  const eventCountRef = useRef(0);
-  const phaseStartedAtRef = useRef<number | null>(null);
-  const context = useMemo(() => new ManualContextProvider(), []);
+  const subscribe = useCallback(
+    (listener: () => void) => session.subscribe(listener),
+    [session],
+  );
+  const getSnapshot = useCallback(() => session.getSnapshot(), [session]);
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  // Drives conditionals from the Settings screen's "Simulated context" panel
-  // live, including mid-run (spec §4.3). "none" is the Settings UI's way of
-  // saying "no sleep-stage reading" — ManualContextProvider (and the engine
-  // beyond it) only knows `undefined` for that.
-  useEffect(() => {
-    const { sleepStage, ...rest } = settings.simulatedContext;
-    context.set({
-      ...rest,
-      sleepStage: sleepStage === "none" ? undefined : sleepStage,
-    });
-  }, [context, settings.simulatedContext]);
+  const status = toScreenStatus(snapshot.status);
+  const isRunning =
+    snapshot.status === "running" || snapshot.status === "stopping";
+
+  const elapsedMs = useElapsed(snapshot.startedAt, isRunning);
+  const phaseElapsedMs = useElapsed(snapshot.phaseStartedAt, isRunning);
 
   useEffect(() => {
-    if (status !== "running" || startedAt === null) return;
-    const id = setInterval(() => {
-      const now = Date.now();
-      setElapsedMs(now - startedAt);
-      if (phaseStartedAtRef.current !== null)
-        setPhaseElapsedMs(now - phaseStartedAtRef.current);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [status, startedAt]);
-
-  useEffect(() => {
-    if (status !== "running") return;
+    if (!isRunning) return;
     const id = setInterval(() => telemetry.heartbeat(), TELEMETRY_HEARTBEAT_MS);
     return () => clearInterval(id);
-  }, [status]);
+  }, [isRunning]);
 
   const start = useCallback(
     async (selectedPhases: SelectedRunPhase[], masterVolume: number) => {
-      if (sessionRef.current) return; // one run at a time
-      if (selectedPhases.length !== 3) {
-        setStatus("error");
-        setErrorMessage("A run requires the three fixed phases.");
-        return;
-      }
-      if (
-        !selectedPhases.some(
-          (phase) => (phase.index === 1 || phase.index === 2) && phase.script,
-        )
-      ) {
-        setStatus("error");
-        setErrorMessage(
-          "Choose a script for Early Sleep or Wake Up (at least one is required).",
-        );
-        return;
-      }
-      const populatedPhases = selectedPhases.filter(
-        (
-          phase,
-        ): phase is { index: number; label: string; script: LibraryScript } =>
-          phase.script !== null,
-      );
-      if (populatedPhases.length === 0) {
-        setStatus("error");
-        setErrorMessage("Choose at least one script before starting.");
-        return;
-      }
-
-      const runName = selectedPhases
-        .map((phase) => `${phase.label}: ${phase.script?.name ?? "Empty"}`)
-        .join(" · ");
-
-      setStatus("starting");
-      setErrorMessage(null);
-      setScriptName(runName);
-      setActivePhaseLabel(null);
-      setActiveScriptName(null);
-      phaseStartedAtRef.current = null;
-      setPhaseElapsedMs(0);
-      setLastEvent(null);
-      setRecentEvents([]);
-      setActivePhaseIndex(null);
-      setPlayCount(0);
-      setEndedAt(null);
-      eventCountRef.current = 0;
-      let failStartedSession: ((message: string) => void) | null = null;
-
-      try {
-        const fileStore = getFileStore();
-        // Preflight every phase before acquiring the wake lock or starting
-        // audio so a later malformed/unresolvable phase cannot fail mid-night.
-        const phases: SessionPhase[] = await Promise.all(
-          populatedPhases.map(async (phase) => {
-            const text = await resolveScriptText(phase.script, fileStore);
-            return {
-              index: phase.index,
-              label: phase.label,
-              script: {
-                ...parseScript(text, {
-                  durationPresets: settings.periodPresets,
-                }),
-                volume: masterVolume,
-              },
-            };
-          }),
-        );
-        const signalNames = [
-          ...new Set(
-            phases.flatMap((phase) => [...collectSignalNames(phase.script)]),
-          ),
-        ];
-        const sourceMap = await resolveSignalMap(
-          signalNames,
+      await session.start(
+        {
+          phases: selectedPhases,
+          masterVolume,
           signals,
-          fileStore,
-        );
-
-        const id = generateRunId();
-        setRunId(id);
-        const started = Date.now();
-        await persistRunStart(id, runName, started);
-        telemetry.runStarted({
-          id,
-          startedAt: started,
-          phases: populatedPhases.map((phase) => ({
-            label: phase.label,
-            script: phase.script.name,
-          })),
-        });
-        let finishedBeforeStartReturned = false;
-
-        const uiLog: LogPort = {
-          log: (event) => {
-            telemetry.observe(event);
-            eventCountRef.current += 1;
-            setLastEvent(event);
-            setRecentEvents((prev) =>
-              [...prev, event].slice(-MAX_RECENT_EVENTS),
-            );
-            if (event.type === "error") setErrorMessage(event.message);
-            if (event.type === "play") setPlayCount((count) => count + 1);
-            if (event.type === "phase.start") {
-              setActivePhaseIndex(event.phaseIndex);
-              setActivePhaseLabel(event.phase);
-              setActiveScriptName(event.scriptName);
-              phaseStartedAtRef.current = event.at;
-              setPhaseElapsedMs(0);
-            }
-            if (event.type === "run.stop") {
-              finishedBeforeStartReturned = true;
-              setEndedAt(event.at);
-              setStatus(
-                event.reason === "error"
-                  ? "error"
-                  : event.reason === "stopped"
-                    ? "stopped"
-                    : "completed",
-              );
-              sessionRef.current = null;
-              telemetry.runEnded(event.at, event.reason);
-              void persistRunEnd(
-                id,
-                runName,
-                started,
-                event,
-                eventCountRef.current,
-              );
-            }
-          },
-        };
-        const log = new FanOutLogPort([
-          new FilteringLogPort(
-            new JsonlLogPort(id, fileStore),
-            settings.logCategories,
-          ),
-          uiLog,
-        ]);
-        failStartedSession = (message) => {
-          const at = Date.now();
-          log.log({ type: "run.start", at: started, scriptName: runName });
-          log.log({ type: "error", at, message });
-          log.log({ type: "run.stop", at, reason: "error" });
-        };
-
-        setStartedAt(started);
-        setElapsedMs(0);
-
-        const session = await startSession({
-          name: runName,
-          phases,
-          sourceMap,
-          context,
-          log,
+          durationPresets: settings.periodPresets,
+        },
+        {
           audioFocus: settings.audioFocus,
           voiceInterrupt: settings.voiceInterrupt === "gentle",
-        });
-        if (!finishedBeforeStartReturned) {
-          sessionRef.current = session;
-          setStatus("running");
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        if (failStartedSession) failStartedSession(message);
-        else {
-          setStatus("error");
-          setErrorMessage(message);
-        }
-      }
+        },
+      );
     },
     [
-      context,
+      session,
       signals,
-      settings.audioFocus,
-      settings.logCategories,
       settings.periodPresets,
+      settings.audioFocus,
       settings.voiceInterrupt,
     ],
   );
 
-  const stop = useCallback(() => {
-    sessionRef.current?.stop();
-  }, []);
+  const stop = useCallback(() => session.stop(), [session]);
 
-  const handleVoiceInterrupt = useCallback((event: VoiceInterruptEvent) => {
-    sessionRef.current?.handleVoiceInterrupt(event);
-  }, []);
+  const handleVoiceInterrupt = useCallback(
+    (event: VoiceInterruptEvent) => session.handleVoiceInterrupt(event),
+    [session],
+  );
 
   /** Plays a script's first `play:` signal at `volume` directly, without
    * running the script — the Run screen's "Test" button (spec §2.2). */
@@ -345,20 +168,22 @@ export function useSession(signals: LibrarySignal[]) {
 
   return {
     status,
-    scriptName,
+    scriptName: snapshot.runName,
     elapsedMs,
     phaseElapsedMs,
-    activePhaseLabel,
-    activeScriptName,
-    lastEvent,
-    currentStepText: lastEvent ? describeEvent(lastEvent) : null,
-    recentEvents,
-    errorMessage,
-    runId,
-    startedAt,
-    endedAt,
-    activePhaseIndex,
-    playCount,
+    activePhaseLabel: snapshot.activePhaseLabel,
+    activeScriptName: snapshot.activeScriptName,
+    lastEvent: snapshot.lastEvent,
+    currentStepText: snapshot.lastEvent
+      ? describeEvent(snapshot.lastEvent)
+      : null,
+    recentEvents: snapshot.recentEvents,
+    errorMessage: snapshot.errorMessage,
+    runId: snapshot.runId,
+    startedAt: snapshot.startedAt,
+    endedAt: snapshot.endedAt,
+    activePhaseIndex: snapshot.activePhaseIndex,
+    playCount: snapshot.playCount,
     start,
     stop,
     testPlay,

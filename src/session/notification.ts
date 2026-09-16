@@ -1,5 +1,5 @@
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 
 /** Layered on top of expo-audio's own Android foreground-service
  * notification (see keep-alive-track.ts) purely for rich, updatable content:
@@ -32,30 +32,34 @@ export function configureNotificationHandler(): void {
   });
 }
 
-const CHANNEL_ID = 'luciddream-run';
-const NOTIFICATION_ID = 'luciddream-run-status';
-const CATEGORY_ID = 'run-controls';
-export const STOP_ACTION_ID = 'STOP';
+const CHANNEL_ID = "luciddream-run";
+const NOTIFICATION_ID = "luciddream-run-status";
+const CATEGORY_ID = "run-controls";
+export const STOP_ACTION_ID = "STOP";
 
 /** Requests notification permission and (re)registers the channel/category.
  * Returns false if permission was denied — callers should keep running
  * without a notification rather than fail the whole session over it. */
 export async function ensureRunNotificationSetup(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
+  if (Platform.OS === "web") return false;
 
   const { granted } = await Notifications.requestPermissionsAsync();
   if (!granted) return false;
 
-  if (Platform.OS === 'android') {
+  if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: 'Run status',
+      name: "Run status",
       importance: Notifications.AndroidImportance.HIGH,
       sound: null,
     });
   }
 
   await Notifications.setNotificationCategoryAsync(CATEGORY_ID, [
-    { identifier: STOP_ACTION_ID, buttonTitle: 'Stop', options: { isDestructive: true } },
+    {
+      identifier: STOP_ACTION_ID,
+      buttonTitle: "Stop",
+      options: { isDestructive: true },
+    },
   ]);
 
   return true;
@@ -69,8 +73,11 @@ export async function ensureRunNotificationSetup(): Promise<boolean> {
  * a locked iPhone's screen. The run posts one per engine event, all night, so
  * iOS content is `passive`: it lands silently in Notification Center and on
  * the lock screen list without waking the display or breaking through Focus. */
-export async function showOrUpdateRunNotification(scriptName: string, stepText: string): Promise<void> {
-  if (Platform.OS === 'web') return;
+export async function showOrUpdateRunNotification(
+  scriptName: string,
+  stepText: string,
+): Promise<void> {
+  if (Platform.OS === "web") return;
 
   await Notifications.scheduleNotificationAsync({
     identifier: NOTIFICATION_ID,
@@ -80,14 +87,16 @@ export async function showOrUpdateRunNotification(scriptName: string, stepText: 
       sticky: true,
       autoDismiss: false,
       categoryIdentifier: CATEGORY_ID,
-      ...(Platform.OS === 'ios' ? { interruptionLevel: 'passive' as const } : {}),
+      ...(Platform.OS === "ios"
+        ? { interruptionLevel: "passive" as const }
+        : {}),
     },
-    trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
+    trigger: Platform.OS === "android" ? { channelId: CHANNEL_ID } : null,
   });
 }
 
 export async function dismissRunNotification(): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === "web") return;
   await Notifications.dismissNotificationAsync(NOTIFICATION_ID);
 }
 
@@ -95,13 +104,15 @@ export async function dismissRunNotification(): Promise<void> {
  * unsubscribe function — callers must remove this listener when the session
  * ends, since expo-notifications listeners are otherwise process-lifetime. */
 export function onStopAction(onStop: () => void): () => void {
-  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    if (
-      response.notification.request.identifier === NOTIFICATION_ID &&
-      response.actionIdentifier === STOP_ACTION_ID
-    ) {
-      onStop();
-    }
-  });
+  const subscription = Notifications.addNotificationResponseReceivedListener(
+    (response) => {
+      if (
+        response.notification.request.identifier === NOTIFICATION_ID &&
+        response.actionIdentifier === STOP_ACTION_ID
+      ) {
+        onStop();
+      }
+    },
+  );
   return () => subscription.remove();
 }

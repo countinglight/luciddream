@@ -1,6 +1,6 @@
-import { RealClockPort } from '../clock';
+import { RealClockPort } from "../clock";
 
-describe('RealClockPort', () => {
+describe("RealClockPort", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.setSystemTime(0);
@@ -10,12 +10,12 @@ describe('RealClockPort', () => {
     jest.useRealTimers();
   });
 
-  it('now() reflects the current wall clock', () => {
+  it("now() reflects the current wall clock", () => {
     jest.setSystemTime(12_345);
     expect(new RealClockPort().now()).toBe(12_345);
   });
 
-  it('sleeps in bounded slices rather than one long setTimeout, so drift is bounded', async () => {
+  it("sleeps in bounded slices rather than one long setTimeout, so drift is bounded", async () => {
     const clock = new RealClockPort();
     let resolved = false;
     clock.sleep(70_000, new AbortController().signal).then(() => {
@@ -34,7 +34,7 @@ describe('RealClockPort', () => {
     expect(resolved).toBe(true);
   });
 
-  it('resolves as soon as the signal aborts, mid-slice', async () => {
+  it("resolves as soon as the signal aborts, mid-slice", async () => {
     const clock = new RealClockPort();
     const controller = new AbortController();
     let resolved = false;
@@ -50,7 +50,7 @@ describe('RealClockPort', () => {
     expect(resolved).toBe(true);
   });
 
-  it('resolves immediately for an already-aborted signal', async () => {
+  it("resolves immediately for an already-aborted signal", async () => {
     const clock = new RealClockPort();
     const controller = new AbortController();
     controller.abort();

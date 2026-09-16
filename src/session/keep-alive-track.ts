@@ -1,5 +1,5 @@
-import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
-import { Platform } from 'react-native';
+import { createAudioPlayer, type AudioPlayer } from "expo-audio";
+import { Platform } from "react-native";
 
 /** A ~1s, very-low-amplitude tone (not true digital silence — some Android
  * media-session implementations are more willing to reclaim an all-zero
@@ -18,7 +18,7 @@ import { Platform } from 'react-native';
  * loop as real playback through a full night is to be confirmed on a device
  * (iOS support plan D4, doc/evidence R-005). v2 replaces it with an audible
  * night ambience (v2 plan F2.4). */
-const KEEP_ALIVE_SOURCE = require('../../assets/sounds/keep-alive.wav');
+const KEEP_ALIVE_SOURCE = require("../../assets/sounds/keep-alive.wav");
 const KEEP_ALIVE_VOLUME = 0.01;
 
 export type KeepAliveTrack = {
@@ -28,7 +28,7 @@ export type KeepAliveTrack = {
 /** No-op on web — there's no OS foreground service to hold there, and
  * looping an inaudible track would just waste a decoder for nothing. */
 export function startKeepAliveTrack(): KeepAliveTrack {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     return { stop() {} };
   }
 

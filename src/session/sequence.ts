@@ -1,4 +1,10 @@
-import { runScript, type LogPort, type RunController, type RunDeps, type Script } from '@/engine';
+import {
+  runScript,
+  type LogPort,
+  type RunController,
+  type RunDeps,
+  type Script,
+} from "@/engine";
 
 export type SessionPhase = {
   /** Index in the fixed three-slot plan, retained even when earlier slots are empty. */
@@ -10,25 +16,29 @@ export type SessionPhase = {
 /** Executes independently parsed scripts in order while presenting one run
  * lifecycle to the rest of the app. Each interpreter gets fresh elapsed-time,
  * loop, rate, and volume state; shared ports keep audio and context continuous. */
-export function runScriptSequence(name: string, phases: SessionPhase[], deps: RunDeps): RunController {
+export function runScriptSequence(
+  name: string,
+  phases: SessionPhase[],
+  deps: RunDeps,
+): RunController {
   let active: RunController | null = null;
   let stoppedByCaller = false;
 
-  deps.log.log({ type: 'run.start', at: deps.clock.now(), scriptName: name });
+  deps.log.log({ type: "run.start", at: deps.clock.now(), scriptName: name });
 
   const done = (async () => {
-    let sequenceReason: 'completed' | 'stopped' | 'error' = 'completed';
+    let sequenceReason: "completed" | "stopped" | "error" = "completed";
 
     try {
       for (const phase of phases) {
         if (stoppedByCaller) {
-          sequenceReason = 'stopped';
+          sequenceReason = "stopped";
           break;
         }
 
-        let phaseReason: 'completed' | 'stopped' | 'error' = 'completed';
+        let phaseReason: "completed" | "stopped" | "error" = "completed";
         deps.log.log({
-          type: 'phase.start',
+          type: "phase.start",
           at: deps.clock.now(),
           phaseIndex: phase.index,
           phase: phase.label,
@@ -37,8 +47,8 @@ export function runScriptSequence(name: string, phases: SessionPhase[], deps: Ru
 
         const phaseLog: LogPort = {
           log(event) {
-            if (event.type === 'run.start') return;
-            if (event.type === 'run.stop') {
+            if (event.type === "run.start") return;
+            if (event.type === "run.stop") {
               phaseReason = event.reason;
               return;
             }
@@ -51,7 +61,7 @@ export function runScriptSequence(name: string, phases: SessionPhase[], deps: Ru
         active = null;
 
         deps.log.log({
-          type: 'phase.stop',
+          type: "phase.stop",
           at: deps.clock.now(),
           phaseIndex: phase.index,
           phase: phase.label,
@@ -59,22 +69,26 @@ export function runScriptSequence(name: string, phases: SessionPhase[], deps: Ru
           reason: phaseReason,
         });
 
-        if (phaseReason !== 'completed') {
+        if (phaseReason !== "completed") {
           sequenceReason = phaseReason;
           break;
         }
       }
     } catch (error) {
-      sequenceReason = 'error';
+      sequenceReason = "error";
       deps.log.log({
-        type: 'error',
+        type: "error",
         at: deps.clock.now(),
         message: error instanceof Error ? error.message : String(error),
       });
     }
 
-    if (stoppedByCaller) sequenceReason = 'stopped';
-    deps.log.log({ type: 'run.stop', at: deps.clock.now(), reason: sequenceReason });
+    if (stoppedByCaller) sequenceReason = "stopped";
+    deps.log.log({
+      type: "run.stop",
+      at: deps.clock.now(),
+      reason: sequenceReason,
+    });
   })();
 
   return {

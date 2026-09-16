@@ -1,12 +1,37 @@
 import {
-    createAudioPlayer,
-    type AudioPlayer,
-    type AudioStatus,
+  createAudioPlayer,
+  type AudioPlayer,
+  type AudioStatus,
 } from "expo-audio";
 
 import type { AudioPort, PlaybackHandle, PlayOptions } from "@/engine";
 
 import type { AudioSourceRef } from "./types";
+
+/** Longest a cue may keep a `wait: true` statement blocked when the player
+ * never reports finishing. A lost Bluetooth route, a decode failure or a
+ * suspended audio session can all mean `didJustFinish` simply never arrives;
+ * before this bound, that stalled the night forever and, because release()
+ * also waited on the same promise, held the wake lock, the keep-alive track
+ * and the notification until the process died (architectural review A2 /
+ * AR-09). Used only when the clip's own duration is unknown. */
+const UNKNOWN_DURATION_TIMEOUT_MS = 60_000;
+
+/** Added to a clip's real duration before giving up on its completion
+ * callback, covering startup latency and rate changes. */
+const COMPLETION_GRACE_MS = 5_000;
+
+/** Longest release() waits for in-flight playback to settle before removing
+ * players anyway. Teardown must always terminate. */
+const RELEASE_TIMEOUT_MS = 10_000;
+
+export type ExpoAudioPortOptions = {
+  /** Reports a cue whose completion callback never arrived, so the run log
+   * can record it. The night continues: a missing callback is not evidence
+   * the sound failed, and ending a night over it would be worse than
+   * carrying on. */
+  onPlaybackTimeout?: (signal: string, waitedMs: number) => void;
+};
 
 /** The real AudioPort (spec §4.1/§5.1), backed by expo-audio. Constructed
  * with every signal already resolved (moniker -> AudioSourceRef, from
@@ -29,42 +54,113 @@ export class ExpoAudioPort implements AudioPort {
   // Signals duck() paused mid-playback, so undoDuck() resumes only those —
   // not every player that happens to be paused because it already finished.
   private duckedSignals = new Set<string>();
+  // Set by release(). Resolves every outstanding and future wait at once, so
+  // nothing can block teardown.
+  private disposed = false;
+  private disposeWaiters = new Set<() => void>();
 
-  constructor(private readonly sources: Record<string, AudioSourceRef>) {}
+  constructor(
+    private readonly sources: Record<string, AudioSourceRef>,
+    private readonly options: ExpoAudioPortOptions = {},
+  ) {}
 
-  async play(signal: string, opts: PlayOptions): Promise<PlaybackHandle> {
+  /** Creates every player up front, during preflight.
+   *
+   * Players used to be created lazily at first play, which could be hours
+   * into the night — by which time a URL signal resolved into the purgeable
+   * cache root may no longer exist, and a decode failure surfaces in the
+   * dark instead of before the user goes to sleep (architectural review
+   * AR-09). Failures here are reported to the caller, which still has the
+   * chance to refuse to start.
+   */
+  async preload(): Promise<void> {
+    for (const signal of Object.keys(this.sources)) {
+      this.playerFor(signal);
+    }
+  }
+
+  private playerFor(signal: string): AudioPlayer {
+    const existing = this.players.get(signal);
+    if (existing) return existing;
+
     const source = this.sources[signal];
     if (source === undefined) {
       throw new Error(
         `Unresolved signal "${signal}" — it wasn't in the resolved signal map for this run.`,
       );
     }
+    const player = createAudioPlayer(source);
+    this.players.set(signal, player);
+    return player;
+  }
 
-    let player = this.players.get(signal);
-    if (!player) {
-      player = createAudioPlayer(source);
-      this.players.set(signal, player);
-    }
+  async play(signal: string, opts: PlayOptions): Promise<PlaybackHandle> {
+    const player = this.playerFor(signal);
 
     player.volume = opts.gain * this.duckFactor;
     player.setPlaybackRate(opts.rate);
     await player.seekTo(0);
     player.play();
 
-    const finished = new Promise<void>((resolve) => {
-      const subscription = player!.addListener(
-        "playbackStatusUpdate",
-        (status: AudioStatus) => {
-          if (status.didJustFinish) {
-            subscription.remove();
-            resolve();
-          }
-        },
-      );
-    });
+    const finished = this.trackCompletion(signal, player, opts.rate);
     this.pendingFinishes.set(signal, finished);
 
     return { finished };
+  }
+
+  /** Resolves on the player's own completion callback, or on a bound derived
+   * from the clip's duration, or on release — whichever comes first. Never
+   * rejects: the interpreter treats `finished` as "stop waiting now", not as
+   * a claim that the sound was heard. */
+  private trackCompletion(
+    signal: string,
+    player: AudioPlayer,
+    rate: number,
+  ): Promise<void> {
+    const timeoutMs = this.completionTimeoutFor(player, rate);
+
+    return new Promise<void>((resolve) => {
+      if (this.disposed) {
+        resolve();
+        return;
+      }
+
+      let settled = false;
+      const settle = (timedOut: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        subscription.remove();
+        this.disposeWaiters.delete(onDispose);
+        if (timedOut) this.options.onPlaybackTimeout?.(signal, timeoutMs);
+        resolve();
+      };
+
+      const onDispose = () => settle(false);
+      this.disposeWaiters.add(onDispose);
+
+      const timer = setTimeout(() => settle(true), timeoutMs);
+
+      const subscription = player.addListener(
+        "playbackStatusUpdate",
+        (status: AudioStatus) => {
+          if (status.didJustFinish) settle(false);
+        },
+      );
+    });
+  }
+
+  private completionTimeoutFor(player: AudioPlayer, rate: number): number {
+    let durationMs = 0;
+    try {
+      // `duration` is seconds and is 0 until the player has loaded.
+      durationMs = Math.max(0, player.duration * 1000);
+    } catch {
+      durationMs = 0;
+    }
+    if (durationMs <= 0) return UNKNOWN_DURATION_TIMEOUT_MS;
+    const scaled = rate > 0 ? durationMs / rate : durationMs;
+    return scaled + COMPLETION_GRACE_MS;
   }
 
   /** Releases every native player this port created. Call once the run
@@ -77,14 +173,36 @@ export class ExpoAudioPort implements AudioPort {
    * example does this) would otherwise reach here while that play is still
    * in flight — removing (which pauses) a player mid-play cuts its audio
    * short and, on web, throws an unhandled AbortError from expo-audio's own
-   * `media.play()` call, which we have no way to catch from here. */
+   * `media.play()` call, which we have no way to catch from here.
+   *
+   * That wait is bounded twice over: each completion promise has its own
+   * timeout, and the whole wait gives up after RELEASE_TIMEOUT_MS. Teardown
+   * that cannot terminate is worse than a clipped final note. */
   async release(): Promise<void> {
-    await Promise.all(this.pendingFinishes.values());
+    const pending = [...this.pendingFinishes.values()];
+    if (pending.length > 0) {
+      await Promise.race([Promise.all(pending), delay(RELEASE_TIMEOUT_MS)]);
+    }
+    this.dispose();
+  }
+
+  /** Immediate, unconditional teardown: resolves every outstanding wait and
+   * removes every player without waiting for anything. Used by release() and
+   * available on its own for a hard stop. Idempotent. */
+  dispose(): void {
+    this.disposed = true;
+    for (const waiter of [...this.disposeWaiters]) waiter();
+    this.disposeWaiters.clear();
     for (const player of this.players.values()) {
-      player.remove();
+      try {
+        player.remove();
+      } catch {
+        // An already-removed or failed player must not block teardown.
+      }
     }
     this.players.clear();
     this.pendingFinishes.clear();
+    this.duckedSignals.clear();
   }
 
   /** Pauses every currently-playing signal and multiplies future plays'
@@ -112,4 +230,8 @@ export class ExpoAudioPort implements AudioPort {
     }
     this.duckedSignals.clear();
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

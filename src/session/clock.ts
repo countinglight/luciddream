@@ -1,4 +1,4 @@
-import type { ClockPort } from '@/engine';
+import type { ClockPort } from "@/engine";
 
 /** Longest single `setTimeout` between wall-clock re-reads. Bounds drift and
  * lets a sleep react to Android throttling timers during doze instead of
@@ -32,9 +32,9 @@ function sleepOnce(ms: number, signal: AbortSignal): Promise<void> {
       resolve();
     };
     const timeout = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
+      signal.removeEventListener("abort", onAbort);
       resolve();
     }, ms);
-    signal.addEventListener('abort', onAbort, { once: true });
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }
