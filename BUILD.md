@@ -29,6 +29,7 @@ operate the services behind it. For what the app does and how to use it, see [RE
    - [Release to testers](#release-to-testers)
 5. [iOS](#5-ios)
    - [Development without a Mac](#development-without-a-mac)
+   - [Troubleshooting the development connection](#troubleshooting-the-development-connection)
    - [Release to testers (TestFlight)](#release-to-testers-testflight)
 6. [Updates without a new binary](#6-updates-without-a-new-binary)
 7. [Device smoke tests (Maestro)](#7-device-smoke-tests-maestro)
@@ -494,16 +495,129 @@ The workflows need the `EXPO_TOKEN` repository secret. Play Store submission (`e
 
 ### Development without a Mac
 
-iOS development uses an EAS **development** build installed on a registered iPhone, which loads
-JavaScript from `npm start` on the development machine. Building it:
+iOS has two separate kinds of build, and they share no runtime path:
 
-- the **EAS Build (iOS)** workflow (`eas-build-ios.yml`, manual dispatch) with profile `development`,
-  or
-- `npx eas-cli build --platform ios --profile development`.
+| Build                 | Profile          | Who uses it   | Where its JavaScript comes from                   |
+| --------------------- | ---------------- | ------------- | ------------------------------------------------- |
+| **Development build** | `development`    | the developer | the development server on the workstation, live   |
+| **TestFlight build**  | `ios-testflight` | testers       | compiled into the app; no workstation is involved |
 
-The iPhone must be registered first (`npx eas-cli device:create`). The complete steps, including
-Apple prerequisites, are in
-[doc/plans/luciddream-ios-support-plan.md](doc/plans/luciddream-ios-support-plan.md) §2.1 and Part E.
+Everything in this section concerns the development build. Testers never register devices, enable
+Developer Mode or connect to a server.
+
+Use `npx eas-cli`, not `npx eas`, which does not resolve to the EAS CLI.
+
+#### One-time setup
+
+1. **Expo account.** Create one at [expo.dev](https://expo.dev) — `login` signs in but does not create
+   an account — then sign in:
+
+   ```bash
+   npx eas-cli login
+   ```
+
+   The project is already linked: its ID is `extra.eas.projectId` in `app.json`.
+
+2. **Register the iPhone.** Development builds use Ad Hoc signing, which only installs on devices
+   whose identifiers are compiled into the build.
+
+   ```bash
+   npx eas-cli device:create
+   ```
+
+   Choose the website method and open the link **in Safari** on the iPhone; install the offered
+   profile. Confirm with `npx eas-cli device:list`. A device registered after a build needs a new
+   build.
+
+3. **Enable Developer Mode** on the iPhone: Settings → Privacy & Security → Developer Mode → on,
+   restart, then confirm **Turn On**. Without it, the app shows _Developer Mode Required_ and will
+   not open. TestFlight builds do not need it.
+
+4. **Build and install:**
+
+   ```bash
+   npx eas-cli build --platform ios --profile development
+   ```
+
+   or the **EAS Build (iOS)** workflow (`eas-build-ios.yml`) with profile `development`. Open the
+   link the build prints in Safari on the iPhone and install. The installed **LucidDream** app is the
+   development client.
+
+#### Daily loop
+
+```bash
+npm start
+```
+
+Open LucidDream on the iPhone. Its launcher lists development servers found on the network; if none
+appears, choose **Enter URL manually** and type `http://<workstation Wi-Fi address>:8081`. The app
+loads its JavaScript from the server, and saved changes appear through Fast Refresh.
+
+The installed app is a shell: native modules, `Info.plist`, entitlements, icon and splash. What a
+change needs:
+
+| Change                                                                      | Needs                                                                            |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| TypeScript under `src/`                                                     | nothing — Fast Refresh                                                           |
+| Images and sounds loaded with `require()` (for example `assets/sounds/`)    | reload the app                                                                   |
+| `assets/scripts/*.yaml`                                                     | `npm run generate:bundled-scripts` while the server runs, or restart `npm start` |
+| `assets/images/icon.png`, `splash-icon.png`                                 | a new development build                                                          |
+| `app.json` plugins or permissions, a new native module, an Expo SDK upgrade | a new development build                                                          |
+| A newly registered device                                                   | a new development build                                                          |
+| `public/`                                                                   | nothing on iOS — web only                                                        |
+
+The same split decides what [Expo Updates](#6-updates-without-a-new-binary) can deliver to installed
+TestFlight builds.
+
+The native iOS project cannot be generated on Windows (`expo prebuild --platform ios` requires macOS
+or Linux). To inspect the resolved configuration — bundle identifier, version, build number,
+`usesNonExemptEncryption` — run `npx expo config --type prebuild --json`. Entries added by plugins
+while writing native files, such as `UIBackgroundModes`, do not appear there; check them in the EAS
+build log.
+
+### Troubleshooting the development connection
+
+Test reachability from the iPhone first. In Safari open:
+
+```
+http://<workstation address>:8081/status
+```
+
+`packager-status:running` means the iPhone reaches the server, and a remaining problem is in the app.
+A timeout means the network or the firewall is blocking it.
+
+**Wrong address.** A workstation with several adapters (Ethernet and Wi-Fi, virtual switches) may
+advertise an address the iPhone cannot use. List them:
+
+```powershell
+Get-NetIPAddress -AddressFamily IPv4 | Select-Object InterfaceAlias, IPAddress
+```
+
+Use the address on the network the iPhone is on — enter it manually in the app, or make the server
+advertise it:
+
+```powershell
+$env:REACT_NATIVE_PACKAGER_HOSTNAME='<Wi-Fi address>'; npm start
+```
+
+**Windows Firewall.** Port 8081 must accept inbound connections, and a rule for the `Private` profile
+does nothing while Windows classifies the network as `Public`. In an elevated PowerShell:
+
+```powershell
+Get-NetConnectionProfile
+Set-NetConnectionProfile -Name "<network name>" -NetworkCategory Private
+New-NetFirewallRule -DisplayName "Expo Metro 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow -Profile Private
+```
+
+Only classify a trusted home or office network as `Private`.
+
+**Different networks.** When the iPhone cannot route to the workstation at all, relay through Expo:
+
+```bash
+npx expo start --tunnel
+```
+
+It works across networks and firewalls, and is slower.
 
 ### Release to testers (TestFlight)
 
