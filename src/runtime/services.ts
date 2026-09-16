@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 
 import { JsonlLogPort } from "@/logging/jsonl-log-port";
+import { sweepOrphanLogs } from "@/logging/run-store";
 import { recordRunEnd, recordRunStart } from "@/logging/run-index";
 import { NightSession } from "@/session/night-session";
 import { deleteRecordingFile } from "@/session/recording-file";
@@ -72,7 +73,14 @@ export function recoverOnLaunch(): Promise<RecoveryResult> {
       // A night killed with voice interrupt on left its temporary microphone
       // file behind; this is the only chance to remove it.
       deleteRecording: deleteRecordingFile,
-    }).catch(() => ({ interrupted: [] }));
+    })
+      .then(async (result) => {
+        // After recovery, so every night that does exist is back in the
+        // index and only genuine orphans are swept.
+        await sweepOrphanLogs(fileStore);
+        return result;
+      })
+      .catch(() => ({ interrupted: [] }));
   }
   return launchRecovery;
 }

@@ -101,6 +101,15 @@ export class ExpoFileSystemStore implements FileStorePort {
     await source.copy(destination);
   }
 
+  async listFiles(root: FileRoot, path: string): Promise<string[]> {
+    const dir = toDirectory(root, path);
+    if (!dir.exists) return [];
+    return dir
+      .list()
+      .filter((entry): entry is File => entry instanceof File)
+      .map((file) => file.name);
+  }
+
   async deleteFile(root: FileRoot, path: string): Promise<void> {
     const file = toFile(root, path);
     if (file.exists) file.delete();

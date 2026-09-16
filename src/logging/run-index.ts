@@ -19,13 +19,29 @@ const STORAGE_KEY = "luciddream.runs.v1";
  * this is just enough metadata for the Log screen's list, same split as
  * library-store.ts (index in AsyncStorage, content in the file store). */
 export async function loadRunIndex(): Promise<RunSummary[]> {
+  return (await tryLoadRunIndex()) ?? [];
+}
+
+/**
+ * Like loadRunIndex, but tells "there are no nights" apart from "the index
+ * could not be read".
+ *
+ * loadRunIndex deliberately returns [] on failure, which is right for a
+ * screen: an empty list beats a crash. It is dangerous for anything that
+ * deletes, because an unreadable index would make every stored log look like
+ * an orphan and wipe the user's entire history. Destructive callers must use
+ * this and do nothing when it returns null.
+ */
+export async function tryLoadRunIndex(): Promise<RunSummary[] | null> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed: unknown = JSON.parse(raw);
+    // Not an array means the stored value is corrupt, which is not the same
+    // as empty either.
+    return Array.isArray(parsed) ? (parsed as RunSummary[]) : null;
   } catch {
-    return [];
+    return null;
   }
 }
 

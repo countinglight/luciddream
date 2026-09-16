@@ -1,10 +1,10 @@
-import { extensionFromUrl } from './id';
-import type { FileRoot, FileStorePort } from './file-store';
-import type { ContentSource } from './library-types';
+import { extensionFromUrl } from "./id";
+import type { FileRoot, FileStorePort } from "./file-store";
+import type { ContentSource } from "./library-types";
 
-export type LibraryKind = 'signals' | 'scripts';
+export type LibraryKind = "signals" | "scripts";
 
-type Resolvable = Exclude<ContentSource, { type: 'bundled' }>;
+type Resolvable = Exclude<ContentSource, { type: "bundled" }>;
 
 function pathFor(kind: LibraryKind, id: string, ext: string): string {
   return `${kind}/${id}.${ext}`;
@@ -20,16 +20,17 @@ export async function ensureResolved(
   id: string,
   source: Resolvable,
   fileStore: FileStorePort,
-  defaultExt: string
+  defaultExt: string,
 ): Promise<{ root: FileRoot; path: string }> {
-  if (source.type === 'file') return { root: 'document', path: source.path };
+  if (source.type === "file") return { root: "document", path: source.path };
 
   const path = pathFor(kind, id, extensionFromUrl(source.url, defaultExt));
-  if (await fileStore.exists('document', path)) return { root: 'document', path };
-  if (!(await fileStore.exists('cache', path))) {
-    await fileStore.downloadTo(source.url, 'cache', path);
+  if (await fileStore.exists("document", path))
+    return { root: "document", path };
+  if (!(await fileStore.exists("cache", path))) {
+    await fileStore.downloadTo(source.url, "cache", path);
   }
-  return { root: 'cache', path };
+  return { root: "cache", path };
 }
 
 /** The "Save offline" action (spec §4.5): promotes whatever's cached to
@@ -41,16 +42,16 @@ export async function saveOffline(
   id: string,
   source: Resolvable,
   fileStore: FileStorePort,
-  defaultExt: string
+  defaultExt: string,
 ): Promise<void> {
-  if (source.type === 'file') return;
+  if (source.type === "file") return;
 
   const path = pathFor(kind, id, extensionFromUrl(source.url, defaultExt));
-  if (await fileStore.exists('document', path)) return;
-  if (await fileStore.exists('cache', path)) {
-    await fileStore.copy({ root: 'cache', path }, { root: 'document', path });
+  if (await fileStore.exists("document", path)) return;
+  if (await fileStore.exists("cache", path)) {
+    await fileStore.copy({ root: "cache", path }, { root: "document", path });
   } else {
-    await fileStore.downloadTo(source.url, 'document', path);
+    await fileStore.downloadTo(source.url, "document", path);
   }
 }
 
@@ -63,10 +64,58 @@ export async function removeOfflineCopy(
   id: string,
   source: Resolvable,
   fileStore: FileStorePort,
-  defaultExt: string
+  defaultExt: string,
 ): Promise<void> {
-  if (source.type === 'file') return;
-  await fileStore.deleteFile('document', pathFor(kind, id, extensionFromUrl(source.url, defaultExt)));
+  if (source.type === "file") return;
+  await fileStore.deleteFile(
+    "document",
+    pathFor(kind, id, extensionFromUrl(source.url, defaultExt)),
+  );
+}
+
+/**
+ * Deletes everything stored for a library item, in both roots.
+ *
+ * Distinct from removeOfflineCopy, which is the user-facing "Remove local
+ * copy" and deliberately keeps the cache. Removing an item from the Library
+ * used to call that instead, which does nothing at all for an imported file
+ * and leaves the URL cache behind — so deleted content stayed on disk,
+ * unreachable and accumulating (architectural review AR-01 / A6).
+ */
+export async function deleteContent(
+  kind: LibraryKind,
+  id: string,
+  source: ContentSource,
+  fileStore: FileStorePort,
+  defaultExt: string,
+): Promise<void> {
+  // Bundled content ships with the app; there is nothing of the user's to
+  // remove.
+  if (source.type === "bundled") return;
+
+  const paths: { root: FileRoot; path: string }[] =
+    source.type === "file"
+      ? [{ root: "document", path: source.path }]
+      : (() => {
+          const path = pathFor(
+            kind,
+            id,
+            extensionFromUrl(source.url, defaultExt),
+          );
+          return [
+            { root: "document", path },
+            { root: "cache", path },
+          ];
+        })();
+
+  for (const target of paths) {
+    try {
+      await fileStore.deleteFile(target.root, target.path);
+    } catch {
+      // One unremovable copy must not stop the others, or leave the user
+      // unable to remove the item at all.
+    }
+  }
 }
 
 export async function isSavedOffline(
@@ -74,10 +123,13 @@ export async function isSavedOffline(
   id: string,
   source: Resolvable,
   fileStore: FileStorePort,
-  defaultExt: string
+  defaultExt: string,
 ): Promise<boolean> {
-  if (source.type === 'file') return true;
-  return fileStore.exists('document', pathFor(kind, id, extensionFromUrl(source.url, defaultExt)));
+  if (source.type === "file") return true;
+  return fileStore.exists(
+    "document",
+    pathFor(kind, id, extensionFromUrl(source.url, defaultExt)),
+  );
 }
 
 /** "Add from file": copies a document-picker result into our own document
@@ -89,9 +141,9 @@ export async function importExternalFile(
   id: string,
   externalUri: string,
   fileStore: FileStorePort,
-  ext: string
-): Promise<{ type: 'file'; path: string }> {
+  ext: string,
+): Promise<{ type: "file"; path: string }> {
   const path = pathFor(kind, id, ext);
-  await fileStore.copyExternal(externalUri, { root: 'document', path });
-  return { type: 'file', path };
+  await fileStore.copyExternal(externalUri, { root: "document", path });
+  return { type: "file", path };
 }

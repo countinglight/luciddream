@@ -65,6 +65,17 @@ export class InMemoryFileStore implements FileStorePort {
     this.files.set(key(to.root, to.path), `content-of(${sourceUri})`);
   }
 
+  async listFiles(root: FileRoot, path: string): Promise<string[]> {
+    const prefix = `${key(root, path)}/`;
+    const names: string[] = [];
+    for (const stored of this.files.keys()) {
+      if (!stored.startsWith(prefix)) continue;
+      const rest = stored.slice(prefix.length);
+      if (rest.length > 0 && !rest.includes("/")) names.push(rest);
+    }
+    return names;
+  }
+
   async deleteFile(root: FileRoot, path: string): Promise<void> {
     this.files.delete(key(root, path));
   }

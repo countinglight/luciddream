@@ -30,7 +30,6 @@ import {
   formatTimeOfDay,
 } from "@/lib/format-time";
 import {
-  clearLucidNotes,
   loadLucidNotes,
   LUCID_OPTIONS,
   saveLucidNote,
@@ -50,12 +49,11 @@ import type { LogCategory } from "@/lib/settings";
 import { eventCategory } from "@/logging/categories";
 import { describeEvent } from "@/logging/describe-event";
 import { shareRunLog } from "@/logging/export";
+import { loadRunIndex, type RunSummary } from "@/logging/run-index";
 import {
-  loadRunIndex,
-  removeRun,
-  saveRunIndex,
-  type RunSummary,
-} from "@/logging/run-index";
+  deleteAllRuns as deleteAllRunRecords,
+  deleteRun as deleteRunRecord,
+} from "@/logging/run-store";
 
 const ALL_CATEGORIES: LogCategory[] = [
   "playback",
@@ -132,17 +130,18 @@ export default function NightsScreen() {
   );
   const viewingRun = runs?.find((run) => run.id === viewingId) ?? null;
 
+  // Deletion itself lives next to the run index (logging/run-store.ts): a
+  // night's log file was missed precisely because this code was in a screen
+  // (AR-01 / AR-18).
   const deleteRun = async (id: string) => {
-    const loaded = await loadRunIndex();
-    await saveRunIndex(removeRun(loaded, id));
-    setLucid(await saveLucidNote(id, null));
+    await deleteRunRecord(id, getFileStore());
+    setLucid(await loadLucidNotes());
     setRuns((previous) => previous?.filter((run) => run.id !== id) ?? null);
     setViewingId(null);
   };
 
   const deleteAll = async () => {
-    await saveRunIndex([]);
-    await clearLucidNotes();
+    await deleteAllRunRecords(getFileStore());
     setRuns([]);
     setLucid({});
     setMenuOpen(false);

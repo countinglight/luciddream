@@ -47,6 +47,10 @@ export interface FileStorePort {
     to: { root: FileRoot; path: string },
   ): Promise<void>;
   deleteFile(root: FileRoot, path: string): Promise<void>;
+  /** File names directly inside a directory, or an empty array if it does
+   * not exist. Needed to find content the index no longer references —
+   * deleting a night must not leave its log on disk (AR-01 / A6). */
+  listFiles(root: FileRoot, path: string): Promise<string[]>;
   /** A URI usable as an expo-audio source / for reading elsewhere. */
   uriFor(root: FileRoot, path: string): string;
 }

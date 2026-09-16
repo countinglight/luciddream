@@ -83,8 +83,8 @@ export function useVoiceInterrupt(
       onRecordingFileRef.current?.(uri);
     };
 
-    setPermission("requesting");
     (async () => {
+      setPermission("requesting");
       const { granted } = await requestRecordingPermissionsAsync();
       if (cancelled) return;
       setPermission(granted ? "granted" : "denied");

@@ -4,3 +4,4 @@ export * from "./export";
 export * from "./jsonl-log-port";
 export * from "./records";
 export * from "./run-index";
+export * from "./run-store";

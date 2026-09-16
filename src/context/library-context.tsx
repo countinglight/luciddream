@@ -13,6 +13,7 @@ import { extensionFromUrl, idForFile, idForUrl } from "@/storage/id";
 import {
   importExternalFile,
   isSavedOffline,
+  deleteContent,
   removeOfflineCopy,
   saveOffline,
 } from "@/storage/library-content";
@@ -228,15 +229,11 @@ export function LibraryProvider({ children }: PropsWithChildren) {
     async (item: LibraryItem) => {
       const kind = item.kind === "signal" ? "signals" : "scripts";
       const defaultExt = item.kind === "signal" ? "audio" : "yaml";
-      if (item.source.type !== "bundled") {
-        await removeOfflineCopy(
-          kind,
-          item.id,
-          item.source,
-          fileStore,
-          defaultExt,
-        );
-      }
+      // Removing an item deletes its content, in both roots. It used to call
+      // removeOfflineCopy, which is the different, user-facing "Remove local
+      // copy" — a no-op for imported files and silent about the URL cache, so
+      // removed content stayed on disk forever (AR-01 / A6).
+      await deleteContent(kind, item.id, item.source, fileStore, defaultExt);
       persist(removeFromIndex(persisted, item.id));
     },
     [persist, persisted],

@@ -155,6 +155,19 @@ export class WebFileStore implements FileStorePort {
     });
   }
 
+  async listFiles(root: FileRoot, path: string): Promise<string[]> {
+    const store = await this.store("readonly");
+    const keys = await requestToPromise(store.getAllKeys());
+    const prefix = `${key(root, path)}/`;
+    const names: string[] = [];
+    for (const stored of keys) {
+      if (typeof stored !== "string" || !stored.startsWith(prefix)) continue;
+      const rest = stored.slice(prefix.length);
+      if (rest.length > 0 && !rest.includes("/")) names.push(rest);
+    }
+    return names;
+  }
+
   async deleteFile(root: FileRoot, path: string): Promise<void> {
     const k = key(root, path);
     const store = await this.store("readwrite");
