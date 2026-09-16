@@ -30,7 +30,7 @@ make it safe.
 ### 1.1 Triggers that pull v3 work forward into a v2.x
 
 - Beta users report overnight runs dying for reasons the v2 hardening package cannot fix in
-  TypeScript (documented in the v2 plan, §7.4).
+  TypeScript (documented in the v2 plan, §7.5).
 - Historical wearable data shows that a user's REM timing varies night to night by more than a
   timed script can absorb, so cross-night learning is not enough for that user.
 - A watch or ring vendor ships a documented live stream with acceptable delivery age.

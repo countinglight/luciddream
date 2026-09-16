@@ -262,7 +262,7 @@ Timing uses **absolute deadlines**, not accumulated `setTimeout` deltas: each `w
 slice. This is what keeps drift from compounding over hundreds of iterations and lets the engine
 recover correctly when Android throttles timers during doze.
 
-**Not as built.** Execution state is *not* held in one serialisable object: the statement position
+**Not as built.** Execution state is _not_ held in one serialisable object: the statement position
 and continuation live in the JavaScript call stack of a recursive async walk, and `ExecState` holds
 only the scope stacks. A run therefore cannot be checkpointed or resumed today. Checkpoint and
 resume are v2 F2.1, and need explicit execution frames, a phase index, loop and scope state,
@@ -300,7 +300,7 @@ available. The mock-first approach means we find out without having built the ap
 
 **Corrected 2026-09-15.** This section described a partial CPU wake lock that never existed.
 `expo-keep-awake` sets Android's `FLAG_KEEP_SCREEN_ON` and iOS's `isIdleTimerDisabled`: both keep
-the *display* awake, neither keeps timers running with the screen off (AR-05 / A3). As of the v1
+the _display_ awake, neither keeps timers running with the screen off (AR-05 / A3). As of the v1
 hardening pass the app no longer holds the screen on at all on a phone — lighting a bedroom all
 night is unacceptable and it dominated the battery budget. The web build keeps the Screen Wake Lock,
 having no foreground service to fall back on.
@@ -334,6 +334,11 @@ URL and the file is stored under its original extension alongside a small sideca
 source URL, saved-at timestamp, display name). The Library screen's list is built by merging this
 saved set with the bundled examples and the in-memory session cache, so "is this available offline"
 is always a direct filesystem check, not an inference.
+
+**Added 2026-09-16.** Every Library address must use `https://`, for single items and for manifests
+and their entries. A script is validated when it is added — downloaded and parsed for a URL,
+parsed for a file — and refused with the script's name and the failing node if it is invalid; a
+manifest containing any invalid script is refused whole. Bundled scripts are not re-checked.
 
 There is no automatic eviction in v1 — storage is small (short audio clips, text scripts) and the
 user is in full control via **Remove local copy**. A saved copy is never re-downloaded automatically;

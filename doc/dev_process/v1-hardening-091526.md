@@ -94,7 +94,7 @@ Everything else above is invisible if it works. These are not.
 
 - [ ] Build and exercise in the Android emulator: D1, D2, D3, D6, D7 in §5.
 - [ ] Physical device for D4 (recording deleted) and D8 (battery).
-- [ ] Answer C1–C6 in §6, or tell me to pick defaults.
+- [x] Answer C1–C6 in §6. Answered 2026-09-16; only C5 remains, after the push.
 - [ ] Push when you are satisfied:
 
 ```bash
@@ -143,16 +143,16 @@ on an emulator, and `npm run emulator:doze` plus `npm run emulator:check` cover 
 foreground-service question. See BUILD.md, "Android emulator". A full night still goes on a phone,
 with the release APK and the phone's battery setting for LucidDream set to Unrestricted.
 
-## 6. Decisions you still owe
+## 6. Decisions — answered 2026-09-16
 
-| #      | Decision                                                                                                                                                                                                                    | What I did meanwhile                                                                                                                                                                                                                                                    |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **C1** | **Android cannot honour the Audio focus setting.** expo-audio requires exclusive focus (`doNotMix`) for the lock-screen registration that keeps a night alive. Spec §4.4 defaults to ducking "so alarms still cut through". | Forced exclusive on Android and wrote a line into the night's own log saying the setting was not applied. Note this does not stop a later alarm taking focus from us — it changes what happens to other apps' audio when we start. Spec §4.4 needs amending either way. |
-| **C2** | **Unknown keys in a script are now rejected.** `wiatt: 5m` used to be ignored silently, so the script simply never waited.                                                                                                  | Rejected, naming the key. This is a behaviour change for any existing script carrying extra keys. If a tester has one, it will now refuse to start rather than quietly misbehave.                                                                                       |
-| **C3** | **A fresh install's `$short` is five seconds.** You chose the Settings values as the single source (AR-20), which is now done. Five seconds is a demo cadence, not a night's.                                               | Unified as instructed and left the values alone. Changing them is a one-line edit in `src/engine/duration.ts`.                                                                                                                                                          |
-| **C4** | **The durable log now records everything**; the category toggles filter display and export.                                                                                                                                 | Per your answer. Side effect: exports are larger for users who had categories switched off.                                                                                                                                                                             |
-| **C5** | **`npm run format:check` fails on 91 files** — and it is the first step of `npm run check`, so your pre-push gate has been failing at step one. This predates this session.                                                 | Left alone deliberately. A repo-wide `prettier --write` would bury the hardening diffs in thousands of lines. Worth one isolated commit when you choose.                                                                                                                |
-| **C6** | **HTTPS-only imports** (AR-14) — not done, because you did not select it and it would break a tester with a saved `http://` URL.                                                                                            | Plain HTTP still works.                                                                                                                                                                                                                                                 |
+| #      | Owner's answer                                                                                                                                                    | Where it landed                                                            |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **C1** | Keep exclusive audio focus on Android. Negative impact is limited to the moment a night starts; no substantial effect on alarms. Make it a v1 release note.       | [v1 release notes](../release/luciddream-v1-release-notes.md); v2 plan D31 |
+| **C2** | Approved, and validate script syntax when a script is added, so the error appears then. Bundled scripts are assumed correct.                                      | Commit `80d48e4`; v2 plan D32                                              |
+| **C3** | Keep 5 s for the v1 beta, as the usability test asked. v2 **must** fix it. Make it a v1 release note.                                                             | Release notes; v2 plan F5.6 and D30                                        |
+| **C4** | Keep as is. React if users file an issue about log size.                                                                                                          | Release notes; v2 plan D34                                                 |
+| **C5** | Fix today as a separate commit, after the owner pushes the rest of this work.                                                                                     | Pending the push                                                           |
+| **C6** | HTTPS only; ignore testers with a saved `http://` address. Verified that everything published under `luciddream.countinglight.com/content/` is served over HTTPS. | Commit `80d48e4`; release notes; v2 plan D33                               |
 
 ## 7. Manual steps outside the repo
 
@@ -163,6 +163,10 @@ Nothing in this session touched Cloudflare, EAS, or any deploy path, per your in
   are untouched. **One new setup step**: the per-install daily quota needs a new table, so
   `npm run telemetry:db:schema` must be run before this Worker is deployed. The schema file is
   idempotent, so re-running it is safe.
+- **Cloudflare "Always Use HTTPS"** for `countinglight.com`. Plain `http://luciddream.countinglight.com/content/…`
+  still answers 200 rather than redirecting. The app no longer accepts `http://` addresses (C6),
+  so this only affects browsers, but it is the matching server-side setting. Dashboard: SSL/TLS →
+  Edge Certificates → Always Use HTTPS.
 - **No push.** The branch is local. When you want it:
 
 ```bash
@@ -186,18 +190,7 @@ without touching anything else. What it contains:
 
 ## 9. Minor inconsistencies, logged rather than fixed
 
-Per your instruction not to chase polish.
-
-1. **`expo lint` serves stale cross-file results.** Its cache is keyed on each file's own mtime, so
-   a rule like `import/export` can report a dependency's old state indefinitely. `npx eslint src
---no-cache` is the truth. Cost me a detour; worth knowing before it costs you one.
-2. **Jest reports "a worker process has failed to exit gracefully"** on every full run. Pre-existing,
-   and not investigated.
-3. **`npm run reset-project`** is still the Expo template script that moves or deletes `src/`
-   (AR-25). It has no business being in this repo.
-4. **Stop shows the Sleeping screen briefly** while the night winds down, rather than a distinct
-   "stopping" state. The service models `stopping` properly; the screens collapse it onto
-   `running` so no layout changed. Fine as it is, but it is a deliberate simplification.
+Tracked in [issue #7](https://github.com/countinglight/luciddream/issues/7) as of 2026-09-16.
 
 ## 10. Owner answers this session ran on
 
@@ -213,28 +206,5 @@ Recorded so a later reader knows these were decisions, not assumptions.
 
 ## 11. Deferred, with reasons
 
-**Still open from the reviews, deliberately not started:**
-
-- **Run manifest** (AR-10 / A8) — the first log record pinning app build, platform, time zone,
-  settings and each phase's script text. You rated it "not too important right now"; it is the
-  thing that would make a shared beta log self-explanatory, and it is the natural next piece.
-- **Checkpoint and resume** (F2.1), **Android exact alarms** (F2.3), **cue-time notifications**
-  (F2.5), **night ambience** (F2.4), **battery measurement** (F2.8 — needs `expo-battery`, a new
-  native dependency). All v2 by both reviews' own recommendation.
-- **True/false/unknown condition semantics** (F3.1). Both reviews are emphatic this must not be
-  slipped into v1: it changes which cues an existing script plays.
-- **Clock conditions across midnight** (AR-23). `until: { clock: { gte: "06:00" } }` is already true
-  at 23:00, so such a loop ends at bedtime. Documented, not changed.
-- **Download size and time limits** (A4's import boundary). `downloadTo` is unbounded; staging now
-  means a partial download is discarded, but nothing stops a huge one.
-- **Session-level records beyond the interrupted one** (AR-11): ducking and resume, a write-failure
-  count in the stop record, per-run sequence numbers. `SessionRecord` in `src/logging/records.ts` is
-  the place they go, and `NightSession.note()` already writes one kind.
-
-**Test coverage that is honestly absent:**
-
-- `ExpoFileSystemStore` and `WebFileStore` are not covered by the `FileStorePort` contract test.
-  The contract is written and the in-memory fake passes it; the native store needs a device and the
-  web store needs a real IndexedDB (`fake-indexeddb` would be a new devDependency).
-- No test covers `session.ts` itself — the real Expo wiring. The lifecycle above it is now tested
-  through `NightSession` with injected fakes.
+Moved to the [v2 plan §7.4](../plans/luciddream-v2-plan.md) on 2026-09-16, since this document is
+being archived. The v2 plan is now the only place to track them.
