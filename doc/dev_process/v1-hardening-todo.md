@@ -59,14 +59,31 @@ the service fix would kill nights within minutes.
 
 Nothing in this session touched Cloudflare, EAS, or any deploy path, per your instruction.
 
-- **Telemetry Worker**: see §7 for its status. No `wrangler` command was run, no resource created,
-  and `deploy:telemetry`, `wrangler.telemetry.jsonc` and `scripts/check-telemetry-config.js` are
-  untouched.
+- **Telemetry Worker**: hardened but still dormant. No `wrangler` command was run, no resource
+  created, and `deploy:telemetry`, `wrangler.telemetry.jsonc` and `scripts/check-telemetry-config.js`
+  are untouched. **One new setup step**: the per-install daily quota needs a new table, so
+  `npm run telemetry:db:schema` must be run before this Worker is deployed. The schema file is
+  idempotent, so re-running it is safe.
 - **No push.** The branch is local. When you want it:
 
 ```bash
 git push origin v1-hardening
 ```
+
+## 4a. Telemetry, in case you roll it back
+
+It is the last commit (`257bdbe`) on purpose, so `git revert 257bdbe` removes the whole thing
+without touching anything else. What it contains:
+
+- Error messages are redacted before queueing — URIs, file paths and email addresses become
+  placeholders. Script names survive, which is what the diagnostics plan allows.
+- The duplicate open-run marker is gone. Interrupted-night detection is now always-on in
+  `src/session/run-recovery.ts` and diagnostics report from it, so a user without diagnostics still
+  gets an honest Nights screen. **If you revert this commit, that consolidation goes with it** and
+  diagnostics lose their reporting path for interrupted nights — the local detection itself stays,
+  since it lives in commit `19e1b63`.
+- Worker: payload projected from known fields rather than stored as received; body read with a cap;
+  per-install daily quota answering 429.
 
 ## 5. Minor inconsistencies, logged rather than fixed
 
@@ -111,6 +128,9 @@ Recorded so a later reader knows these were decisions, not assumptions.
   at 23:00, so such a loop ends at bedtime. Documented, not changed.
 - **Download size and time limits** (A4's import boundary). `downloadTo` is unbounded; staging now
   means a partial download is discarded, but nothing stops a huge one.
+- **Session-level records beyond the interrupted one** (AR-11): ducking and resume, a write-failure
+  count in the stop record, per-run sequence numbers. `SessionRecord` in `src/logging/records.ts` is
+  the place they go, and `NightSession.note()` already writes one kind.
 
 **Test coverage that is honestly absent:**
 
