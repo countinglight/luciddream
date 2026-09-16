@@ -412,14 +412,59 @@ Common failures:
 
 ## Android install APK via USB
 
-From a Windows command prompt, after `npm run android:apk:release`:
+Installs a release APK you built onto a phone connected by USB. The release APK runs on its own; it
+does not need Metro or the computer after installing. Use it for full-night tests.
 
-```bat
-%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe install android\app\build\outputs\apk\release\luciddream-v0.5.1-release.apk
+**One-time phone setup.** Enable Developer options (Settings > About phone, tap _Build number_ seven
+times), then turn on _USB debugging_ in Developer options. Connect the cable, unlock the phone, and
+accept the _Allow USB debugging_ prompt.
+
+**1. Build** (from the project folder):
+
+```bash
+npm run android:apk:release
 ```
 
-The APK filename tracks `version` in `package.json` through
-`plugins/withCanonicalVersion.js`, so it changes with each version bump.
+The APK lands in `android\app\build\outputs\apk\release\` as `luciddream-v<version>-release.apk`. The
+version comes from `package.json` through `plugins/withCanonicalVersion.js`, so the name changes with
+each version bump. The commands below use `0.5.1`.
+
+**2. Check the phone is visible.** `adb` is usually not on `PATH`; these use its full path from
+Command Prompt (`cmd`):
+
+```bat
+%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe devices
+```
+
+A line ending in `device` means it is ready. `unauthorized` means the phone is waiting for you to
+accept the USB debugging prompt.
+
+**3. Install**, replacing any copy already on the phone:
+
+```bat
+%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d install -r android\app\build\outputs\apk\release\luciddream-v0.5.1-release.apk
+```
+
+- `-d` targets the USB phone. Without it, `adb` refuses when an emulator is also running.
+- `-r` replaces an existing install and keeps its data. Without it, a second install fails with
+  `INSTALL_FAILED_ALREADY_EXISTS`.
+
+`Success` means done; open LucidDream from the app drawer.
+
+In PowerShell, replace `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` with `& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"`.
+
+**If install fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`**, the copy on the phone was signed with a
+different key (for example an APK from GitHub Releases). Uninstall it first. **This deletes the app's
+data on the phone**, including nights and library items:
+
+```bat
+%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe -d uninstall com.vladsadovsky.luciddream
+```
+
+Then repeat step 3.
+
+**Before a full-night test**, set LucidDream's battery setting to _Unrestricted_ in the phone's app
+settings. Many Android makers stop background apps overnight otherwise.
 
 ## Android emulator
 
