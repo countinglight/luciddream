@@ -5,7 +5,7 @@
  * tests use fakes (see testing/).
  */
 
-export type SleepStage = 'awake' | 'light' | 'deep' | 'rem';
+export type SleepStage = "awake" | "light" | "deep" | "rem";
 
 export type ContextSnapshot = {
   at: number;
@@ -30,6 +30,18 @@ export interface ClockPort {
    * comes first. Never rejects; the interpreter checks `signal.aborted`
    * afterwards to decide whether to keep going. */
   sleep(ms: number, signal: AbortSignal): Promise<void>;
+  /**
+   * Gives the host a turn.
+   *
+   * `await` alone is not a yield: it schedules a microtask, and microtasks
+   * run to exhaustion before any timer or UI event. A loop of `log` or `set`
+   * statements with no wait therefore spins forever without the Stop button,
+   * the notification action or the interpreter's own timers ever getting a
+   * chance to run — the app simply stops responding (architectural review
+   * A4). The real clock resolves this on a timer; a virtual clock resolves it
+   * immediately, so tests stay deterministic and no virtual time passes.
+   */
+  yieldToHost(): Promise<void>;
 }
 
 export type PlayOptions = {
@@ -56,22 +68,35 @@ export interface AudioPort {
 }
 
 export type EngineEvent =
-  | { type: 'run.start'; at: number; scriptName: string }
-  | { type: 'run.stop'; at: number; reason: 'completed' | 'stopped' | 'error' }
-  | { type: 'phase.start'; at: number; phaseIndex: number; phase: string; scriptName: string }
+  | { type: "run.start"; at: number; scriptName: string }
+  | { type: "run.stop"; at: number; reason: "completed" | "stopped" | "error" }
   | {
-      type: 'phase.stop';
+      type: "phase.start";
       at: number;
       phaseIndex: number;
       phase: string;
       scriptName: string;
-      reason: 'completed' | 'stopped' | 'error';
     }
-  | { type: 'play'; at: number; signal: string; gain: number; rate: number; wait: boolean }
-  | { type: 'volume.changed'; at: number; volume: number }
-  | { type: 'log'; at: number; message: string }
-  | { type: 'context.unavailable'; at: number; field: string }
-  | { type: 'error'; at: number; message: string };
+  | {
+      type: "phase.stop";
+      at: number;
+      phaseIndex: number;
+      phase: string;
+      scriptName: string;
+      reason: "completed" | "stopped" | "error";
+    }
+  | {
+      type: "play";
+      at: number;
+      signal: string;
+      gain: number;
+      rate: number;
+      wait: boolean;
+    }
+  | { type: "volume.changed"; at: number; volume: number }
+  | { type: "log"; at: number; message: string }
+  | { type: "context.unavailable"; at: number; field: string }
+  | { type: "error"; at: number; message: string };
 
 /** Sink for every event the run produces — the source of the morning-after
  * log (spec §2.2/§4.7). Implementations should not throw; a logging failure

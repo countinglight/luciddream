@@ -15,6 +15,11 @@ export class RealClockPort implements ClockPort {
     return Date.now();
   }
 
+  /** A real macrotask, so timers and touch events get their turn. */
+  yieldToHost(): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
   async sleep(ms: number, signal: AbortSignal): Promise<void> {
     const deadline = Date.now() + ms;
     while (!signal.aborted) {

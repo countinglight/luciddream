@@ -1,6 +1,6 @@
-import type { Condition, Script, Statement } from './ast';
-import { evaluateCondition, type ConditionContext } from './conditions';
-import type { RunDeps } from './ports';
+import type { Condition, Script, Statement } from "./ast";
+import { evaluateCondition, type ConditionContext } from "./conditions";
+import type { RunDeps } from "./ports";
 
 export type RunController = {
   /** Requests a clean stop. Idempotent — safe to call more than once, and
@@ -23,7 +23,14 @@ type ExecState = {
   /** Innermost enclosing `repeat`'s 0-based iteration, for the `iteration`
    * condition field. Undefined outside any loop. */
   iterationStack: number[];
+  /** Statements executed since the host was last given a turn. */
+  stepsSinceYield: number;
 };
+
+/** How much work may happen between cooperative yields. Small enough that
+ * Stop stays responsive, large enough to cost nothing on a normal night,
+ * where statements are seconds or hours apart. */
+const STEPS_PER_YIELD = 200;
 
 function product(stack: number[]): number {
   return stack.reduce((acc, v) => acc * v, 1);
@@ -44,27 +51,32 @@ export function runScript(script: Script, deps: RunDeps): RunController {
     gainStack: [script.volume],
     rateStack: [1],
     iterationStack: [],
+    stepsSinceYield: 0,
   };
 
-  deps.log.log({ type: 'run.start', at: state.startedAt, scriptName: script.name });
+  deps.log.log({
+    type: "run.start",
+    at: state.startedAt,
+    scriptName: script.name,
+  });
 
   let stoppedByCaller = false;
 
   const done = (async () => {
-    let reason: 'completed' | 'stopped' | 'error' = 'completed';
+    let reason: "completed" | "stopped" | "error" = "completed";
     try {
       await execBody(script.body, state);
-      if (state.abort.signal.aborted) reason = 'stopped';
+      if (state.abort.signal.aborted) reason = "stopped";
     } catch (err) {
-      reason = 'error';
+      reason = "error";
       deps.log.log({
-        type: 'error',
+        type: "error",
         at: deps.clock.now(),
         message: err instanceof Error ? err.message : String(err),
       });
     }
-    if (stoppedByCaller) reason = 'stopped';
-    deps.log.log({ type: 'run.stop', at: deps.clock.now(), reason });
+    if (stoppedByCaller) reason = "stopped";
+    deps.log.log({ type: "run.stop", at: deps.clock.now(), reason });
   })();
 
   return {
@@ -80,44 +92,68 @@ function isStopped(state: ExecState): boolean {
   return state.abort.signal.aborted;
 }
 
-async function execBody(statements: Statement[], state: ExecState): Promise<void> {
+async function execBody(
+  statements: Statement[],
+  state: ExecState,
+): Promise<void> {
   for (const statement of statements) {
+    if (isStopped(state)) return;
+    await yieldIfDue(state);
     if (isStopped(state)) return;
     await execStatement(statement, state);
   }
 }
 
-async function execStatement(statement: Statement, state: ExecState): Promise<void> {
+/** Hands control back to the host every STEPS_PER_YIELD statements, so a
+ * script that never waits cannot lock the app up. */
+async function yieldIfDue(state: ExecState): Promise<void> {
+  state.stepsSinceYield += 1;
+  if (state.stepsSinceYield < STEPS_PER_YIELD) return;
+  state.stepsSinceYield = 0;
+  await state.deps.clock.yieldToHost();
+}
+
+async function execStatement(
+  statement: Statement,
+  state: ExecState,
+): Promise<void> {
   switch (statement.kind) {
-    case 'play':
+    case "play":
       return execPlay(statement, state);
-    case 'wait':
+    case "wait":
       return execWait(statement, state);
-    case 'repeat':
+    case "repeat":
       return execRepeat(statement, state);
-    case 'if':
+    case "if":
       return execIf(statement, state);
-    case 'with':
+    case "with":
       return execWith(statement, state);
-    case 'set':
+    case "set":
       return execSet(statement, state);
-    case 'log':
-      state.deps.log.log({ type: 'log', at: state.deps.clock.now(), message: statement.message });
+    case "log":
+      state.deps.log.log({
+        type: "log",
+        at: state.deps.clock.now(),
+        message: statement.message,
+      });
       return;
-    case 'stop':
+    case "stop":
       state.abort.abort();
       return;
   }
 }
 
-async function execPlay(statement: Extract<Statement, { kind: 'play' }>, state: ExecState): Promise<void> {
+async function execPlay(
+  statement: Extract<Statement, { kind: "play" }>,
+  state: ExecState,
+): Promise<void> {
   const gain = clamp01(product(state.gainStack) * (statement.gain ?? 1));
   const rate = product(state.rateStack) * (statement.rate ?? 1);
   const wait = statement.wait ?? false;
 
   const handle = await state.deps.audio.play(statement.signal, { gain, rate });
   state.deps.log.log({
-    type: 'play',
+    type: "play",
     at: state.deps.clock.now(),
     signal: statement.signal,
     gain,
@@ -129,12 +165,18 @@ async function execPlay(statement: Extract<Statement, { kind: 'play' }>, state: 
   }
 }
 
-async function execWait(statement: Extract<Statement, { kind: 'wait' }>, state: ExecState): Promise<void> {
+async function execWait(
+  statement: Extract<Statement, { kind: "wait" }>,
+  state: ExecState,
+): Promise<void> {
   await state.deps.clock.sleep(statement.duration, state.abort.signal);
 }
 
-async function execRepeat(statement: Extract<Statement, { kind: 'repeat' }>, state: ExecState): Promise<void> {
-  const max = statement.count === 'infinite' ? Infinity : statement.count;
+async function execRepeat(
+  statement: Extract<Statement, { kind: "repeat" }>,
+  state: ExecState,
+): Promise<void> {
+  const max = statement.count === "infinite" ? Infinity : statement.count;
   for (let i = 0; i < max; i++) {
     if (isStopped(state)) return;
     if (statement.until) {
@@ -152,13 +194,19 @@ async function execRepeat(statement: Extract<Statement, { kind: 'repeat' }>, sta
   }
 }
 
-async function execIf(statement: Extract<Statement, { kind: 'if' }>, state: ExecState): Promise<void> {
+async function execIf(
+  statement: Extract<Statement, { kind: "if" }>,
+  state: ExecState,
+): Promise<void> {
   const { value } = await evalCondition(statement.condition, state);
   const branch = value ? statement.then : statement.else;
   if (branch) await execBody(branch, state);
 }
 
-async function execWith(statement: Extract<Statement, { kind: 'with' }>, state: ExecState): Promise<void> {
+async function execWith(
+  statement: Extract<Statement, { kind: "with" }>,
+  state: ExecState,
+): Promise<void> {
   state.gainStack.push(statement.gain ?? 1);
   state.rateStack.push(statement.rate ?? 1);
   try {
@@ -169,16 +217,23 @@ async function execWith(statement: Extract<Statement, { kind: 'with' }>, state: 
   }
 }
 
-async function execSet(statement: Extract<Statement, { kind: 'set' }>, state: ExecState): Promise<void> {
+async function execSet(
+  statement: Extract<Statement, { kind: "set" }>,
+  state: ExecState,
+): Promise<void> {
   if (statement.volume === undefined) return;
   state.gainStack[0] = statement.volume;
-  state.deps.log.log({ type: 'volume.changed', at: state.deps.clock.now(), volume: statement.volume });
+  state.deps.log.log({
+    type: "volume.changed",
+    at: state.deps.clock.now(),
+    volume: statement.volume,
+  });
 }
 
 function formatClock(epochMs: number): string {
   const date = new Date(epochMs);
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
   return `${hh}:${mm}`;
 }
 
@@ -195,7 +250,11 @@ async function evalCondition(condition: Condition, state: ExecState) {
   };
   const result = evaluateCondition(condition, ctx);
   for (const field of result.missingFields) {
-    state.deps.log.log({ type: 'context.unavailable', at: state.deps.clock.now(), field });
+    state.deps.log.log({
+      type: "context.unavailable",
+      at: state.deps.clock.now(),
+      field,
+    });
   }
   return result;
 }

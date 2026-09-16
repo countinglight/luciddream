@@ -21,6 +21,90 @@ export type ParseOptions = {
   durationPresets?: DurationPresets;
 };
 
+/**
+ * What a script is allowed to cost while being read.
+ *
+ * A script is data from outside the app — imported from a URL, a file, and in
+ * v2 drafted by a model. Without bounds, an accidentally malformed or
+ * hostile one could exhaust the stack or memory before the night even starts:
+ * js-yaml happily builds a cyclic structure from `&a *a` aliases, and a
+ * deeply nested body recurses until the stack gives out. The limits are far
+ * above any real script — the largest bundled example is a few dozen nodes —
+ * so hitting one means something is wrong, not that the user was ambitious
+ * (architectural review A4 / AR-15).
+ */
+export const PARSE_LIMITS = {
+  /** Characters of YAML source. */
+  maxSourceLength: 256 * 1024,
+  /** Statements and conditions combined. */
+  maxNodes: 10_000,
+  /** Nesting of bodies and conditions. */
+  maxDepth: 32,
+  /** Statements in a single body. */
+  maxBodyLength: 2_000,
+} as const;
+
+/** Shared budget plus the current depth. The budget object is mutable and
+ * shared across the whole parse; depth is per branch. */
+type ParseContext = ParseOptions & {
+  budget: { nodes: number };
+  depth: number;
+};
+
+function deeper(ctx: ParseContext): ParseContext {
+  return { ...ctx, depth: ctx.depth + 1 };
+}
+
+function countNode(ctx: ParseContext, path: string): void {
+  ctx.budget.nodes += 1;
+  if (ctx.budget.nodes > PARSE_LIMITS.maxNodes) {
+    fail(
+      path,
+      `This script is too large to run safely (over ${PARSE_LIMITS.maxNodes} steps). It may contain a repeated reference to itself.`,
+    );
+  }
+  if (ctx.depth > PARSE_LIMITS.maxDepth) {
+    fail(
+      path,
+      `This script nests too deeply (over ${PARSE_LIMITS.maxDepth} levels). It may contain a repeated reference to itself.`,
+    );
+  }
+}
+
+/** Keys each construct accepts. Anything else is a typo that would otherwise
+ * be silently ignored — `wiatt: 5m` would simply never wait. */
+const ALLOWED_KEYS: Record<string, readonly string[]> = {
+  $: ["name", "version", "volume", "body"],
+  play: ["play"],
+  wait: ["wait"],
+  repeat: ["repeat", "until", "body"],
+  if: ["if", "then", "else"],
+  with: ["with", "body"],
+  set: ["set"],
+  log: ["log"],
+  stop: ["stop"],
+  "play.detail": ["signal", "gain", "rate", "wait"],
+  "with.detail": ["gain", "rate"],
+  "set.detail": ["volume"],
+};
+
+function rejectUnknownKeys(
+  obj: Record<string, unknown>,
+  allowed: readonly string[],
+  path: string,
+): void {
+  const unknown = Object.keys(obj).filter((key) => !allowed.includes(key));
+  if (unknown.length > 0) {
+    fail(
+      path,
+      `Unknown option "${unknown[0]}" — expected one of: ${allowed.join(", ")}.`,
+    );
+  }
+}
+
+/** Script format versions this build knows how to run. */
+const SUPPORTED_VERSIONS = [1];
+
 /** Thrown for anything wrong with a script — bad YAML, an unknown statement
  * key, a value out of range. `path` names the failing node (e.g.
  * `body[2].repeat.body[0].play`) so the error is readable without a
@@ -73,7 +157,10 @@ function requireString(value: unknown, path: string): string {
 }
 
 function requireNumber(value: unknown, path: string): number {
-  if (typeof value !== "number" || Number.isNaN(value))
+  // Number.isFinite rejects NaN and both infinities. YAML's `.inf` parses to
+  // Infinity, which previously passed straight through into gains, rates and
+  // repeat counts.
+  if (typeof value !== "number" || !Number.isFinite(value))
     fail(path, "Expected a number.");
   return value;
 }
@@ -81,7 +168,7 @@ function requireNumber(value: unknown, path: string): number {
 function parseDurationField(
   value: unknown,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): number {
   const raw = requireString(value, path);
   try {
@@ -97,6 +184,13 @@ export function parseScript(
   source: string,
   options: ParseOptions = {},
 ): Script {
+  if (source.length > PARSE_LIMITS.maxSourceLength) {
+    fail(
+      "$",
+      `This script is too large to read (over ${Math.floor(PARSE_LIMITS.maxSourceLength / 1024)} KB).`,
+    );
+  }
+
   let doc: unknown;
   try {
     doc = parseYaml(source);
@@ -107,31 +201,56 @@ export function parseScript(
     );
   }
 
+  const ctx: ParseContext = { ...options, budget: { nodes: 0 }, depth: 0 };
   const root = requireObject(doc, "$");
+  rejectUnknownKeys(root, ALLOWED_KEYS.$, "$");
 
   const name = requireString(root.name, "$.name");
   const version =
     root.version === undefined ? 1 : requireNumber(root.version, "$.version");
+  if (!SUPPORTED_VERSIONS.includes(version)) {
+    // Better to refuse than to run a newer format's script under older rules
+    // and quietly do something else at 3am.
+    fail(
+      "$.version",
+      `This script is version ${version}; this app understands version ${SUPPORTED_VERSIONS.join(" or ")}.`,
+    );
+  }
   const volume =
     root.volume === undefined ? 1 : requireNumber(root.volume, "$.volume");
   if (volume < 0 || volume > 1)
     fail("$.volume", "volume must be between 0 and 1.");
 
-  const bodyRaw = requireArray(root.body, "$.body");
-  if (bodyRaw.length === 0)
-    fail("$.body", "A script needs at least one statement.");
-  const body = bodyRaw.map((item, i) =>
-    parseStatement(item, `$.body[${i}]`, options),
-  );
+  const body = parseStatementList(root.body, "$.body", ctx, "A script");
 
   return { name, version, volume, body };
+}
+
+/** Parses a list of statements, bounding how many one body may hold. */
+function parseStatementList(
+  raw: unknown,
+  path: string,
+  ctx: ParseContext,
+  subject: string,
+): Statement[] {
+  const list = requireArray(raw, path);
+  if (list.length === 0) fail(path, `${subject} needs at least one statement.`);
+  if (list.length > PARSE_LIMITS.maxBodyLength) {
+    fail(
+      path,
+      `Too many statements in one place (over ${PARSE_LIMITS.maxBodyLength}).`,
+    );
+  }
+  const child = deeper(ctx);
+  return list.map((item, i) => parseStatement(item, `${path}[${i}]`, child));
 }
 
 function parseStatement(
   node: unknown,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Statement {
+  countNode(options, path);
   const obj = requireObject(node, path);
   const presentKinds = STATEMENT_KINDS.filter((kind) => kind in obj);
 
@@ -146,6 +265,7 @@ function parseStatement(
   }
 
   const kind = presentKinds[0];
+  rejectUnknownKeys(obj, ALLOWED_KEYS[kind], path);
   switch (kind) {
     case "play":
       return parsePlay(obj, path);
@@ -187,6 +307,7 @@ function parsePlay(obj: Record<string, unknown>, path: string): Statement {
     return { kind: "play", signal: raw };
   }
   const detail = requireObject(raw, `${path}.play`);
+  rejectUnknownKeys(detail, ALLOWED_KEYS["play.detail"], `${path}.play`);
   const signal = requireString(detail.signal, `${path}.play.signal`);
   const gain =
     detail.gain === undefined
@@ -215,20 +336,15 @@ function parsePlay(obj: Record<string, unknown>, path: string): Statement {
 function parseBody(
   obj: Record<string, unknown>,
   bodyPath: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Statement[] {
-  const raw = requireArray(obj.body, bodyPath);
-  if (raw.length === 0)
-    fail(bodyPath, "body must have at least one statement.");
-  return raw.map((item, i) =>
-    parseStatement(item, `${bodyPath}[${i}]`, options),
-  );
+  return parseStatementList(obj.body, bodyPath, options, "body");
 }
 
 function parseRepeat(
   obj: Record<string, unknown>,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Statement {
   const raw = obj.repeat;
   let count: number | "infinite";
@@ -254,33 +370,29 @@ function parseRepeat(
 function parseIf(
   obj: Record<string, unknown>,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Statement {
   const condition = parseCondition(obj.if, `${path}.if`, options);
-  const thenRaw = requireArray(obj.then, `${path}.then`);
-  if (thenRaw.length === 0)
-    fail(`${path}.then`, "then must have at least one statement.");
-  const thenBody = thenRaw.map((item, i) =>
-    parseStatement(item, `${path}.then[${i}]`, options),
+  const thenBody = parseStatementList(
+    obj.then,
+    `${path}.then`,
+    options,
+    "then",
   );
-  let elseBody: Statement[] | undefined;
-  if (obj.else !== undefined) {
-    const elseRaw = requireArray(obj.else, `${path}.else`);
-    if (elseRaw.length === 0)
-      fail(`${path}.else`, "else must have at least one statement.");
-    elseBody = elseRaw.map((item, i) =>
-      parseStatement(item, `${path}.else[${i}]`, options),
-    );
-  }
+  const elseBody =
+    obj.else === undefined
+      ? undefined
+      : parseStatementList(obj.else, `${path}.else`, options, "else");
   return { kind: "if", condition, then: thenBody, else: elseBody };
 }
 
 function parseWith(
   obj: Record<string, unknown>,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Statement {
   const detail = requireObject(obj.with, `${path}.with`);
+  rejectUnknownKeys(detail, ALLOWED_KEYS["with.detail"], `${path}.with`);
   const gain =
     detail.gain === undefined
       ? undefined
@@ -295,6 +407,7 @@ function parseWith(
 
 function parseSet(obj: Record<string, unknown>, path: string): Statement {
   const detail = requireObject(obj.set, `${path}.set`);
+  rejectUnknownKeys(detail, ALLOWED_KEYS["set.detail"], `${path}.set`);
   if (detail.volume === undefined)
     fail(`${path}.set`, "set must specify volume.");
   const volume = requireNumber(detail.volume, `${path}.set.volume`);
@@ -306,8 +419,9 @@ function parseSet(obj: Record<string, unknown>, path: string): Statement {
 function parseCondition(
   node: unknown,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Condition {
+  countNode(options, path);
   const obj = requireObject(node, path);
   const keys = Object.keys(obj);
   if (keys.length !== 1) {
@@ -322,14 +436,21 @@ function parseCondition(
     if (key === "not") {
       return {
         kind: "not",
-        condition: parseCondition(obj.not, `${path}.not`, options),
+        condition: parseCondition(obj.not, `${path}.not`, deeper(options)),
       };
     }
     const list = requireArray(obj[key], `${path}.${key}`);
     if (list.length === 0)
       fail(`${path}.${key}`, `${key} must list at least one condition.`);
+    if (list.length > PARSE_LIMITS.maxBodyLength) {
+      fail(
+        `${path}.${key}`,
+        `Too many conditions in one place (over ${PARSE_LIMITS.maxBodyLength}).`,
+      );
+    }
+    const child = deeper(options);
     const conditions = list.map((item, i) =>
-      parseCondition(item, `${path}.${key}[${i}]`, options),
+      parseCondition(item, `${path}.${key}[${i}]`, child),
     );
     return key === "all"
       ? { kind: "all", conditions }
@@ -350,7 +471,7 @@ function parseFieldCondition(
   field: ConditionField,
   raw: unknown,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): Condition {
   // Shorthand: `rem: true` means `rem: { eq: true }`.
   if (!isPlainObject(raw)) {
@@ -391,7 +512,7 @@ function normalizeFieldValue(
   field: ConditionField,
   raw: unknown,
   path: string,
-  options: ParseOptions,
+  options: ParseContext,
 ): number | string | boolean {
   if (field === "elapsed") {
     return typeof raw === "number"

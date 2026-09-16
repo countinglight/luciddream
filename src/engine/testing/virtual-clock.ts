@@ -1,4 +1,4 @@
-import type { ClockPort } from '../ports';
+import type { ClockPort } from "../ports";
 
 type PendingTimer = {
   at: number;
@@ -21,12 +21,18 @@ export class VirtualClock implements ClockPort {
     return this.currentMs;
   }
 
+  /** Resolves immediately and advances no virtual time: a cooperative yield
+   * must not shift the timings a fixture asserts. */
+  yieldToHost(): Promise<void> {
+    return Promise.resolve();
+  }
+
   sleep(ms: number, signal?: AbortSignal): Promise<void> {
     if (ms <= 0) return Promise.resolve();
     return new Promise<void>((resolve) => {
       const timer: PendingTimer = { at: this.currentMs + ms, resolve };
       this.timers.push(timer);
-      signal?.addEventListener('abort', () => {
+      signal?.addEventListener("abort", () => {
         const index = this.timers.indexOf(timer);
         if (index !== -1) {
           this.timers.splice(index, 1);
@@ -50,7 +56,9 @@ export class VirtualClock implements ClockPort {
   async advanceTo(targetMs: number): Promise<void> {
     for (;;) {
       await flushMicrotasks();
-      const due = this.timers.filter((t) => t.at <= targetMs).sort((a, b) => a.at - b.at);
+      const due = this.timers
+        .filter((t) => t.at <= targetMs)
+        .sort((a, b) => a.at - b.at);
       if (due.length === 0) break;
       const next = due[0];
       this.currentMs = next.at;
@@ -68,7 +76,10 @@ export class VirtualClock implements ClockPort {
    * returns true (the run finished) or no timer remains pending, or `maxMs`
    * of virtual time has passed — a safety net against a script that never
    * finishes hanging a test forever. */
-  async runToCompletion(isDone: () => boolean, maxMs = 24 * 3_600_000): Promise<void> {
+  async runToCompletion(
+    isDone: () => boolean,
+    maxMs = 24 * 3_600_000,
+  ): Promise<void> {
     while (!isDone() && this.currentMs < maxMs) {
       if (this.timers.length === 0) {
         await flushMicrotasks();
