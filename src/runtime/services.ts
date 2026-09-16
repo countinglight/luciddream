@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import { JsonlLogPort } from "@/logging/jsonl-log-port";
 import { recordRunEnd, recordRunStart } from "@/logging/run-index";
 import { NightSession } from "@/session/night-session";
+import { deleteRecordingFile } from "@/session/recording-file";
 import {
   clearOpenRun,
   recoverInterruptedRuns,
@@ -68,6 +69,9 @@ export function recoverOnLaunch(): Promise<RecoveryResult> {
     launchRecovery = recoverInterruptedRuns({
       fileStore,
       now: () => Date.now(),
+      // A night killed with voice interrupt on left its temporary microphone
+      // file behind; this is the only chance to remove it.
+      deleteRecording: deleteRecordingFile,
     }).catch(() => ({ interrupted: [] }));
   }
   return launchRecovery;

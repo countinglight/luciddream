@@ -340,6 +340,46 @@ describe("NightSession", () => {
     expect(session.getSnapshot().status).toBe("completed");
   });
 
+  it("records a session-level note against the running night", async () => {
+    const { session, fake, logged } = makeSession();
+    await session.start(PLAN, OPTIONS);
+
+    session.note("Voice interrupt is not listening.");
+    fake.endRun("completed", 5);
+
+    expect(logged[0]).toMatchObject({
+      type: "error",
+      message: "Voice interrupt is not listening.",
+    });
+  });
+
+  it("ignores a note when no night is running", async () => {
+    const { session } = makeSession();
+    expect(() => session.note("nothing to attach this to")).not.toThrow();
+  });
+
+  it("tracks the temporary recording a night owns", async () => {
+    const markOpenRun = jest.fn();
+    const { session } = makeSession({ markOpenRun });
+    await session.start(PLAN, OPTIONS);
+
+    session.setOwnedRecording("file:///cache/voice.m4a");
+
+    expect(markOpenRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ recordingUri: "file:///cache/voice.m4a" }),
+    );
+  });
+
+  it("clears the open-run marker when a night ends cleanly", async () => {
+    const clearOpenRun = jest.fn();
+    const { session, fake } = makeSession({ clearOpenRun });
+    await session.start(PLAN, OPTIONS);
+
+    fake.endRun("completed", 5);
+
+    expect(clearOpenRun).toHaveBeenCalledTimes(1);
+  });
+
   it("notifies subscribers and stops after unsubscribe", async () => {
     const { session, fake } = makeSession();
     const listener = jest.fn();

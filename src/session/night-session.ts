@@ -154,6 +154,8 @@ export class NightSession {
   private teardown: Promise<void> = Promise.resolve();
   private eventCount = 0;
   private durable: (LogPort & { drain?: () => Promise<void> }) | null = null;
+  /** The running night's log, so session-level facts can be recorded. */
+  private activeLog: LogPort | null = null;
   /** Identity of the night currently being tracked by the open-run marker. */
   private openRun: OpenRunMarker | null = null;
   private lastMarkerWrite = 0;
@@ -271,6 +273,8 @@ export class NightSession {
         },
       };
 
+      this.activeLog = log;
+
       const session = await this.deps.startSession({
         name: prepared.name,
         phases: prepared.phases,
@@ -335,6 +339,13 @@ export class NightSession {
     }
   }
 
+  /** Records a session-level fact against the running night — something the
+   * engine cannot know, such as the microphone not actually listening. A
+   * feature that silently is not working is worse than one that says so. */
+  note(message: string): void {
+    this.activeLog?.log({ type: "error", at: this.deps.now(), message });
+  }
+
   /** Refreshes the open-run marker during long silent waits, when no events
    * arrive at all. Without it an interrupted night would be reported as
    * ending at its last cue, which can be hours early. */
@@ -384,6 +395,7 @@ export class NightSession {
   ): void {
     this.controller = null;
     this.abort = null;
+    this.activeLog = null;
     this.openRun = null;
     this.deps.clearOpenRun?.();
     this.publish({

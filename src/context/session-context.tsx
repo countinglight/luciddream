@@ -9,10 +9,23 @@ import { useLibrary } from "@/context/library-context";
 import { useSettings } from "@/context/settings-context";
 import { useSession } from "@/hooks/use-session";
 import { useTelemetryLifecycle } from "@/hooks/use-telemetry";
-import { useVoiceInterrupt } from "@/hooks/use-voice-interrupt";
-import { getContextProvider, recoverOnLaunch } from "@/runtime/services";
+import {
+  useVoiceInterrupt,
+  type VoiceInterruptMonitor,
+} from "@/hooks/use-voice-interrupt";
+import {
+  getContextProvider,
+  getNightSession,
+  recoverOnLaunch,
+} from "@/runtime/services";
 
-type SessionContextValue = ReturnType<typeof useSession>;
+type SessionContextValue = ReturnType<typeof useSession> & {
+  /** So a screen can tell the user that voice interrupt is not actually
+   * listening. A denied permission used to be discarded silently, leaving
+   * someone believing a feature was watching over their night when it was
+   * not (architectural review A1). */
+  voiceInterrupt: VoiceInterruptMonitor;
+};
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
@@ -47,13 +60,33 @@ export function SessionProvider({ children }: PropsWithChildren) {
     void recoverOnLaunch();
   }, []);
 
-  useVoiceInterrupt(
+  const voiceInterrupt = useVoiceInterrupt(
     settings.voiceInterrupt === "gentle" && session.status === "running",
     session.handleVoiceInterrupt,
+    {
+      // The night owns the temporary recording, so a night the OS kills can
+      // still have it deleted at the next launch.
+      onRecordingFile: (uri) => getNightSession().setOwnedRecording(uri),
+    },
   );
 
+  // A microphone that is not listening must not pass for one that is. The
+  // night's own record says so, which is also what the Sleeping screen's
+  // recent activity shows.
+  const micState = voiceInterrupt.permission;
+  useEffect(() => {
+    if (session.status !== "running") return;
+    if (micState === "denied") {
+      getNightSession().note(
+        "Voice interrupt is not listening: microphone permission was denied.",
+      );
+    } else if (micState === "error") {
+      getNightSession().note("Voice interrupt could not start listening.");
+    }
+  }, [micState, session.status]);
+
   return (
-    <SessionContext.Provider value={session}>
+    <SessionContext.Provider value={{ ...session, voiceInterrupt }}>
       {children}
     </SessionContext.Provider>
   );
