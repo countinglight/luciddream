@@ -61,11 +61,16 @@ npm run test:ci
 ```text
 src/engine/      pure TypeScript parser and interpreter
 src/audio/       Expo Audio adapter and signal resolution
-src/runtime/     context providers
-src/session/     three-phase run lifecycle and platform keep-alive behavior
-src/logging/     JSONL logs, filtering, index, and export
+src/runtime/     composition root (services.ts) and context providers
+src/session/     the night: session service, preparation, recovery, platform keep-alive
+src/logging/     JSONL logs, record types, filtering, index, deletion, and export
 src/storage/     library persistence and web/native file stores
 src/telemetry/   opt-in beta diagnostics: events, offline queue, crash/kill detection
+src/lib/         pure helpers: settings, night grouping, formatting
+src/context/     React providers over the services above
+src/hooks/       React views of the session, library, and run logs
+src/components/  shared UI, including the root error boundary
+src/constants/   theme tokens
 src/app/         Expo Router screens
 telemetry/       diagnostics ingest Worker and D1 schema
 public/          static assets copied into the web export (PWA manifest, icons)
@@ -73,8 +78,15 @@ site/            the marketing website — hand-authored static HTML, no build s
 site/content/    customer-hosted scripts, signals, and manifest
 ```
 
-The engine imports no React Native, Expo, or sibling application modules. External behavior reaches
-it only through port interfaces, which keeps overnight script behavior deterministic under tests.
+The engine imports no React Native, Expo, or sibling application modules — only its own files and
+js-yaml, enforced as an allowlist in `eslint.config.js`. External behavior reaches it only through
+port interfaces, which keeps overnight script behavior deterministic under tests.
+
+A night is owned by `src/session/night-session.ts`, a plain TypeScript service with an explicit
+state machine and no dependency on React; `src/hooks/use-session.ts` subscribes to it. Anything that
+must run before or without the UI — launch-time recovery of an interrupted night, and in v2 an
+OS-initiated relaunch — reaches storage through `src/runtime/services.ts` rather than a React
+context.
 
 ## Building and publishing
 

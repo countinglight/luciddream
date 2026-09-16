@@ -196,6 +196,17 @@ combinators `all` / `any` / `not`.
 A condition over a field with no reading available evaluates to **false**, and the engine logs a
 `context.unavailable` event. Scripts therefore degrade quietly rather than stalling.
 
+Two limitations worth knowing, both deliberate in v1 and addressed in v2:
+
+- **A missing reading is false, and negating it is true.** `not: { rem: true }` is therefore true
+  when there is no REM reading at all, which is not the same as knowing the sleeper is not in REM.
+  v2 F3.1 replaces this with explicit true/false/unknown semantics. Until then, do not write a cue
+  gate that depends on negating a reading that may be absent.
+- **`clock` is compared as an `"HH:MM"` string, so it does not understand midnight.**
+  `until: { clock: { gte: "06:00" } }` is already true at 23:00, so such a loop ends at bedtime
+  rather than at dawn. Express overnight limits with `elapsed` instead. v2 compares on the night's
+  timeline (AR-23).
+
 ### 3.4 Explicitly deferred from the script language
 
 User-defined variables and arithmetic, in-script function/macro definitions, parallel branches,
@@ -251,8 +262,12 @@ Timing uses **absolute deadlines**, not accumulated `setTimeout` deltas: each `w
 slice. This is what keeps drift from compounding over hundreds of iterations and lets the engine
 recover correctly when Android throttles timers during doze.
 
-Execution state (call stack, loop counters, scope stack) is held in one serialisable object, so a
-run can be checkpointed and resumed if the process is restarted mid-night.
+**Not as built.** Execution state is *not* held in one serialisable object: the statement position
+and continuation live in the JavaScript call stack of a recursive async walk, and `ExecState` holds
+only the scope stacks. A run therefore cannot be checkpointed or resumed today. Checkpoint and
+resume are v2 F2.1, and need explicit execution frames, a phase index, loop and scope state,
+deadlines and a frozen run plan — serialising the current object would not be enough. Corrected
+2026-09-15 after the architectural reviews (AR-07 / A7).
 
 Cancellation is cooperative: `stop()` sets a flag checked at every statement boundary and aborts the
 current sleep, so stopping is immediate rather than waiting out a 20-minute `wait`.
@@ -283,13 +298,29 @@ available. The mock-first approach means we find out without having built the ap
 
 ### 4.4 Overnight execution
 
-Android: a **foreground service** (via `expo-notifications` plus the audio background mode) holds the
-process alive with a persistent, non-dismissable notification carrying the current step and a Stop
-action; `expo-keep-awake` holds a partial wake lock. `enableBackgroundPlayback` is `true` in
-`app.json`. Battery-optimisation exemption is requested once, with an explanation screen, because
-OEM power management is the single biggest threat to an 8-hour run.
+**Corrected 2026-09-15.** This section described a partial CPU wake lock that never existed.
+`expo-keep-awake` sets Android's `FLAG_KEEP_SCREEN_ON` and iOS's `isIdleTimerDisabled`: both keep
+the *display* awake, neither keeps timers running with the screen off (AR-05 / A3). As of the v1
+hardening pass the app no longer holds the screen on at all on a phone — lighting a bedroom all
+night is unacceptable and it dominated the battery budget. The web build keeps the Screen Wake Lock,
+having no foreground service to fall back on.
 
-Audio focus defaults to **lowered** rather than exclusive so alarms still cut through.
+Overnight liveness rests on the audio session:
+
+- **Android**: expo-audio's media playback service, which is bound only when a player is registered
+  through `setActiveForLockScreen`. The keep-alive loop is that player. Without this registration
+  expo-audio's own documentation states background playback stops after about three minutes. A
+  separate `expo-notifications` notification carries the current step and a Stop action; it is
+  registered at LOW importance so it does not wake the screen on every event.
+- **iOS**: the `audio` background mode, kept live by the same keep-alive loop.
+
+`enableBackgroundPlayback` is `true` in `app.json`. The battery-optimisation exemption screen is
+still not built.
+
+Audio focus defaults to **lowered** rather than exclusive so alarms still cut through — **except on
+Android**, where the lock-screen registration above requires exclusive focus, so the setting cannot
+be honoured and the run records that in its own log. This conflict is an open owner decision (C1 in
+[v1-hardening-todo.md](../dev_process/v1-hardening-todo.md)).
 
 ### 4.5 Local persistence of remote signals and scripts
 
@@ -315,7 +346,13 @@ wants the playback to stop or quiet down _right now_ and cannot reliably find, u
 phone in the dark. A voice trigger needs no coordination, which is what makes it worth having.
 
 **Design — on-device voice-activity detection, no speech recognition.** `expo-audio`'s existing
-recorder/metering monitors mic input _level_ — no new dependency, no words parsed, no audio stored.
+recorder/metering monitors mic input _level_ — no new dependency, no words parsed, no audio kept.
+
+**Precisely, corrected 2026-09-15:** expo-audio's recorder always writes a file, even when only its
+metering is wanted, so a temporary recording does exist while the feature is running. The app owns
+that file and deletes it when the recorder stops, and a night the OS kills has its file deleted at
+the next launch from the open-run marker. Until the v1 hardening pass nothing deleted it, leaving
+roughly 230 MB (iOS) or 44 MB (Android) of bedroom audio in the cache per night (AR-02 / A1).
 A burst of sustained loud input near the device (any voice, a cough, "hey, stop that") lowers volume
 and pauses briefly, then the run resumes on its own. It **never fully stops the run** on its own:
 since this is a level threshold and not real word recognition, a false positive (snoring, a partner
