@@ -1,4 +1,9 @@
-import { DurationParseError, formatDuration, parseDuration } from "../duration";
+import {
+  DEFAULT_DURATION_PRESETS,
+  DurationParseError,
+  formatDuration,
+  parseDuration,
+} from "../duration";
 
 describe("parseDuration", () => {
   it("parses a single unit", () => {
@@ -40,9 +45,12 @@ describe("parseDuration", () => {
     };
 
     it("uses the built-in defaults when no preset map is provided", () => {
-      expect(parseDuration("$short")).toBe(300_000);
-      expect(parseDuration("$medium")).toBe(1_200_000);
-      expect(parseDuration("$long")).toBe(5_400_000);
+      // Asserted against the shared constant rather than repeated literals:
+      // these are the same values Settings starts from, and there is now
+      // exactly one place to change them (AR-20).
+      expect(parseDuration("$short")).toBe(DEFAULT_DURATION_PRESETS.short);
+      expect(parseDuration("$medium")).toBe(DEFAULT_DURATION_PRESETS.medium);
+      expect(parseDuration("$long")).toBe(DEFAULT_DURATION_PRESETS.long);
     });
 
     it("expands a $preset macro through the provided presets", () => {

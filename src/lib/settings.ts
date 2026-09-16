@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { SleepStage } from "@/engine";
+import { DEFAULT_DURATION_PRESETS, type SleepStage } from "@/engine";
 
 import {
   DEFAULT_RUN_PHASE_SCRIPT_IDS,
@@ -67,11 +67,9 @@ export const DEFAULT_SETTINGS: Settings = {
     rem: false,
     sleepStage: "none",
   },
-  periodPresets: {
-    short: 5_000,
-    medium: 20_000,
-    long: 5 * 60_000,
-  },
+  // Defined once, in the engine, so a script means the same thing in a
+  // fixture, on a phone and on the v2 host (AR-20).
+  periodPresets: { ...DEFAULT_DURATION_PRESETS },
   runPhaseScriptIds: DEFAULT_RUN_PHASE_SCRIPT_IDS,
   diagnostics: {
     enabled: false,

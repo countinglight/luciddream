@@ -4,9 +4,9 @@ import path from "node:path";
 import { runScript } from "../interpreter";
 import { parseScript } from "../parse";
 import {
-    FakeContextProvider,
-    RecordingAudioPort,
-    RecordingLogPort,
+  FakeContextProvider,
+  RecordingAudioPort,
+  RecordingLogPort,
 } from "../testing/fakes";
 import { VirtualClock } from "../testing/virtual-clock";
 
@@ -51,7 +51,7 @@ describe("bundled example scripts", () => {
     ]);
   });
 
-  it("02-interval-chime.yaml: plays three times, 5m apart, then completes", async () => {
+  it("02-interval-chime.yaml: plays three times, one $short apart, then completes", async () => {
     const clock = new VirtualClock();
     const deps = makeDeps(clock);
     const script = parseScript(loadExample("02-interval-chime.yaml"));
@@ -65,9 +65,12 @@ describe("bundled example scripts", () => {
     expect(deps.log.events).toEqual([
       { type: "run.start", at: 0, scriptName: "Interval Chime" },
       { type: "play", at: 0, signal: "chime", gain: 0.6, rate: 1, wait: false },
+      // $short is 5s, the single definition shared with Settings (AR-20).
+      // These used to be five minutes apart here and five seconds apart on a
+      // phone, from the same script.
       {
         type: "play",
-        at: 300_000,
+        at: 5_000,
         signal: "chime",
         gain: 0.6,
         rate: 1,
@@ -75,13 +78,13 @@ describe("bundled example scripts", () => {
       },
       {
         type: "play",
-        at: 600_000,
+        at: 10_000,
         signal: "chime",
         gain: 0.6,
         rate: 1,
         wait: false,
       },
-      { type: "run.stop", at: 900_000, reason: "completed" },
+      { type: "run.stop", at: 15_000, reason: "completed" },
     ]);
   });
 

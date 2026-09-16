@@ -20,11 +20,23 @@ const MACRO_PATTERN = /^\$([A-Za-z][A-Za-z0-9]*)$/;
  * `$short` / `$medium` / `$long` from the Settings screen's Period presets. */
 export type DurationPresets = Record<string, number>;
 
-export const DEFAULT_DURATION_PRESETS: DurationPresets = {
-  short: 5 * 60_000,
-  medium: 20 * 60_000,
-  long: 90 * 60_000,
-};
+/**
+ * The one definition of the period presets.
+ *
+ * There used to be two: these, and a different set in the app's settings
+ * defaults. The app always passes its own, so a script meant one thing in a
+ * fixture and another on a phone — and the v2 host validates scripts with this
+ * same engine, so one script would have described two different nights
+ * (architectural review AR-20). Settings now imports these rather than
+ * declaring its own; changing a value here changes it everywhere.
+ */
+export const DEFAULT_DURATION_PRESETS = {
+  short: 5_000,
+  medium: 20_000,
+  long: 5 * 60_000,
+  // `satisfies` rather than a type annotation, so the three keys survive in
+  // the type and Settings can spread this into its stricter shape.
+} satisfies DurationPresets;
 
 export class DurationParseError extends Error {}
 
