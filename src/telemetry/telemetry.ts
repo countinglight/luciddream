@@ -59,7 +59,7 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Opt-in beta diagnostics (doc/plans/luciddream-beta-telemetry.md). Reports
+ * Opt-in beta diagnostics (doc/plans/luciddream-telemetry.md). Reports
  * when a night started, how it ended and on what device — enough to answer
  * the field-evidence questions without asking testers. Every method is
  * fire-and-forget and swallows its own failures: diagnostics must never

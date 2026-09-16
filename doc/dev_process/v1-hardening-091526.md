@@ -160,7 +160,7 @@ Nothing in this session touched Cloudflare, EAS, or any deploy path, per your in
 
 - **Telemetry Worker**: created and deployed on 2026-09-16 with the owner's approval, including the
   schema with the new quota table and an ingest token. The setup record is in
-  [luciddream-beta-telemetry.md §7.1](../plans/luciddream-beta-telemetry.md); connecting builds
+  [luciddream-telemetry.md §7.1](../plans/luciddream-telemetry.md); connecting builds
   (§7.2 there) is part of the EAS work.
 - **Cloudflare "Always Use HTTPS"** for `countinglight.com`. Plain `http://luciddream.countinglight.com/content/…`
   still answers 200 rather than redirecting. The app no longer accepts `http://` addresses (C6),

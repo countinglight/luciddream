@@ -1,5 +1,5 @@
 /**
- * Beta diagnostics wire format (doc/plans/luciddream-beta-telemetry.md §4).
+ * Beta diagnostics wire format (doc/plans/luciddream-telemetry.md §4).
  * One event per interesting moment of a night — never the run log itself,
  * never audio, never library content beyond script display names.
  */

@@ -11,7 +11,7 @@ if (!match || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(match[1])) {
   console.error(
     "wrangler.telemetry.jsonc still has the placeholder database_id.\n" +
       "Run `npx wrangler@4.129.0 d1 create luciddream-telemetry`, paste the printed id,\n" +
-      "then `npm run telemetry:db:schema` before deploying. See doc/plans/luciddream-beta-telemetry.md.",
+      "then `npm run telemetry:db:schema` before deploying. See doc/plans/luciddream-telemetry.md.",
   );
   process.exit(1);
 }

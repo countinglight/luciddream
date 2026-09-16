@@ -401,7 +401,7 @@ app build, a random install id and an optional tester name. No audio, logs, libr
 device identifiers. The feature is invisible in builds without an endpoint, never runs on the web,
 and deletes anything unsent when switched off. It exists to replace asking testers what happened
 (`doc/evidence/`). Design, backend, cost and the steps to switch it on:
-[luciddream-beta-telemetry.md](luciddream-beta-telemetry.md).
+[luciddream-telemetry.md](luciddream-telemetry.md).
 
 ---
 

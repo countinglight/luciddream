@@ -509,7 +509,7 @@ and the privacy screen have all been through beta.
 
 Beta diagnostics exist in the v1 code, and their ingest service has been live since 2026-09-16;
 builds switch them on once they carry its address
-([luciddream-beta-telemetry.md](luciddream-beta-telemetry.md)); switched on, they supply the field
+([luciddream-telemetry.md](luciddream-telemetry.md)); switched on, they supply the field
 evidence for F2.7 and for the v3 triggers without asking testers.
 
 Before v2.0 feature work: the redesign review and merge to trunk (#4), the doc sync

@@ -43,7 +43,7 @@ export type Settings = {
   /** Last-used three-phase plan on the Run screen. Null means that phase is
    * intentionally empty, not that settings have failed to load. */
   runPhaseScriptIds: RunPhaseScriptIds;
-  /** Opt-in beta diagnostics (doc/plans/luciddream-beta-telemetry.md). Only
+  /** Opt-in beta diagnostics (doc/plans/luciddream-telemetry.md). Only
    * shown, and only effective, in builds that carry a telemetry endpoint. */
   diagnostics: {
     enabled: boolean;

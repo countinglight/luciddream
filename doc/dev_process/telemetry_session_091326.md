@@ -3,12 +3,12 @@
 Process record for the opt-in beta diagnostics ("telemetry") added in commit `d000d93` on
 `v1-redesign`. It keeps the request, the questions and answers, the options weighed, every design
 detail as implemented, and the full setup and operations procedure. The settled design lives in
-[`doc/plans/luciddream-beta-telemetry.md`](../plans/luciddream-beta-telemetry.md); this document is
+[`doc/plans/luciddream-telemetry.md`](../plans/luciddream-telemetry.md); this document is
 the long form behind it.
 
 > **Later status (2026-09-16):** the service described here was created and deployed, and has since
 > been hardened. This record describes the session of 2026-09-13 as it was. For the current state
-> see [luciddream-beta-telemetry.md](../plans/luciddream-beta-telemetry.md).
+> see [luciddream-telemetry.md](../plans/luciddream-telemetry.md).
 
 Status at the end of the session: **implemented, tested, committed, dormant.** No build carries an
 endpoint, no Cloudflare resource exists, nothing is sent.

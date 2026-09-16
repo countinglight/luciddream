@@ -355,7 +355,7 @@ ships.
 `luciddream-telemetry` receives the opt-in night summaries. It was created and deployed on
 2026-09-16 and is live at `https://luciddream-telemetry.countinglight.com`; no app build carries its
 address yet. Setup record, routine operations, queries and troubleshooting are all in
-[doc/plans/luciddream-beta-telemetry.md](doc/plans/luciddream-beta-telemetry.md) §7 and §8.
+[doc/plans/luciddream-telemetry.md](doc/plans/luciddream-telemetry.md) §7 and §8.
 
 ```bash
 npm run deploy:telemetry

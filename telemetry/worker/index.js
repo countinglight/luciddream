@@ -1,5 +1,5 @@
 // LucidDream beta diagnostics ingest. Deployed by `npm run deploy:telemetry`
-// with wrangler.telemetry.jsonc; see doc/plans/luciddream-beta-telemetry.md.
+// with wrangler.telemetry.jsonc; see doc/plans/luciddream-telemetry.md.
 //
 // POST /v1/events  { events: TelemetryEvent[] }  -> 202 { accepted }
 // GET  /v1/health                                -> 200 { ok: true }

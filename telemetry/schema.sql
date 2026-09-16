@@ -1,4 +1,4 @@
--- LucidDream beta diagnostics (doc/plans/luciddream-beta-telemetry.md).
+-- LucidDream beta diagnostics (doc/plans/luciddream-telemetry.md).
 -- Apply with: npm run telemetry:db:schema
 -- Safe to re-run; every statement is idempotent.
 

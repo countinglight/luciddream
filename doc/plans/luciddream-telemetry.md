@@ -1,4 +1,4 @@
-# LucidDream — beta diagnostics (telemetry)
+# LucidDream — diagnostics (telemetry)
 
 Status (2026-09-16): **backend live, app builds not yet connected.** The ingest Worker and its
 database were created and deployed on 2026-09-16 (§7.1). No app build carries the endpoint yet, so

@@ -1,5 +1,5 @@
 {
-  // Beta diagnostics ingest (doc/plans/luciddream-beta-telemetry.md). A Worker
+  // Beta diagnostics ingest (doc/plans/luciddream-telemetry.md). A Worker
   // with a D1 database, not static assets. Not connected to a Git build: it is
   // published only by `npm run deploy:telemetry`, which refuses to run while
   // database_id below is still the placeholder. Everything here fits the
