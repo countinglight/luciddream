@@ -38,11 +38,11 @@ everything it could sense, and keeps going until morning even if the OS gets in 
 On waking, they speak whatever they remember into the room, then answer three questions on the phone.
 Later, on a laptop, they open the night: the cues, the sleep data from their watch, the movement and
 sound the phone sensed, and the recording, all on one timeline. Their spoken report is transcribed
-and kept next to the original audio. The tool points at moments: *this cue was followed by movement;
-this one by nothing; here you spoke for forty seconds.*
+and kept next to the original audio. The tool points at moments: _this cue was followed by movement;
+this one by nothing; here you spoke for forty seconds._
 
-After a few weeks the tool has something to say: *your reports are longer on nights with the bowl
-cue than the hum; the third cue of the night usually wakes you.* It proposes one change, explains its
+After a few weeks the tool has something to say: _your reports are longer on nights with the bowl
+cue than the hum; the third cue of the night usually wakes you._ It proposes one change, explains its
 evidence, and asks. If they agree, the adjusted script is on the phone for tonight. Nothing was
 decided for them, and nothing they recorded left their own machines unless they chose to send an
 excerpt to an AI provider for transcription.
@@ -84,14 +84,14 @@ Three components, one contract between them.
 
 These apply to every feature and are the difference between a proof of concept and a release.
 
-| Goal | What it means in v2 |
-| --- | --- |
-| **Reliability** | An eight-hour screen-off run on both platforms, validated on physical devices, with honest reporting when the OS interrupts it. No run silently dies. |
-| **Privacy and security** | Nothing leaves the user's devices without an explicit action. Bedroom audio stays on the user's machines; only chosen excerpts go to an AI provider, under a visible setting. Every stored thing can be deleted. |
-| **Power** | Battery draw with screen off stays dominated by the audio session; on-device sensing is sampled at rates that keep the night under the v1 target of 8 % per night. Measured, not assumed. |
-| **Honesty and interpretability** | The record distinguishes what was scheduled, what played, what was sensed, what the user said, and what a model inferred. Low sample sizes and missing data are shown, not hidden. |
-| **Maintainability** | Each module remains workable with only its own folder in context (v1 spec §4.1). The engine stays free of React, Expo and I/O. The host's analysis core is a library with fixtures, like the engine. |
-| **Release readiness** | Store distribution on both platforms, release automation, docs and help consistent with the shipped UI. |
+| Goal                             | What it means in v2                                                                                                                                                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Reliability**                  | An eight-hour screen-off run on both platforms, validated on physical devices, with honest reporting when the OS interrupts it. No run silently dies.                                                            |
+| **Privacy and security**         | Nothing leaves the user's devices without an explicit action. Bedroom audio stays on the user's machines; only chosen excerpts go to an AI provider, under a visible setting. Every stored thing can be deleted. |
+| **Power**                        | Battery draw with screen off stays dominated by the audio session; on-device sensing is sampled at rates that keep the night under the v1 target of 8 % per night. Measured, not assumed.                        |
+| **Honesty and interpretability** | The record distinguishes what was scheduled, what played, what was sensed, what the user said, and what a model inferred. Low sample sizes and missing data are shown, not hidden.                               |
+| **Maintainability**              | Each module remains workable with only its own folder in context (v1 spec §4.1). The engine stays free of React, Expo and I/O. The host's analysis core is a library with fixtures, like the engine.             |
+| **Release readiness**            | Store distribution on both platforms, release automation, docs and help consistent with the shipped UI.                                                                                                          |
 
 ### 1.5 How AI is used, and how it is not
 
@@ -135,31 +135,31 @@ source in v2.
 
 Every feature in §4 names at least one of these.
 
-| Id | Scenario | The user's question |
-| --- | --- | --- |
-| **S1** | **Set up tonight in a minute.** Open the app, see the three phases, adjust, press Begin. | "Is it ready, and will it be gentle?" |
-| **S2** | **Sleep undisturbed by the app.** Cues are soft, the room stays quiet, the phone keeps working all night without attention. | "Will it wake me, and will it still be running at 5 AM?" |
-| **S3** | **Record the night on a second device.** Press record on the spare phone, Begin on the main one; in the morning both are still going. | "How do I capture what happens without the app spying on me?" |
-| **S4** | **Speak on waking, then answer three questions.** Talk into the room while the memory is fresh; a short morning review on the phone. | "How do I keep the dream before it fades?" |
-| **S5** | **Bring the night to the host.** Export from the phone, drop the recording next to it, see one aligned timeline. | "What actually happened last night?" |
-| **S6** | **Read the night.** Transcript beside audio, cue-by-cue reactions, wearable stages, the phone's sensing, all navigable. | "Did the cue do anything? What did I say?" |
-| **S7** | **Learn across nights.** Recurring places and themes, outcomes by cue and by timing, sleep-data baselines, uncertainty shown. | "What is working for me, if anything?" |
-| **S8** | **Adjust the practice with consent.** The host proposes one change with its evidence; the user accepts; the phone has the new script for tonight. | "What should I try next, and why?" |
-| **S9** | **Author and share.** Build a simple script on the phone, describe a script in a sentence on the host, use a personal cue, share via a library extension. | "Can I make this mine?" |
-| **S10** | **Install, update and trust.** Get the app from a store or beta channel, understand what is stored where, delete anything. | "Can I rely on this, and who sees my data?" |
+| Id      | Scenario                                                                                                                                                  | The user's question                                           |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **S1**  | **Set up tonight in a minute.** Open the app, see the three phases, adjust, press Begin.                                                                  | "Is it ready, and will it be gentle?"                         |
+| **S2**  | **Sleep undisturbed by the app.** Cues are soft, the room stays quiet, the phone keeps working all night without attention.                               | "Will it wake me, and will it still be running at 5 AM?"      |
+| **S3**  | **Record the night on a second device.** Press record on the spare phone, Begin on the main one; in the morning both are still going.                     | "How do I capture what happens without the app spying on me?" |
+| **S4**  | **Speak on waking, then answer three questions.** Talk into the room while the memory is fresh; a short morning review on the phone.                      | "How do I keep the dream before it fades?"                    |
+| **S5**  | **Bring the night to the host.** Export from the phone, drop the recording next to it, see one aligned timeline.                                          | "What actually happened last night?"                          |
+| **S6**  | **Read the night.** Transcript beside audio, cue-by-cue reactions, wearable stages, the phone's sensing, all navigable.                                   | "Did the cue do anything? What did I say?"                    |
+| **S7**  | **Learn across nights.** Recurring places and themes, outcomes by cue and by timing, sleep-data baselines, uncertainty shown.                             | "What is working for me, if anything?"                        |
+| **S8**  | **Adjust the practice with consent.** The host proposes one change with its evidence; the user accepts; the phone has the new script for tonight.         | "What should I try next, and why?"                            |
+| **S9**  | **Author and share.** Build a simple script on the phone, describe a script in a sentence on the host, use a personal cue, share via a library extension. | "Can I make this mine?"                                       |
+| **S10** | **Install, update and trust.** Get the app from a store or beta channel, understand what is stored where, delete anything.                                | "Can I rely on this, and who sees my data?"                   |
 
 ---
 
 ## 3. Goals that features attach to
 
-| Id | Goal | Why it is a v2 goal |
-| --- | --- | --- |
-| **G1** | **Sleep-friendly by default** | The first customer feedback on v1: sounds must be very soft; beeps and chirps are unacceptable. |
-| **G2** | **A faithful record of the night** | The loop needs the sleeper's side of the story: the room, the body, the words, alongside what played. |
-| **G3** | **Understanding on a large screen** | Phones are for the night; analysis needs space, time and compute. |
-| **G4** | **Self-improvement across nights** | The differentiator no competitor has: preparation, execution, report and adaptation connected. |
-| **G5** | **Reliability, privacy and power** | The non-scenario goals of §1.4; v2 is a release, not a proof of concept. |
-| **G6** | **Release readiness** | Stores, docs, usability fixes, and the redesign landing on the trunk. |
+| Id     | Goal                                | Why it is a v2 goal                                                                                   |
+| ------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **G1** | **Sleep-friendly by default**       | The first customer feedback on v1: sounds must be very soft; beeps and chirps are unacceptable.       |
+| **G2** | **A faithful record of the night**  | The loop needs the sleeper's side of the story: the room, the body, the words, alongside what played. |
+| **G3** | **Understanding on a large screen** | Phones are for the night; analysis needs space, time and compute.                                     |
+| **G4** | **Self-improvement across nights**  | The differentiator no competitor has: preparation, execution, report and adaptation connected.        |
+| **G5** | **Reliability, privacy and power**  | The non-scenario goals of §1.4; v2 is a release, not a proof of concept.                              |
+| **G6** | **Release readiness**               | Stores, docs, usability fixes, and the redesign landing on the trunk.                                 |
 
 ---
 
@@ -170,111 +170,116 @@ specifications and issues.
 
 ### 4.1 Phone: sleep-friendly audio (issue #6)
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F1.1 | **Fade-in and fade-out on every play.** Volume ramp on the player over about one second at start and end; no DSP dependency. | G1 | S2 |
-| F1.2 | **Softening presets `gentle` and `strong`**, pre-rendered on the phone at import or preflight: low-pass, pitch down, light reverb tail, peak normalisation with a cap. Deterministic and unit-tested. Cached by (signal hash, preset, renderer version). | G1 | S2 |
-| F1.3 | **Global "Soft sounds" setting** (Off / Gentle / Strong, default Gentle) applied to every play; scripts may ask for more via `soften:` on `play` or `with`, never less. | G1 | S1, S2 |
-| F1.4 | **Purpose-made soft bundled signals** generated by the build script: singing bowl, breath swell, warm two-note hum. Retire `alert`; Wake Up default no longer a beep. | G1 | S1, S2 |
-| F1.5 | **Lossless user signals: WAV, FLAC, AIFF.** WAV is the documented format; FLAC and AIFF are rare for this audience but accepted. Import filters and URL import reject lossy formats (MP3 and others) with a clear message; bundled `chirp.mp3` converted at build time. No notice for earlier imports: v2 is a fresh release (D19). Heavier preparation can be done on the host instead (F8.12). | G1, G5 | S9 |
-| F1.6 | **Library warning on import**: measure brightness and attack; flag "may wake you, soften recommended". | G1 | S9 |
-| F1.7 | **Test plays the softened version.** What the user hears when testing is what plays at night. | G1 | S1 |
-| F1.8 | **Softening recorded in the log** on every `play` event, so the host knows which variant sounded. | G2, G4 | S6 |
-| F1.9 | **Personal cue from the user's own words.** The user types or speaks an intention phrase; a calm synthetic voice renders it as a signal at import time, softened like any other. Grounded in targeted lucidity reactivation, where the trained cue matters more than the sound itself. Text-to-speech is the first AI capability on the phone, and it is optional. | G1, G4 | S9 |
-| F1.10 | **Sound check (user calibration).** During first setup, and any time from Settings, the user places the phone where it will sit at night and plays a cue through their actual bedside speaker at night volume: Off / Gentle / Strong and a cue-volume slider, each played in turn. They pick the softest version they would still notice. The choice sets the global Soft sounds setting (F1.3) and master volume, and is written to the bundle. Their device, room and hearing matter more than any preset tuned at a developer's desk (D17). | G1 | S1, S2 |
+| Id    | Feature                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Goals  | Scenarios |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- |
+| F1.1  | **Fade-in and fade-out on every play.** Volume ramp on the player over about one second at start and end; no DSP dependency.                                                                                                                                                                                                                                                                                                                                                                                                                   | G1     | S2        |
+| F1.2  | **Softening presets `gentle` and `strong`**, pre-rendered on the phone at import or preflight: low-pass, pitch down, light reverb tail, peak normalisation with a cap. Deterministic and unit-tested. Cached by (signal hash, preset, renderer version).                                                                                                                                                                                                                                                                                       | G1     | S2        |
+| F1.3  | **Global "Soft sounds" setting** (Off / Gentle / Strong, default Gentle) applied to every play; scripts may ask for more via `soften:` on `play` or `with`, never less.                                                                                                                                                                                                                                                                                                                                                                        | G1     | S1, S2    |
+| F1.4  | **Purpose-made soft bundled signals** generated by the build script: singing bowl, breath swell, warm two-note hum. Retire `alert`; Wake Up default no longer a beep.                                                                                                                                                                                                                                                                                                                                                                          | G1     | S1, S2    |
+| F1.5  | **Lossless user signals: WAV, FLAC, AIFF.** WAV is the documented format; FLAC and AIFF are rare for this audience but accepted. Import filters and URL import reject lossy formats (MP3 and others) with a clear message; bundled `chirp.mp3` converted at build time. No notice for earlier imports: v2 is a fresh release (D19). Heavier preparation can be done on the host instead (F8.12).                                                                                                                                               | G1, G5 | S9        |
+| F1.6  | **Library warning on import**: measure brightness and attack; flag "may wake you, soften recommended".                                                                                                                                                                                                                                                                                                                                                                                                                                         | G1     | S9        |
+| F1.7  | **Test plays the softened version.** What the user hears when testing is what plays at night.                                                                                                                                                                                                                                                                                                                                                                                                                                                  | G1     | S1        |
+| F1.8  | **Softening recorded in the log** on every `play` event, so the host knows which variant sounded.                                                                                                                                                                                                                                                                                                                                                                                                                                              | G2, G4 | S6        |
+| F1.9  | **Personal cue from the user's own words.** The user types or speaks an intention phrase; a calm synthetic voice renders it as a signal at import time, softened like any other. Grounded in targeted lucidity reactivation, where the trained cue matters more than the sound itself. Text-to-speech is the first AI capability on the phone, and it is optional.                                                                                                                                                                             | G1, G4 | S9        |
+| F1.10 | **Sound check (user calibration).** During first setup, and any time from Settings, the user places the phone where it will sit at night and plays a cue through their actual bedside speaker at night volume: Off / Gentle / Strong and a cue-volume slider, each played in turn. They pick the softest version they would still notice. The choice sets the global Soft sounds setting (F1.3) and master volume, and is written to the bundle. Their device, room and hearing matter more than any preset tuned at a developer's desk (D17). | G1     | S1, S2    |
 
 ### 4.2 Phone: night session reliability (the hardening package)
+
+**Status note, 2026-09-15.** The v1 hardening pass on `v1-hardening` delivered part of this package
+early, because the same defects were hurting v1 nights. F2.2 is complete; F2.6, F2.9 and F6.3 are
+partly done. Each affected row says what is left. The rest of the package is unchanged and still
+release-blocking. See [v1-hardening-091526.md](../dev_process/v1-hardening-091526.md).
 
 Every row in this section is release-blocking (D14). Beta users have reported problems, but the
 stronger reason is reputation: v2 must come out with fundamentally very high quality, so in v2 the
 work goes into functionality that works, ahead of adding more features.
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F2.1 | **Checkpoint and resume.** Interpreter state written to disk at statement boundaries; on relaunch the run resumes from the checkpoint with an `interrupted` event and no burst of missed cues. | G5 | S2 |
-| F2.2 | **Append-only run log.** The JSONL port appends instead of rewriting the file per event. | G5 | S2, S6 |
-| F2.3 | **Android alarm module.** A small Expo native module using exact alarms that survive doze to relaunch the foreground service at the next cue time and resume from checkpoint. Android only; on iOS the audio session is the mechanism. | G5 | S2 |
-| F2.4 | **Night ambience.** The keep-alive track becomes a real, very quiet, band-limited brown/pink noise: user-adjustable, can be turned off, default barely audible. Keeps the audio session honest for store review, keeps Bluetooth routes awake, and gives the host a constant alignment reference in the recording. | G1, G5, G6 | S2, S3 |
-| F2.5 | **Cue-time local notifications** scheduled at run start; if the app has died, the user still sees when it stopped, and the morning report says so. | G5 | S2, S4 |
-| F2.6 | **Audio route handling.** The target setup is a bedside speaker, not earbuds (D16): the phone's own speaker or a Bluetooth speaker. If a Bluetooth speaker drops or the route changes: log it, keep playing on the new route, never stall. | G5 | S2 |
-| F2.7 | **Eight-hour physical-device validation gate** on Android and iOS: locked screen, silent gaps, Sleep Focus / Do Not Disturb, low battery, audio interruptions. Recorded per release. | G5 | S2 |
-| F2.8 | **Battery measurement per night** written into the bundle (start/end level), so power cost is observed, not assumed. | G5 | S6 |
-| F2.9 | **Honest morning report of interruptions**: process loss, resume, missed cues, route changes, shown on Good morning and in Nights. | G2, G5 | S4 |
+| Id   | Feature                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Goals      | Scenarios |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------- |
+| F2.1 | **Checkpoint and resume.** Interpreter state written to disk at statement boundaries; on relaunch the run resumes from the checkpoint with an `interrupted` event and no burst of missed cues. **Groundwork done in v1:** the run is owned by a React-free `NightSession` with an explicit state machine, so there is now an entry point that does not need the UI. The interpreter still cannot be resumed — its position lives in the call stack.                                                              | G5         | S2        |
+| F2.2 | ~~**Append-only run log.** The JSONL port appends instead of rewriting the file per event.~~ **Done in v1** (2026-09-15). `appendText` added to `FileStorePort` and implemented in all three stores, with a shared contract test, batched writes, a `drain()` boundary and a write-failure count.                                                                                                                                                                                                                | G5         | S2, S6    |
+| F2.3 | **Android alarm module.** A small Expo native module using exact alarms that survive doze to relaunch the foreground service at the next cue time and resume from checkpoint. Android only; on iOS the audio session is the mechanism.                                                                                                                                                                                                                                                                           | G5         | S2        |
+| F2.4 | **Night ambience.** The keep-alive track becomes a real, very quiet, band-limited brown/pink noise: user-adjustable, can be turned off, default barely audible. Keeps the audio session honest for store review, keeps Bluetooth routes awake, and gives the host a constant alignment reference in the recording.                                                                                                                                                                                               | G1, G5, G6 | S2, S3    |
+| F2.5 | **Cue-time local notifications** scheduled at run start; if the app has died, the user still sees when it stopped, and the morning report says so.                                                                                                                                                                                                                                                                                                                                                               | G5         | S2, S4    |
+| F2.6 | **Audio route handling.** The target setup is a bedside speaker, not earbuds (D16): the phone's own speaker or a Bluetooth speaker. If a Bluetooth speaker drops or the route changes: log it, keep playing on the new route, never stall. **"Never stall" is done in v1**: playback waits and teardown are bounded, and a cue that never reports finishing is logged and the night continues. **Left for v2:** route-change events, and continuing on the new route.                                            | G5         | S2        |
+| F2.7 | **Eight-hour physical-device validation gate** on Android and iOS: locked screen, silent gaps, Sleep Focus / Do Not Disturb, low battery, audio interruptions. Recorded per release.                                                                                                                                                                                                                                                                                                                             | G5         | S2        |
+| F2.8 | **Battery measurement per night** written into the bundle (start/end level), so power cost is observed, not assumed.                                                                                                                                                                                                                                                                                                                                                                                             | G5         | S6        |
+| F2.9 | **Honest morning report of interruptions**: process loss, resume, missed cues, route changes, shown on Good morning and in Nights. **Detection is done in v1**: an always-on open-run marker, launch recovery that closes abandoned nights as `interrupted`, a `run.interrupted` record naming how the end time was established, and an Interrupted pill in Nights — for every user, not only those with diagnostics on. **Left for v2:** the Good morning report itself, resume, missed cues and route changes. | G2, G5     | S4        |
 
 ### 4.3 Phone: context and conditions
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F3.1 | **True/false/unknown condition semantics.** Negating unknown stays unknown; a cue gate requires true; an explicit unavailable policy governs branching. Specified as v2 behaviour with its own fixtures; no v1 compatibility mode (D19). Lands before any real context source. | G5, G4 | S2 |
-| F3.2 | **On-device context sources**, sampled at low rate all night: movement (accelerometer) and sound level (existing metering). Available to scripts as conditions (`movement`, `soundLevel`) and written to the log as observations. | G2, G4 | S2, S6 |
-| F3.3 | **Audio route and charger state** as further phone sources: near-zero power cost, and they explain interruptions in the morning report (a Bluetooth speaker dropped, the phone unplugged). Ambient light and sunrise are not in v2 (D29). | G2, G5 | S6, S4 |
-| F3.4 | **Conditionals and the simulated-context panel are retained** as the v3 on-ramp; they are no longer advertised as a wearable feature. | G4 | S9 |
-| F3.5 | **Observation schema** shared with the bundle: source, time, value, availability, provenance. Same shape the v3 live sources will use. | G2 | S6 |
+| Id   | Feature                                                                                                                                                                                                                                                                        | Goals  | Scenarios |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | --------- |
+| F3.1 | **True/false/unknown condition semantics.** Negating unknown stays unknown; a cue gate requires true; an explicit unavailable policy governs branching. Specified as v2 behaviour with its own fixtures; no v1 compatibility mode (D19). Lands before any real context source. | G5, G4 | S2        |
+| F3.2 | **On-device context sources**, sampled at low rate all night: movement (accelerometer) and sound level (existing metering). Available to scripts as conditions (`movement`, `soundLevel`) and written to the log as observations.                                              | G2, G4 | S2, S6    |
+| F3.3 | **Audio route and charger state** as further phone sources: near-zero power cost, and they explain interruptions in the morning report (a Bluetooth speaker dropped, the phone unplugged). Ambient light and sunrise are not in v2 (D29).                                      | G2, G5 | S6, S4    |
+| F3.4 | **Conditionals and the simulated-context panel are retained** as the v3 on-ramp; they are no longer advertised as a wearable feature.                                                                                                                                          | G4     | S9        |
+| F3.5 | **Observation schema** shared with the bundle: source, time, value, availability, provenance. Same shape the v3 live sources will use.                                                                                                                                         | G2     | S6        |
 
 ### 4.4 Phone: morning and export
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F4.1 | **Morning review** on Good morning: lucid? (built in the redesign), noticed the cue inside the dream / on waking / not at all, woke more than wanted, rested. Three taps, skippable. "Noticed the cue" is asked before the review is saved. A setting turns it off for users who find it annoying; when it is off, the question is not shown and the bundle records it as not asked, never as a guessed answer (D22). | G2 | S4 |
-| F4.2 | **Report marker.** One large button on the Sleeping screen writes a `report` event so the host finds the speech that follows it in the recording. | G2 | S4 |
-| F4.3 | **Night bundle export**: versioned, self-describing archive of the run log, observations, settings and script versions used, morning review, lucid answer, battery figures, sound-check choice. Shared as a file through the OS share sheet or saved to a folder. No network transport in v2 (D23). | G2, G3 | S5 |
-| F4.4 | **Historical wearable import into the bundle**: HealthKit on iOS, Health Connect on Android, read at morning-review time for last night, with a note that the watch's app may need to sync first. Target devices (D24): Apple Watch (HealthKit only), Samsung Galaxy Watch and Google Pixel Watch (Health Connect), Oura ring (either store, whichever phone the user has; no Oura cloud API). Data read: sleep session and stages, overnight heart rate and HRV (D26). Validated on Apple Watch and Oura hardware; Samsung and Pixel through beta users (D27). The v2 platform-parity path for wearables. | G2, G4 | S5, S7 |
-| F4.5 | **Nights sheet shows bundle status** (exported, imported by host, proposal pending) so the phone side of the loop is visible. | G4 | S8 |
+| Id   | Feature                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Goals  | Scenarios |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- |
+| F4.1 | **Morning review** on Good morning: lucid? (built in the redesign), noticed the cue inside the dream / on waking / not at all, woke more than wanted, rested. Three taps, skippable. "Noticed the cue" is asked before the review is saved. A setting turns it off for users who find it annoying; when it is off, the question is not shown and the bundle records it as not asked, never as a guessed answer (D22).                                                                                                                                                                                      | G2     | S4        |
+| F4.2 | **Report marker.** One large button on the Sleeping screen writes a `report` event so the host finds the speech that follows it in the recording.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | G2     | S4        |
+| F4.3 | **Night bundle export**: versioned, self-describing archive of the run log, observations, settings and script versions used, morning review, lucid answer, battery figures, sound-check choice. Shared as a file through the OS share sheet or saved to a folder. No network transport in v2 (D23).                                                                                                                                                                                                                                                                                                        | G2, G3 | S5        |
+| F4.4 | **Historical wearable import into the bundle**: HealthKit on iOS, Health Connect on Android, read at morning-review time for last night, with a note that the watch's app may need to sync first. Target devices (D24): Apple Watch (HealthKit only), Samsung Galaxy Watch and Google Pixel Watch (Health Connect), Oura ring (either store, whichever phone the user has; no Oura cloud API). Data read: sleep session and stages, overnight heart rate and HRV (D26). Validated on Apple Watch and Oura hardware; Samsung and Pixel through beta users (D27). The v2 platform-parity path for wearables. | G2, G4 | S5, S7    |
+| F4.5 | **Nights sheet shows bundle status** (exported, imported by host, proposal pending) so the phone side of the loop is visible.                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | G4     | S8        |
 
 ### 4.5 Phone: authoring, library and usability
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F5.1 | **Visual script editor** on the phone: every statement of the language (`play`, `wait`, `repeat`, `if`/`else`, `with`, `set`, `log`, `stop`, conditions, soften and gain) except nested loops, saved as YAML the text editor can still open (D20). Until usability testing (D28): a step list with one level of blocks; scripts it cannot represent open read-only with "Edit as text"; saving a text-origin script writes a new copy. Alternatives in §9.3. | G6 | S9 |
-| F5.2 | **Import a proposed script** from the host as a shared file, landing in the Library with its provenance (which night's evidence, which proposal). URL and QR transport wait until file sharing has been tried with users (D23). | G4 | S8 |
-| F5.3 | **Import fixes**: URL import works with a name alone (#3), last-used URL remembered, clearer errors. | G6 | S9 |
-| F5.4 | **Library extension improvements**: refresh in place, show what changed, format rule (F1.5) enforced in manifests; an extension may carry pre-rendered softened variants prepared by the host (F8.12), which the phone uses instead of rendering its own. | G6 | S9 |
-| F5.5 | **Script view explains itself.** The read-only viewer shows a plain-language timeline of what a script will do tonight ("wait 90 min, then six quiet cycles"). Generated by the engine, not a model. | G6 | S1, S9 |
+| Id   | Feature                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Goals | Scenarios |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | --------- |
+| F5.1 | **Visual script editor** on the phone: every statement of the language (`play`, `wait`, `repeat`, `if`/`else`, `with`, `set`, `log`, `stop`, conditions, soften and gain) except nested loops, saved as YAML the text editor can still open (D20). Until usability testing (D28): a step list with one level of blocks; scripts it cannot represent open read-only with "Edit as text"; saving a text-origin script writes a new copy. Alternatives in §9.3. | G6    | S9        |
+| F5.2 | **Import a proposed script** from the host as a shared file, landing in the Library with its provenance (which night's evidence, which proposal). URL and QR transport wait until file sharing has been tried with users (D23).                                                                                                                                                                                                                              | G4    | S8        |
+| F5.3 | **Import fixes**: URL import works with a name alone (#3), last-used URL remembered, clearer errors.                                                                                                                                                                                                                                                                                                                                                         | G6    | S9        |
+| F5.4 | **Library extension improvements**: refresh in place, show what changed, format rule (F1.5) enforced in manifests; an extension may carry pre-rendered softened variants prepared by the host (F8.12), which the phone uses instead of rendering its own.                                                                                                                                                                                                    | G6    | S9        |
+| F5.5 | **Script view explains itself.** The read-only viewer shows a plain-language timeline of what a script will do tonight ("wait 90 min, then six quiet cycles"). Generated by the engine, not a model.                                                                                                                                                                                                                                                         | G6    | S1, S9    |
 
 ### 4.6 Phone: interface and documentation
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F6.1 | **Redesign to the trunk** (#4): the v1-redesign branch after review, hardening of its console and sheets. | G6 | S1 |
-| F6.2 | **Docs and help consistent with the shipped UI**: README, spec §2, website pages and screenshots, in-app help. Part of every push. | G6 | S10 |
-| F6.3 | **Privacy screen in the app**: what is stored, where, what leaves the device and when; delete everything. | G5 | S10 |
+| Id   | Feature                                                                                                                                                                                                                                                                                                                                                                              | Goals | Scenarios |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | --------- |
+| F6.1 | **Redesign to the trunk** (#4): the v1-redesign branch after review, hardening of its console and sheets.                                                                                                                                                                                                                                                                            | G6    | S1        |
+| F6.2 | **Docs and help consistent with the shipped UI**: README, spec §2, website pages and screenshots, in-app help. Part of every push.                                                                                                                                                                                                                                                   | G6    | S10       |
+| F6.3 | **Privacy screen in the app**: what is stored, where, what leaves the device and when; delete everything. **"Delete everything" is done in v1**: deleting a night removes its log, removing a library item removes its content in both roots, orphaned logs are swept at launch, and the voice-interrupt recording is owned and deleted. **Left for v2:** the privacy screen itself. | G5    | S10       |
 
 ### 4.7 Recorder
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F7.1 | **Second-device recording guidance**: which apps work (any that produce a common audio file), placement, charging, the one-minute nightly ritual. Documentation and a help page, not code. | G2 | S3 |
-| F7.2 | **Sync tone at run start** (a short, soft, distinctive signal) so alignment is trivial even if the recorder starts late. | G2, G3 | S3, S5 |
-| F7.3 | **Optional LucidDream recorder app**: a v3 decision. Workable third-party recorder apps exist, so it is not a v2 issue; it moves into v2 only if users ask for it (D21). | - | S3 |
+| Id   | Feature                                                                                                                                                                                    | Goals  | Scenarios |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | --------- |
+| F7.1 | **Second-device recording guidance**: which apps work (any that produce a common audio file), placement, charging, the one-minute nightly ritual. Documentation and a help page, not code. | G2     | S3        |
+| F7.2 | **Sync tone at run start** (a short, soft, distinctive signal) so alignment is trivial even if the recorder starts late.                                                                   | G2, G3 | S3, S5    |
+| F7.3 | **Optional LucidDream recorder app**: a v3 decision. Workable third-party recorder apps exist, so it is not a v2 issue; it moves into v2 only if users ask for it (D21).                   | -      | S3        |
 
 ### 4.8 Host service
 
 Detailed in §5. Summary rows for the feature map:
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F8.1 | Import night bundles and recordings; align them by cue matching. | G3 | S5 |
-| F8.2 | Night view: one timeline with cues, observations, wearable stages, audio waveform, speech segments. | G3 | S6 |
-| F8.3 | Transcription of speech segments; original audio kept; editable transcript. | G3 | S6 |
-| F8.4 | Structured extraction with uncertainty: title, places, people, emotions, lucidity unclear/reported. | G3, G4 | S6, S7 |
-| F8.5 | Cue-reaction detection: movement, sound, speech within a window after each cue. | G3, G4 | S6, S7 |
-| F8.6 | Archive and retrieval: search across nights by meaning, not only words. | G3 | S7 |
-| F8.7 | Patterns and baselines with sample sizes shown. | G4 | S7 |
-| F8.8 | Experiments: compare two conditions across nights, honest about what the data can support. | G4 | S7 |
-| F8.9 | Proposals: one change at a time, with evidence, producing a validated script for the phone. | G4 | S8 |
-| F8.10 | Script author: a sentence becomes a draft script, validated by the engine's own parser. | G4 | S9 |
-| F8.11 | Profiles, privacy controls, deletion, export. | G5 | S10 |
-| F8.12 | Library preparation: the host transcodes any audio into phone-ready signals, pre-renders the softening presets, runs the brightness/attack check (F1.6) and publishes the result as a library extension the phone imports. Heavy transcoding moves off the phone. | G1, G6 | S9 |
+| Id    | Feature                                                                                                                                                                                                                                                           | Goals  | Scenarios |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- |
+| F8.1  | Import night bundles and recordings; align them by cue matching.                                                                                                                                                                                                  | G3     | S5        |
+| F8.2  | Night view: one timeline with cues, observations, wearable stages, audio waveform, speech segments.                                                                                                                                                               | G3     | S6        |
+| F8.3  | Transcription of speech segments; original audio kept; editable transcript.                                                                                                                                                                                       | G3     | S6        |
+| F8.4  | Structured extraction with uncertainty: title, places, people, emotions, lucidity unclear/reported.                                                                                                                                                               | G3, G4 | S6, S7    |
+| F8.5  | Cue-reaction detection: movement, sound, speech within a window after each cue.                                                                                                                                                                                   | G3, G4 | S6, S7    |
+| F8.6  | Archive and retrieval: search across nights by meaning, not only words.                                                                                                                                                                                           | G3     | S7        |
+| F8.7  | Patterns and baselines with sample sizes shown.                                                                                                                                                                                                                   | G4     | S7        |
+| F8.8  | Experiments: compare two conditions across nights, honest about what the data can support.                                                                                                                                                                        | G4     | S7        |
+| F8.9  | Proposals: one change at a time, with evidence, producing a validated script for the phone.                                                                                                                                                                       | G4     | S8        |
+| F8.10 | Script author: a sentence becomes a draft script, validated by the engine's own parser.                                                                                                                                                                           | G4     | S9        |
+| F8.11 | Profiles, privacy controls, deletion, export.                                                                                                                                                                                                                     | G5     | S10       |
+| F8.12 | Library preparation: the host transcodes any audio into phone-ready signals, pre-renders the softening presets, runs the brightness/attack check (F1.6) and publishes the result as a library extension the phone imports. Heavy transcoding moves off the phone. | G1, G6 | S9        |
 
 ### 4.9 Distribution and release
 
-| Id | Feature | Goals | Scenarios |
-| --- | --- | --- | --- |
-| F9.1 | **Store distribution, both platforms, at a v2.x** after the night-audio story has been through beta: Play and App Store listings, privacy and health-data declarations, review readiness for background audio (see F2.4). | G6 | S10 |
-| F9.2 | **Release automation**: tag-driven Android and iOS builds (the iOS plan's remaining steps), OTA updates via `expo-updates` for JS-only fixes. | G6 | S10 |
-| F9.3 | **Beta channels stay**: APK on GitHub Releases and TestFlight for v2.0 and v2.1. | G6 | S10 |
-| F9.4 | **Host distribution**: one command to run locally (`npx`-style or a single download), no installer. See §5.7. | G6 | S5, S10 |
-| F9.5 | **Marketing surface**: the website gains a v2 page once v2.0 ships, showing the loop with real screenshots of the night view; claims limited to what ships. | G6 | S10 |
+| Id   | Feature                                                                                                                                                                                                                   | Goals | Scenarios |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --------- |
+| F9.1 | **Store distribution, both platforms, at a v2.x** after the night-audio story has been through beta: Play and App Store listings, privacy and health-data declarations, review readiness for background audio (see F2.4). | G6    | S10       |
+| F9.2 | **Release automation**: tag-driven Android and iOS builds (the iOS plan's remaining steps), OTA updates via `expo-updates` for JS-only fixes.                                                                             | G6    | S10       |
+| F9.3 | **Beta channels stay**: APK on GitHub Releases and TestFlight for v2.0 and v2.1.                                                                                                                                          | G6    | S10       |
+| F9.4 | **Host distribution**: one command to run locally (`npx`-style or a single download), no installer. See §5.7.                                                                                                             | G6    | S5, S10   |
+| F9.5 | **Marketing surface**: the website gains a v2 page once v2.0 ships, showing the loop with real screenshots of the night view; claims limited to what ships.                                                               | G6    | S10       |
 
 ---
 
@@ -326,21 +331,21 @@ provider and when, and offers deletion per night and in full.
 
 ### 5.3 Functionality
 
-| Area | Functions |
-| --- | --- |
-| **Ingest** | Watch folder, page upload; bundle version validation; recording formats decoded on the host (the signal format rule F1.5 applies to phone signals, not recordings). Recordings are kept as imported: no compression or retention policy in v2; the user deletes (D21). |
-| **Library preparation** | Transcode, pre-render softening presets, measure brightness/attack, publish as a library extension (F8.12). |
-| **Alignment** | Cross-correlate known signal files and the sync tone against the recording; report offset and confidence; fall back to clock offsets with a warning; manual nudge. |
-| **Segmentation** | Speech segments, movement/noise events, silence spans in the recording; the phone's own cues and ambience excluded from "room" events. |
-| **Transcription** | Per speech segment, through the provider adapter; original audio kept; transcript editable; uncertainty markers preserved. |
-| **Extraction** | Title, places, people, emotions, lucidity (reported / unclear / not indicated), cue mention, with the source words quoted; user confirms. |
-| **Night view** | Timeline, cue windows, reaction summary, wearable stages, morning review answers, interruptions. |
-| **Archive** | Nights list, outcomes table, full-text and semantic search with citations. |
-| **Patterns** | Outcomes by cue, timing, phase, sleep-stage context, day of week; baselines; sample sizes and missing-report counts always shown. |
-| **Experiments** | Define two conditions, assign nights (alternating by default), compare with a plain-language summary of what the data can and cannot support. |
-| **Proposals** | One change per proposal, evidence, alternatives considered, script diff, accept/decline with reason; produces a validated script. |
-| **Script author** | Natural-language draft to YAML, validated by the engine parser in a loop; plain-language preview. |
-| **Profiles and privacy** | One profile per person even on a single machine; per-night and full deletion; provider log; export of everything as files. |
+| Area                     | Functions                                                                                                                                                                                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ingest**               | Watch folder, page upload; bundle version validation; recording formats decoded on the host (the signal format rule F1.5 applies to phone signals, not recordings). Recordings are kept as imported: no compression or retention policy in v2; the user deletes (D21). |
+| **Library preparation**  | Transcode, pre-render softening presets, measure brightness/attack, publish as a library extension (F8.12).                                                                                                                                                            |
+| **Alignment**            | Cross-correlate known signal files and the sync tone against the recording; report offset and confidence; fall back to clock offsets with a warning; manual nudge.                                                                                                     |
+| **Segmentation**         | Speech segments, movement/noise events, silence spans in the recording; the phone's own cues and ambience excluded from "room" events.                                                                                                                                 |
+| **Transcription**        | Per speech segment, through the provider adapter; original audio kept; transcript editable; uncertainty markers preserved.                                                                                                                                             |
+| **Extraction**           | Title, places, people, emotions, lucidity (reported / unclear / not indicated), cue mention, with the source words quoted; user confirms.                                                                                                                              |
+| **Night view**           | Timeline, cue windows, reaction summary, wearable stages, morning review answers, interruptions.                                                                                                                                                                       |
+| **Archive**              | Nights list, outcomes table, full-text and semantic search with citations.                                                                                                                                                                                             |
+| **Patterns**             | Outcomes by cue, timing, phase, sleep-stage context, day of week; baselines; sample sizes and missing-report counts always shown.                                                                                                                                      |
+| **Experiments**          | Define two conditions, assign nights (alternating by default), compare with a plain-language summary of what the data can and cannot support.                                                                                                                          |
+| **Proposals**            | One change per proposal, evidence, alternatives considered, script diff, accept/decline with reason; produces a validated script.                                                                                                                                      |
+| **Script author**        | Natural-language draft to YAML, validated by the engine parser in a loop; plain-language preview.                                                                                                                                                                      |
+| **Profiles and privacy** | One profile per person even on a single machine; per-night and full deletion; provider log; export of everything as files.                                                                                                                                             |
 
 ### 5.4 Architecture
 
@@ -412,18 +417,18 @@ proven its value.
 
 ### 5.6 Data model
 
-| Entity | Contents | Notes |
-| --- | --- | --- |
-| Profile | id, display name, settings, provider policy | One per person; no auth locally |
-| Night | id, date key (evening-based, as in the phone), bundle reference, recordings, status | The unit of everything |
-| Bundle | version, run log, observations, script versions, settings snapshot, morning review, lucid answer, battery, interruptions | Immutable once imported |
-| Recording | file reference, format, duration, device label, alignment (offset, confidence, method) | Any number per night |
-| Segment | type (speech, movement, noise, silence), start, end, source | Derived; regenerable |
-| Transcript | segment reference, text, provider, model, cost, user edits kept separately | Original audio never modified |
-| Annotation | user-confirmed or model-suggested tag with provenance and confidence | Suggested and confirmed are distinct states |
-| Pattern / experiment | definition, nights included, computed results, generated summary | Results regenerable from nights |
-| Proposal | evidence nights, change, alternatives, script before/after, decision and reason | Feeds the phone |
-| Provider log | what was sent, to whom, when, cost | The privacy ledger |
+| Entity               | Contents                                                                                                                 | Notes                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| Profile              | id, display name, settings, provider policy                                                                              | One per person; no auth locally             |
+| Night                | id, date key (evening-based, as in the phone), bundle reference, recordings, status                                      | The unit of everything                      |
+| Bundle               | version, run log, observations, script versions, settings snapshot, morning review, lucid answer, battery, interruptions | Immutable once imported                     |
+| Recording            | file reference, format, duration, device label, alignment (offset, confidence, method)                                   | Any number per night                        |
+| Segment              | type (speech, movement, noise, silence), start, end, source                                                              | Derived; regenerable                        |
+| Transcript           | segment reference, text, provider, model, cost, user edits kept separately                                               | Original audio never modified               |
+| Annotation           | user-confirmed or model-suggested tag with provenance and confidence                                                     | Suggested and confirmed are distinct states |
+| Pattern / experiment | definition, nights included, computed results, generated summary                                                         | Results regenerable from nights             |
+| Proposal             | evidence nights, change, alternatives, script before/after, decision and reason                                          | Feeds the phone                             |
+| Provider log         | what was sent, to whom, when, cost                                                                                       | The privacy ledger                          |
 
 ### 5.7 Distribution and desktop dependency
 
@@ -477,11 +482,11 @@ users ask for a LucidDream recorder, it can move into v2 (F7.3, D21).
 
 ### 7.1 Increments
 
-| Increment | Theme | Contents | Channel |
-| --- | --- | --- | --- |
-| **v2.0 Observe** | The phone records a faithful night | §4.1 audio, §4.2 hardening, §4.3 context, §4.4 morning and export, F6.1 redesign to trunk, F6.2 docs, F7.1-F7.2 recorder guidance | APK + TestFlight |
-| **v2.1 Understand** | The host reads the night | §5 through F8.7 (ingest, alignment, night view, archivist, retrieval, patterns), F9.4 host distribution | APK + TestFlight; host by command |
-| **v2.2 Adapt** | The loop closes across nights | F8.8-F8.10 experiments, proposals, script author; F8.12 library preparation; F5.1 visual editor; F5.2 proposal import; F4.5 | Stores (F9.1) after review readiness is confirmed |
+| Increment           | Theme                              | Contents                                                                                                                          | Channel                                           |
+| ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **v2.0 Observe**    | The phone records a faithful night | §4.1 audio, §4.2 hardening, §4.3 context, §4.4 morning and export, F6.1 redesign to trunk, F6.2 docs, F7.1-F7.2 recorder guidance | APK + TestFlight                                  |
+| **v2.1 Understand** | The host reads the night           | §5 through F8.7 (ingest, alignment, night view, archivist, retrieval, patterns), F9.4 host distribution                           | APK + TestFlight; host by command                 |
+| **v2.2 Adapt**      | The loop closes across nights      | F8.8-F8.10 experiments, proposals, script author; F8.12 library preparation; F5.1 visual editor; F5.2 proposal import; F4.5       | Stores (F9.1) after review readiness is confirmed |
 
 Store submission is planned for v2.2 because that is when the night-audio story, the ambience track
 and the privacy screen have all been through beta.
@@ -517,47 +522,47 @@ address in TypeScript. The v3 plan lists the triggers (§1.1 there).
 
 ## 8. Decisions recorded on 2026-09-13
 
-| # | Decision |
-| --- | --- |
-| D1 | v2 thesis is "listen and learn": the loop across nights, on the current stack. |
-| D2 | The native session runtime, live DSP and sample-accurate timing are not needed for sleeping scenarios; the native architecture moves to the v3 plan and is entered only on field evidence. |
-| D3 | Session ownership problems (checkpoint/resume, append-only log) are fixed in TypeScript; an Android exact-alarm native module is the one small native addition; iOS relies on the audio session. |
-| D4 | The keep-alive track becomes a real, very quiet night ambience: a feature, optional, and the store-review defence. |
-| D5 | Full-night recording happens on a separate device; LucidDream itself does not record in v2. |
-| D6 | The host is source-agnostic: a run bundle plus any recordings from any source, aligned by cue matching. |
-| D7 | The host is a local service with a browser UI, designed to become a hosted service; the bundle format, per-profile storage and the analysis core are the stable contracts. Whether to host it is deferred to user feedback. |
-| D8 | Wearables enter v2 as historical import into the bundle (HealthKit, Health Connect; Oura through them, D24); live wearable observations are v3. |
-| D9 | Script conditionals stay in the language and engine, with pluggable context sources; on-device sources (movement, sound level) are the v2 live sources. |
-| D10 | User-provided signals are lossless: WAV, plus FLAC and AIFF (amended by D18); bundled MP3 is converted at build time. |
-| D11 | Store distribution on both platforms remains in v2 scope, targeted at v2.2. |
-| D12 | The v2 audience is enthusiasts and self-experimenters; beginners are addressed in v3. |
-| D13 | AI is used only where it produces traceable user value (§1.5); the owner's platform learning follows the same features in the same order. |
+| #   | Decision                                                                                                                                                                                                                    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | v2 thesis is "listen and learn": the loop across nights, on the current stack.                                                                                                                                              |
+| D2  | The native session runtime, live DSP and sample-accurate timing are not needed for sleeping scenarios; the native architecture moves to the v3 plan and is entered only on field evidence.                                  |
+| D3  | Session ownership problems (checkpoint/resume, append-only log) are fixed in TypeScript; an Android exact-alarm native module is the one small native addition; iOS relies on the audio session.                            |
+| D4  | The keep-alive track becomes a real, very quiet night ambience: a feature, optional, and the store-review defence.                                                                                                          |
+| D5  | Full-night recording happens on a separate device; LucidDream itself does not record in v2.                                                                                                                                 |
+| D6  | The host is source-agnostic: a run bundle plus any recordings from any source, aligned by cue matching.                                                                                                                     |
+| D7  | The host is a local service with a browser UI, designed to become a hosted service; the bundle format, per-profile storage and the analysis core are the stable contracts. Whether to host it is deferred to user feedback. |
+| D8  | Wearables enter v2 as historical import into the bundle (HealthKit, Health Connect; Oura through them, D24); live wearable observations are v3.                                                                             |
+| D9  | Script conditionals stay in the language and engine, with pluggable context sources; on-device sources (movement, sound level) are the v2 live sources.                                                                     |
+| D10 | User-provided signals are lossless: WAV, plus FLAC and AIFF (amended by D18); bundled MP3 is converted at build time.                                                                                                       |
+| D11 | Store distribution on both platforms remains in v2 scope, targeted at v2.2.                                                                                                                                                 |
+| D12 | The v2 audience is enthusiasts and self-experimenters; beginners are addressed in v3.                                                                                                                                       |
+| D13 | AI is used only where it produces traceable user value (§1.5); the owner's platform learning follows the same features in the same order.                                                                                   |
 
 ### 8.1 Decisions from the answers to the open questions (2026-09-13)
 
-| # | Decision |
-| --- | --- |
-| D14 | The whole hardening package (§4.2) is release-blocking. Beta users have reported problems, but reputation is the deciding reason: v2 ships with fundamentally very high quality, with the work going into functionality that works ahead of more features. |
-| D15 | AI providers: a local model server (OpenAI-compatible endpoint; the owner's DGX Spark as the reference) and a paid cloud provider using lower-end models, both through the adapter. The wording of the "what is sent" disclosure is UI copy written with the feature, not a planning decision. |
-| D16 | The target listening setup is a bedside speaker (phone or Bluetooth), not earbuds. Softening presets, listening tests and the validation gate use speakers. |
-| D17 | Users calibrate their own softness through a sound check (F1.10). |
-| D18 | FLAC and AIFF are accepted alongside WAV. The host can prepare library extensions (transcode, pre-render softened variants), taking transcoding load off the phone (F8.12). |
-| D19 | v2 is treated as a brand-new release: no migration of v1 data, signals, settings or condition semantics, and no migration notices or compatibility fixtures. |
-| D20 | The phone's visual editor exposes every statement of the language except nested loops (F5.1). |
-| D21 | Night recording on a second device is not a v2 issue: workable recorder apps exist. A LucidDream recorder is a v3 decision and moves into v2 only if users ask for it. The host keeps recordings as imported; no compression or retention policy in v2. |
-| D22 | "Noticed the cue" is asked before the morning review is saved, with a setting to turn it off; when off, the bundle records "not asked". |
-| D23 | Transport between phone and host is file sharing only in v2, in both directions, until it has been tried with users. |
-| D24 | Wearable targets: Apple Watch, Samsung Galaxy Watch, Google Pixel Watch, Oura ring, read from the phone's health store. |
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D14 | The whole hardening package (§4.2) is release-blocking. Unchanged by the v1 hardening pass, which completed F2.2 and parts of F2.6/F2.9/F6.3 early — those rows are satisfied rather than dropped. Beta users have reported problems, but reputation is the deciding reason: v2 ships with fundamentally very high quality, with the work going into functionality that works ahead of more features. |
+| D15 | AI providers: a local model server (OpenAI-compatible endpoint; the owner's DGX Spark as the reference) and a paid cloud provider using lower-end models, both through the adapter. The wording of the "what is sent" disclosure is UI copy written with the feature, not a planning decision.                                                                                                        |
+| D16 | The target listening setup is a bedside speaker (phone or Bluetooth), not earbuds. Softening presets, listening tests and the validation gate use speakers.                                                                                                                                                                                                                                           |
+| D17 | Users calibrate their own softness through a sound check (F1.10).                                                                                                                                                                                                                                                                                                                                     |
+| D18 | FLAC and AIFF are accepted alongside WAV. The host can prepare library extensions (transcode, pre-render softened variants), taking transcoding load off the phone (F8.12).                                                                                                                                                                                                                           |
+| D19 | v2 is treated as a brand-new release: no migration of v1 data, signals, settings or condition semantics, and no migration notices or compatibility fixtures.                                                                                                                                                                                                                                          |
+| D20 | The phone's visual editor exposes every statement of the language except nested loops (F5.1).                                                                                                                                                                                                                                                                                                         |
+| D21 | Night recording on a second device is not a v2 issue: workable recorder apps exist. A LucidDream recorder is a v3 decision and moves into v2 only if users ask for it. The host keeps recordings as imported; no compression or retention policy in v2.                                                                                                                                               |
+| D22 | "Noticed the cue" is asked before the morning review is saved, with a setting to turn it off; when off, the bundle records "not asked".                                                                                                                                                                                                                                                               |
+| D23 | Transport between phone and host is file sharing only in v2, in both directions, until it has been tried with users.                                                                                                                                                                                                                                                                                  |
+| D24 | Wearable targets: Apple Watch, Samsung Galaxy Watch, Google Pixel Watch, Oura ring, read from the phone's health store.                                                                                                                                                                                                                                                                               |
 
 ### 8.2 Decisions from the follow-up answers (2026-09-13)
 
-| # | Decision |
-| --- | --- |
-| D25 | v2 starts strictly with the desktop host that looks like a service (§5). The decision on a real cloud backend is postponed; §5.8 keeps the path open and records the considerations. |
-| D26 | Wearable import reads sleep session and stages plus overnight heart rate and HRV. Oura is read through the phone's health store only; no Oura cloud API. Health modules are an engineering choice. |
+| #   | Decision                                                                                                                                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D25 | v2 starts strictly with the desktop host that looks like a service (§5). The decision on a real cloud backend is postponed; §5.8 keeps the path open and records the considerations.                             |
+| D26 | Wearable import reads sleep session and stages plus overnight heart rate and HRV. Oura is read through the phone's health store only; no Oura cloud API. Health modules are an engineering choice.               |
 | D27 | Wearable validation on owned hardware covers Apple Watch and Oura. Samsung Galaxy Watch and Google Pixel Watch are validated through beta users with those devices, and the release notes say so until they are. |
-| D28 | Visual editor, until usability testing: a step list with one level of blocks; scripts it cannot represent open read-only with "Edit as text"; saving a script that came from text writes a new copy. |
-| D29 | On-device sources in v2: movement and sound level (F3.2) plus audio route and charger state. Ambient light and sunrise stay out. Sampling rates are set by battery measurement against the 8 % budget. |
+| D28 | Visual editor, until usability testing: a step list with one level of blocks; scripts it cannot represent open read-only with "Edit as text"; saving a script that came from text writes a new copy.             |
+| D29 | On-device sources in v2: movement and sound level (F3.2) plus audio route and charger state. Ambient light and sunrise stay out. Sampling rates are set by battery measurement against the 8 % budget.           |
 
 ---
 
@@ -565,22 +570,22 @@ address in TypeScript. The v3 plan lists the triggers (§1.1 there).
 
 ### 9.1 Status of the questions asked on 2026-09-13
 
-| # | Question | Status |
-| --- | --- | --- |
-| 1 | Hosted service trigger | Answered: D25. Desktop host first; the backend decision is postponed, with the considerations in §5.8. |
-| 2 | Overnight-reliability evidence | Answered: D14. Beta reports are still collected; they inform priorities within §4.2, not whether it is done. |
-| 3 | AI provider policy | Answered: D15. Cloud cost is billed to the user's own key while the host runs locally (§5.7). |
-| 4 | Store review of background audio | Open: the owner reviews the current rules on 2026-09-14, before the F2.3 alarm module is built. See 9.2. |
-| 5 | Health module choice | Answered: D24, D26, D27. |
-| 6 | Speaker versus earbuds | Answered: D16. |
-| 7 | Listening test | Answered and extended: D17 (sound check for every user). The pre-build listening test with the customer who raised #6 stays: rendered files on a bedside speaker before the presets are coded. |
-| 8 | FLAC/AIFF; maximum pre-render length | Formats answered: D18. Maximum length is an engineering default (proposed: pre-render signals up to 60 s; longer ones get fades only, or the host prepares them). |
-| 9 | Migration notice for MP3 signals | Closed by D19. |
-| 10 | Editor statements; unrepresentable scripts | Answered: D20, D28, pending usability testing. Alternatives kept in 9.3. |
-| 11 | Night recording retention and compression | Closed by D21. |
-| 12 | On-device sensing rates and sources | Answered: D29. |
-| 13 | Morning review order | Answered: D22. |
-| 14 | Bundle transport | Answered: D23. |
+| #   | Question                                   | Status                                                                                                                                                                                         |
+| --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Hosted service trigger                     | Answered: D25. Desktop host first; the backend decision is postponed, with the considerations in §5.8.                                                                                         |
+| 2   | Overnight-reliability evidence             | Answered: D14. Beta reports are still collected; they inform priorities within §4.2, not whether it is done.                                                                                   |
+| 3   | AI provider policy                         | Answered: D15. Cloud cost is billed to the user's own key while the host runs locally (§5.7).                                                                                                  |
+| 4   | Store review of background audio           | Open: the owner reviews the current rules on 2026-09-14, before the F2.3 alarm module is built. See 9.2.                                                                                       |
+| 5   | Health module choice                       | Answered: D24, D26, D27.                                                                                                                                                                       |
+| 6   | Speaker versus earbuds                     | Answered: D16.                                                                                                                                                                                 |
+| 7   | Listening test                             | Answered and extended: D17 (sound check for every user). The pre-build listening test with the customer who raised #6 stays: rendered files on a bedside speaker before the presets are coded. |
+| 8   | FLAC/AIFF; maximum pre-render length       | Formats answered: D18. Maximum length is an engineering default (proposed: pre-render signals up to 60 s; longer ones get fades only, or the host prepares them).                              |
+| 9   | Migration notice for MP3 signals           | Closed by D19.                                                                                                                                                                                 |
+| 10  | Editor statements; unrepresentable scripts | Answered: D20, D28, pending usability testing. Alternatives kept in 9.3.                                                                                                                       |
+| 11  | Night recording retention and compression  | Closed by D21.                                                                                                                                                                                 |
+| 12  | On-device sensing rates and sources        | Answered: D29.                                                                                                                                                                                 |
+| 13  | Morning review order                       | Answered: D22.                                                                                                                                                                                 |
+| 14  | Bundle transport                           | Answered: D23.                                                                                                                                                                                 |
 
 ### 9.2 Still open
 
@@ -589,15 +594,15 @@ concerns only the phone app in the App Store and Google Play, and applies even w
 all. Store reviewers check that an app's declared background behaviour matches what it does. Three
 v2 features touch rules that have rejected apps before:
 
-- *iOS background audio.* Apple allows an app to keep running with the screen locked only while it
+- _iOS background audio._ Apple allows an app to keep running with the screen locked only while it
   plays audio the user can actually hear. A near-silent loop kept alive only to stay running is the
   pattern that gets rejected. The night ambience (F2.4) is the defence, which is why it is a real
   optional feature and not a trick.
-- *Android foreground service and exact alarms.* Recent Android versions require the Play listing
+- _Android foreground service and exact alarms._ Recent Android versions require the Play listing
   to declare a foreground service type (here, media playback) and justify it, sometimes with a video.
   Exact alarms (F2.3) are restricted: an app either asks the user to grant "Alarms & reminders"
   in system settings or qualifies for a permission Google reserves for alarm and clock apps.
-- *Health data.* Reading Health Connect or HealthKit (F4.4) requires a declaration of which data is
+- _Health data._ Reading Health Connect or HealthKit (F4.4) requires a declaration of which data is
   read and why, plus a privacy policy that matches.
 
 **Action: the owner reviews the current Apple and Google policy text on 2026-09-14**, before the F2.3
@@ -649,20 +654,20 @@ Engineering escalates to the owner only if the 8 % per-night budget (§1.4) cann
 
 ## 10. Appendix: source mapping
 
-| Source | Where it landed |
-| --- | --- |
-| Customer: "sounds must be very soft; beeps, alerts, chirps are no go" | G1, §4.1 |
-| Issue #6 and its 2026-09-13 comment | §4.1, D10, D16-D19 |
-| Owner's answers to the open questions, 2026-09-13 | D14-D29, §9 |
-| Issue #5 (full-night recording, host analysis, privacy) | §5, F7.x, D5-D7 |
-| Issue #4 (new aesthetic to trunk) | F6.1 |
-| Issue #3 (URL import confusion) | F5.3 |
-| Owner list (former §4.4): visual editor | F5.1 |
-| Owner list: host analysis tool, "uber smart journal" | §5, F8.x |
-| Owner list: closed loop modifying scripts per user | F8.9, F5.2, S8 |
-| Owner list: usability (last used URL etc.) | F5.3 |
-| Research paper §8.4 speak-on-waking, §12 AI sequence | S4, F4.2, §5.5, §1.5 |
-| Competitive paper: v2 = phone-based loop, v3 = sensing | §1, D1, D8 |
-| v1 spec deferred items (DSP, wearables, keyword spotting, Play Store) | v3 plan §3; F9.1 |
-| Former chapter 1 (native architecture) | v3 plan §2 |
-| Former §4.1-4.3 (drivers, stores, parity) | D2, D11, F4.4 |
+| Source                                                                | Where it landed      |
+| --------------------------------------------------------------------- | -------------------- |
+| Customer: "sounds must be very soft; beeps, alerts, chirps are no go" | G1, §4.1             |
+| Issue #6 and its 2026-09-13 comment                                   | §4.1, D10, D16-D19   |
+| Owner's answers to the open questions, 2026-09-13                     | D14-D29, §9          |
+| Issue #5 (full-night recording, host analysis, privacy)               | §5, F7.x, D5-D7      |
+| Issue #4 (new aesthetic to trunk)                                     | F6.1                 |
+| Issue #3 (URL import confusion)                                       | F5.3                 |
+| Owner list (former §4.4): visual editor                               | F5.1                 |
+| Owner list: host analysis tool, "uber smart journal"                  | §5, F8.x             |
+| Owner list: closed loop modifying scripts per user                    | F8.9, F5.2, S8       |
+| Owner list: usability (last used URL etc.)                            | F5.3                 |
+| Research paper §8.4 speak-on-waking, §12 AI sequence                  | S4, F4.2, §5.5, §1.5 |
+| Competitive paper: v2 = phone-based loop, v3 = sensing                | §1, D1, D8           |
+| v1 spec deferred items (DSP, wearables, keyword spotting, Play Store) | v3 plan §3; F9.1     |
+| Former chapter 1 (native architecture)                                | v3 plan §2           |
+| Former §4.1-4.3 (drivers, stores, parity)                             | D2, D11, F4.4        |

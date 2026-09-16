@@ -320,7 +320,7 @@ still not built.
 Audio focus defaults to **lowered** rather than exclusive so alarms still cut through — **except on
 Android**, where the lock-screen registration above requires exclusive focus, so the setting cannot
 be honoured and the run records that in its own log. This conflict is an open owner decision (C1 in
-[v1-hardening-todo.md](../dev_process/v1-hardening-todo.md)).
+[v1-hardening-091526.md](../dev_process/v1-hardening-091526.md)).
 
 ### 4.5 Local persistence of remote signals and scripts
 

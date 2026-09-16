@@ -474,4 +474,4 @@ npm run e2e
 
 An emulator cannot exercise an eight-hour night, Doze, screen-lock behaviour, background audio, the
 Android media foreground service, or battery. Those remain manual device checks and are listed in
-[doc/dev_process/v1-hardening-todo.md](doc/dev_process/v1-hardening-todo.md) §1.
+[doc/dev_process/v1-hardening-091526.md](doc/dev_process/v1-hardening-091526.md) §1.

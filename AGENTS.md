@@ -7,6 +7,15 @@
 - Use `vlads-dev` or an appropriate release/development branch for all work.
 - Treat `deploy` as a deployment-only branch. Update it only through the repository's release/deployment process, not as a working branch.
 
+# Session records
+
+- Summaries, TODO lists, session records and review write-ups live in `doc/dev_process/`, never as
+  artifacts or chat-only output.
+- Their file names carry the date as `MMDDYY`, matching the existing files there — for example
+  `telemetry_session_091326.md`, `review-architectural-091426.md`, `v1-hardening-091526.md`.
+- The date belongs in the document's title and header as well, in full (`2026-09-15`), so a reader
+  who has only the file open knows when it was written.
+
 # Field evidence
 
 - Facts code cannot establish (device runs, installs, battery, tester feedback, store review) live in

@@ -47,4 +47,4 @@ screens, deliberately: the redesign is recent and this session did not want to t
 
 An eight-hour night, Doze, screen-lock behaviour, background audio, battery, and the Android media
 foreground service. None of that is reachable from an emulator flow; it is in
-[v1-hardening-todo.md](../doc/dev_process/v1-hardening-todo.md) §1 as manual device work.
+[v1-hardening-091526.md](../doc/dev_process/v1-hardening-091526.md) §1 as manual device work.
