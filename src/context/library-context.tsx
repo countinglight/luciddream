@@ -7,9 +7,8 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Platform } from "react-native";
 
-import { ExpoFileSystemStore } from "@/storage/expo-file-store";
+import { getFileStore } from "@/runtime/services";
 import { extensionFromUrl, idForFile, idForUrl } from "@/storage/id";
 import {
   importExternalFile,
@@ -30,12 +29,8 @@ import type {
   LibraryScript,
   LibrarySignal,
 } from "@/storage/library-types";
-import { WebFileStore } from "@/storage/web-file-store";
 
-// expo-file-system's Directory/File classes are unimplemented on web, so
-// the web build needs its own IndexedDB-backed FileStorePort instead.
-const fileStore =
-  Platform.OS === "web" ? new WebFileStore() : new ExpoFileSystemStore();
+const fileStore = getFileStore();
 
 type LibraryContextValue = {
   isLoaded: boolean;
@@ -304,10 +299,4 @@ export function useLibrary() {
   const ctx = useContext(LibraryContext);
   if (!ctx) throw new Error("useLibrary must be used within a LibraryProvider");
   return ctx;
-}
-
-/** Exposed for the Run screen, which needs the same file store to resolve
- * signals and script text before starting a run. */
-export function getLibraryFileStore() {
-  return fileStore;
 }

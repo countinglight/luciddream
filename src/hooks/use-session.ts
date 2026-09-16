@@ -6,7 +6,7 @@ import {
   firstSignalName,
   resolveSignalMap,
 } from "@/audio";
-import { getLibraryFileStore } from "@/context/library-context";
+import { getFileStore } from "@/runtime/services";
 import { useSettings } from "@/context/settings-context";
 import { parseScript, type EngineEvent, type LogPort } from "@/engine";
 import {
@@ -28,12 +28,7 @@ import { resolveScriptText } from "@/storage/scripts";
 import { telemetry } from "@/telemetry";
 
 export type SessionStatus =
-  | "idle"
-  | "starting"
-  | "running"
-  | "completed"
-  | "stopped"
-  | "error";
+  "idle" | "starting" | "running" | "completed" | "stopped" | "error";
 
 const MAX_RECENT_EVENTS = 6;
 /** Refreshes the diagnostics open-run marker through long silent waits, so an
@@ -189,7 +184,7 @@ export function useSession(signals: LibrarySignal[]) {
       let failStartedSession: ((message: string) => void) | null = null;
 
       try {
-        const fileStore = getLibraryFileStore();
+        const fileStore = getFileStore();
         // Preflight every phase before acquiring the wake lock or starting
         // audio so a later malformed/unresolvable phase cannot fail mid-night.
         const phases: SessionPhase[] = await Promise.all(
@@ -332,7 +327,7 @@ export function useSession(signals: LibrarySignal[]) {
    * running the script — the Run screen's "Test" button (spec §2.2). */
   const testPlay = useCallback(
     async (item: LibraryScript, volume: number) => {
-      const fileStore = getLibraryFileStore();
+      const fileStore = getFileStore();
       const text = await resolveScriptText(item, fileStore);
       const script = parseScript(text, {
         durationPresets: settings.periodPresets,

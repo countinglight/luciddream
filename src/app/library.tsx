@@ -14,7 +14,8 @@ import { Surface } from "@/components/surface";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { MaxContentWidth, Spacing, withAlpha } from "@/constants/theme";
-import { getLibraryFileStore, useLibrary } from "@/context/library-context";
+import { useLibrary } from "@/context/library-context";
+import { getFileStore } from "@/runtime/services";
 import { useTheme } from "@/hooks/use-theme";
 import {
   loadLibraryManifest,
@@ -44,7 +45,11 @@ function ItemTile({ kind }: { kind: "signal" | "script" }) {
   const color = kind === "signal" ? theme.phase3 : theme.phase2;
   return (
     <View style={[styles.tile, { backgroundColor: withAlpha(color, 0.16) }]}>
-      <Icon name={kind === "signal" ? "wave" : "script"} color={color} size={20} />
+      <Icon
+        name={kind === "signal" ? "wave" : "script"}
+        color={color}
+        size={20}
+      />
     </View>
   );
 }
@@ -93,7 +98,7 @@ function SignalRow({ item, isLast }: { item: LibrarySignal; isLast: boolean }) {
     setPlaying(true);
     setPlayError(null);
     try {
-      await previewSignal(item, getLibraryFileStore());
+      await previewSignal(item, getFileStore());
     } catch (err) {
       setPlayError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -105,7 +110,10 @@ function SignalRow({ item, isLast }: { item: LibrarySignal; isLast: boolean }) {
     <View
       style={[
         styles.row,
-        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+        !isLast && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: theme.border,
+        },
       ]}
     >
       <ItemTile kind="signal" />
@@ -139,11 +147,20 @@ function SignalRow({ item, isLast }: { item: LibrarySignal; isLast: boolean }) {
             onPress={toggleOffline}
             disabled={busy}
           >
-            <Icon name={item.savedOffline ? "close" : "download"} color={theme.textSecondary} size={18} />
+            <Icon
+              name={item.savedOffline ? "close" : "download"}
+              color={theme.textSecondary}
+              size={18}
+            />
           </IconButton>
         )}
         {!isBundled && (
-          <IconButton label={`Remove ${item.name}`} tone="plain" size={40} onPress={() => removeItem(item)}>
+          <IconButton
+            label={`Remove ${item.name}`}
+            tone="plain"
+            size={40}
+            onPress={() => removeItem(item)}
+          >
             <Icon name="trash" color={theme.danger} size={18} />
           </IconButton>
         )}
@@ -179,7 +196,10 @@ function ScriptRow({
     <View
       style={[
         styles.row,
-        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+        !isLast && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: theme.border,
+        },
       ]}
     >
       <ItemTile kind="script" />
@@ -198,15 +218,29 @@ function ScriptRow({
             onPress={toggleOffline}
             disabled={busy}
           >
-            <Icon name={item.savedOffline ? "close" : "download"} color={theme.textSecondary} size={18} />
+            <Icon
+              name={item.savedOffline ? "close" : "download"}
+              color={theme.textSecondary}
+              size={18}
+            />
           </IconButton>
         )}
         {!isBundled && (
-          <IconButton label={`Remove ${item.name}`} tone="plain" size={40} onPress={() => removeItem(item)}>
+          <IconButton
+            label={`Remove ${item.name}`}
+            tone="plain"
+            size={40}
+            onPress={() => removeItem(item)}
+          >
             <Icon name="trash" color={theme.danger} size={18} />
           </IconButton>
         )}
-        <IconButton label={`View ${item.name}`} tone="plain" size={40} onPress={() => onView(item)}>
+        <IconButton
+          label={`View ${item.name}`}
+          tone="plain"
+          size={40}
+          onPress={() => onView(item)}
+        >
           <Icon name="chevron-right" color={theme.textSecondary} size={16} />
         </IconButton>
       </View>
@@ -226,7 +260,7 @@ function ScriptViewer({
 
   useEffect(() => {
     let cancelled = false;
-    resolveScriptText(item, getLibraryFileStore())
+    resolveScriptText(item, getFileStore())
       .then((value) => {
         if (!cancelled) setText(value);
       })
@@ -739,7 +773,11 @@ export default function LibraryScreen() {
               {tab === "scripts" ? (
                 <Surface style={styles.listCard}>
                   {scripts.length === 0 ? (
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.emptyList}>
+                    <ThemedText
+                      type="small"
+                      themeColor="textSecondary"
+                      style={styles.emptyList}
+                    >
                       No scripts yet.
                     </ThemedText>
                   ) : (
@@ -756,12 +794,20 @@ export default function LibraryScreen() {
               ) : (
                 <Surface style={styles.listCard}>
                   {signals.length === 0 ? (
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.emptyList}>
+                    <ThemedText
+                      type="small"
+                      themeColor="textSecondary"
+                      style={styles.emptyList}
+                    >
                       No signals yet.
                     </ThemedText>
                   ) : (
                     signals.map((item, index) => (
-                      <SignalRow key={item.id} item={item} isLast={index === signals.length - 1} />
+                      <SignalRow
+                        key={item.id}
+                        item={item}
+                        isLast={index === signals.length - 1}
+                      />
                     ))
                   )}
                 </Surface>
@@ -781,19 +827,32 @@ export default function LibraryScreen() {
                 />
               )}
 
-              <ThemedText type="eyebrow" themeColor="textSecondary" style={styles.sectionTitle}>
+              <ThemedText
+                type="eyebrow"
+                themeColor="textSecondary"
+                style={styles.sectionTitle}
+              >
                 Library extensions
               </ThemedText>
               <Surface style={styles.card}>
                 {manifestSources.length === 0 && (
                   <ThemedText type="small" themeColor="textSecondary">
-                    Add a whole collection of scripts and signals from one manifest URL.
+                    Add a whole collection of scripts and signals from one
+                    manifest URL.
                   </ThemedText>
                 )}
                 {manifestSources.map((source) => (
-                  <View key={source.url} style={[styles.manifestSourceRow, { borderColor: theme.border }]}>
+                  <View
+                    key={source.url}
+                    style={[
+                      styles.manifestSourceRow,
+                      { borderColor: theme.border },
+                    ]}
+                  >
                     <View style={styles.rowMain}>
-                      <ThemedText type="smallBold">{manifestHost(source.url)}</ThemedText>
+                      <ThemedText type="smallBold">
+                        {manifestHost(source.url)}
+                      </ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
                         {source.count} item{source.count === 1 ? "" : "s"}
                       </ThemedText>

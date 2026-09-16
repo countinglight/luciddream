@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getLibraryFileStore } from "@/context/library-context";
+import { getFileStore } from "@/runtime/services";
 import type { EngineEvent } from "@/engine";
 import { logPathFor } from "@/logging/jsonl-log-port";
 import { parseLogText } from "@/lib/nights";
@@ -19,7 +19,7 @@ export function useRunEvents(runId: string | null, refreshKey?: unknown) {
   useEffect(() => {
     if (!runId) return;
     let cancelled = false;
-    getLibraryFileStore()
+    getFileStore()
       .readText("document", logPathFor(runId))
       .then((text) => {
         if (!cancelled) setState({ events: parseLogText(text), error: null });

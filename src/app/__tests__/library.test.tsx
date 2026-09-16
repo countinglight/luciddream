@@ -19,8 +19,11 @@ jest.mock("@/audio", () => ({
 }));
 
 jest.mock("@/context/library-context", () => ({
-  getLibraryFileStore: jest.fn(),
   useLibrary: jest.fn(),
+}));
+
+jest.mock("@/runtime/services", () => ({
+  getFileStore: jest.fn(),
 }));
 
 jest.mock("@/hooks/use-theme", () => ({

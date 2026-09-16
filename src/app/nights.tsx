@@ -20,7 +20,7 @@ import {
   withAlpha,
   type ThemeColors,
 } from "@/constants/theme";
-import { getLibraryFileStore } from "@/context/library-context";
+import { getFileStore } from "@/runtime/services";
 import { formatDuration } from "@/engine";
 import { useRunEvents } from "@/hooks/use-run-events";
 import { useTheme } from "@/hooks/use-theme";
@@ -417,7 +417,7 @@ function NightDetail({
     setSharing(true);
     setShareError(null);
     try {
-      await shareRunLog(run.id, getLibraryFileStore());
+      await shareRunLog(run.id, getFileStore());
     } catch (err) {
       setShareError(err instanceof Error ? err.message : String(err));
     } finally {
