@@ -1,0 +1,26 @@
+appId: com.vladsadovsky.luciddream
+name: Every sheet opens and closes
+---
+- launchApp
+- assertVisible: "Begin the night"
+
+# Library
+- tapOn:
+    id: "Library"
+- takeScreenshot: artifacts/sheet-library
+- back
+- assertVisible: "Begin the night"
+
+# Nights
+- tapOn:
+    id: "Nights"
+- takeScreenshot: artifacts/sheet-nights
+- back
+- assertVisible: "Begin the night"
+
+# Settings
+- tapOn:
+    id: "Settings"
+- takeScreenshot: artifacts/sheet-settings
+- back
+- assertVisible: "Begin the night"

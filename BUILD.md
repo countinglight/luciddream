@@ -436,3 +436,42 @@ From a Windows command prompt, after `npm run android:apk:release`:
 
 The APK filename tracks `version` in `package.json` through
 `plugins/withCanonicalVersion.js`, so it changes with each version bump.
+
+## Device smoke flows (Maestro)
+
+Flows live in [`.maestro/`](.maestro/README.md) and cover launch, the three sheets, a night that
+begins and stops, and a plan with nothing to play. They were written during the v1 hardening pass
+and **have never been executed** — expect the first run to be part of writing them.
+
+Maestro is a standalone binary, not an npm dependency, so none of this changes the app's build.
+
+### Android emulator, on Windows
+
+```bash
+npm run android:apk:debug
+```
+
+Start an emulator from Android Studio's Device Manager, install the APK, then run the flows. Maestro
+installs under WSL on Windows:
+
+```bash
+npm run e2e
+```
+
+### iOS Simulator, on a Mac
+
+```bash
+npm run ios
+```
+
+Then:
+
+```bash
+npm run e2e
+```
+
+### What these flows cannot tell you
+
+An emulator cannot exercise an eight-hour night, Doze, screen-lock behaviour, background audio, the
+Android media foreground service, or battery. Those remain manual device checks and are listed in
+[doc/dev_process/v1-hardening-todo.md](doc/dev_process/v1-hardening-todo.md) §1.

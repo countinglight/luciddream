@@ -1,0 +1,7 @@
+appId: com.vladsadovsky.luciddream
+name: Launches to Tonight
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Begin the night"
+- takeScreenshot: artifacts/launch-tonight

@@ -1,0 +1,19 @@
+appId: com.vladsadovsky.luciddream
+name: An empty plan refuses to start, readably
+---
+- launchApp:
+    clearState: true
+
+# Empty every phase, so there is nothing to play. The app must say so rather
+# than starting a night that does nothing.
+- repeat:
+    times: 3
+    commands:
+      - tapOn:
+          id: ".*Change script.*"
+      - tapOn: "Empty"
+
+- tapOn: "Begin the night"
+- assertVisible:
+    text: ".*at least one.*"
+- takeScreenshot: artifacts/bad-input-refused

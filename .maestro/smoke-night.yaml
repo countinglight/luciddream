@@ -1,0 +1,24 @@
+appId: com.vladsadovsky.luciddream
+name: A night begins, runs and stops
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Begin the night"
+
+- tapOn: "Begin the night"
+
+# Sleeping. The default plan starts with a bundled script, so this should
+# appear without any library setup.
+- assertVisible: "LucidDream is running"
+- takeScreenshot: artifacts/night-sleeping
+
+# Hold-to-stop is a deliberate ~2s press so a half-asleep hand cannot end a
+# night by brushing the screen.
+- longPressOn:
+    id: "Stop the night"
+
+# Good morning, or "Night complete" outside the morning hours.
+- assertVisible:
+    text: "Good morning|Night complete"
+- assertVisible: "Did you have a lucid dream?"
+- takeScreenshot: artifacts/night-morning
