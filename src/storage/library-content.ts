@@ -22,15 +22,64 @@ export async function ensureResolved(
   fileStore: FileStorePort,
   defaultExt: string,
 ): Promise<{ root: FileRoot; path: string }> {
-  if (source.type === "file") return { root: "document", path: source.path };
+  if (source.type === "file") {
+    // An imported file's path was trusted without checking. The copy can be
+    // gone — restored to a new device, cleared by the OS, removed by a failed
+    // write — and a missing file then passed preflight and failed hours later
+    // as an unplayable cue in the dark (architectural review A10).
+    if (!(await fileStore.exists("document", source.path))) {
+      throw new Error(
+        "This file is no longer on the phone. Remove it from your Library and add it again.",
+      );
+    }
+    return { root: "document", path: source.path };
+  }
 
   const path = pathFor(kind, id, extensionFromUrl(source.url, defaultExt));
   if (await fileStore.exists("document", path))
     return { root: "document", path };
   if (!(await fileStore.exists("cache", path))) {
-    await fileStore.downloadTo(source.url, "cache", path);
+    await downloadStaged(source.url, "cache", path, fileStore);
   }
   return { root: "cache", path };
+}
+
+/** Suffix a download is written under until it is known to have completed. */
+const PARTIAL_SUFFIX = ".part";
+
+/**
+ * Downloads to a temporary path and promotes it only once it has finished.
+ *
+ * Writing straight to the final path meant an interrupted download left a
+ * truncated file exactly where the next resolution looks — and resolution
+ * treats existence as validity, so a half-downloaded sound would be accepted
+ * and played as whatever it managed to fetch (A10).
+ */
+async function downloadStaged(
+  url: string,
+  root: FileRoot,
+  path: string,
+  fileStore: FileStorePort,
+): Promise<void> {
+  const staging = `${path}${PARTIAL_SUFFIX}`;
+  try {
+    await fileStore.downloadTo(url, root, staging);
+    await fileStore.copy({ root, path: staging }, { root, path });
+  } catch (error) {
+    // Never leave a partial file where a later run would take it for content.
+    try {
+      await fileStore.deleteFile(root, path);
+    } catch {
+      // Nothing more to try.
+    }
+    throw error;
+  } finally {
+    try {
+      await fileStore.deleteFile(root, staging);
+    } catch {
+      // A leftover .part file is harmless; it is never resolved.
+    }
+  }
 }
 
 /** The "Save offline" action (spec §4.5): promotes whatever's cached to
