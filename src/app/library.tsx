@@ -32,6 +32,26 @@ function sourceBadge(item: LibraryItem): string {
   return item.manifestUrl ? "manifest" : item.source.type;
 }
 
+/** A name for an item imported from a URL when the user leaves the name blank
+ * — the file name in the address, without its extension. Mirrors the file
+ * import, which already falls back to the picked file's name, so neither path
+ * makes naming compulsory (issue #3). */
+function nameFromUrl(url: string): string {
+  let lastSegment = "";
+  try {
+    lastSegment = decodeURIComponent(
+      new URL(url).pathname.split("/").filter(Boolean).pop() ?? "",
+    );
+  } catch {
+    // Not a parseable URL: fall back to the text the user typed, which the
+    // caller is about to reject anyway if it cannot be resolved.
+    lastSegment = url.split(/[?#]/)[0].split("/").filter(Boolean).pop() ?? "";
+  }
+
+  const withoutExtension = lastSegment.replace(/\.[^.]+$/, "").trim();
+  return withoutExtension || lastSegment.trim() || url.trim();
+}
+
 function manifestHost(url: string): string {
   try {
     return new URL(url).host;
@@ -328,11 +348,11 @@ function ImportItemPrompt({
   const [error, setError] = useState<string | null>(null);
 
   const importFromUrl = async () => {
-    if (!name.trim() || !url.trim()) return;
+    if (!url.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      await onAddFromUrl(url.trim(), name.trim());
+      await onAddFromUrl(url.trim(), name.trim() || nameFromUrl(url.trim()));
       onNameChange("");
       setUrl("");
       onClose();
@@ -382,7 +402,7 @@ function ImportItemPrompt({
             <TextInput
               value={name}
               onChangeText={onNameChange}
-              placeholder="Name"
+              placeholder="Name (optional)"
               placeholderTextColor={theme.textSecondary}
               style={[
                 styles.input,
@@ -429,7 +449,7 @@ function ImportItemPrompt({
                 label="Import from URL"
                 onPress={importFromUrl}
                 variant="primary"
-                disabled={!name.trim() || !url.trim()}
+                disabled={!url.trim()}
                 loading={busy}
                 style={styles.promptAction}
               />

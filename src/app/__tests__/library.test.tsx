@@ -73,7 +73,7 @@ describe("LibraryScreen", () => {
     await fireEvent.press(screen.getByText("Signals"));
     await fireEvent.press(screen.getByText("Import new signal"));
     await fireEvent.changeText(
-      screen.getAllByPlaceholderText("Name")[0],
+      screen.getAllByPlaceholderText("Name (optional)")[0],
       "My cue",
     );
     await fireEvent.press(screen.getByText("Import from file"));
@@ -83,6 +83,41 @@ describe("LibraryScreen", () => {
         "file:///picked/audio.mp3",
         "audio.mp3",
         "My cue",
+      );
+    });
+  });
+
+  // Issue #3: the button used to stay disabled until both fields were filled,
+  // which reads as a dead end. The name now defaults to the file name in the
+  // address, as it already did for a picked file.
+  it("imports from a URL with no name, using the file name in the address", async () => {
+    const addSignalFromUrl = jest.fn().mockResolvedValue(undefined);
+    jest.mocked(useLibrary).mockReturnValue({
+      isLoaded: true,
+      signals: [],
+      scripts: [],
+      addSignalFromUrl,
+      addScriptFromUrl: jest.fn(),
+      addSignalFromFile: jest.fn(),
+      addScriptFromFile: jest.fn(),
+      importManifest: jest.fn(),
+      removeItem: jest.fn(),
+      setSavedOffline: jest.fn(),
+    });
+
+    await render(<LibraryScreen />);
+    await fireEvent.press(screen.getByText("Signals"));
+    await fireEvent.press(screen.getByText("Import new signal"));
+    await fireEvent.changeText(
+      screen.getAllByPlaceholderText("https://…/signal.mp3")[0],
+      "https://example.com/sounds/Soft%20Chime.mp3",
+    );
+    await fireEvent.press(screen.getByText("Import from URL"));
+
+    await waitFor(() => {
+      expect(addSignalFromUrl).toHaveBeenCalledWith(
+        "https://example.com/sounds/Soft%20Chime.mp3",
+        "Soft Chime",
       );
     });
   });
