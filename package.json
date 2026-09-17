@@ -56,6 +56,10 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "sync:signals": "node ./scripts/sync-signals.js",
+    "check:content": "node ./scripts/sync-signals.js --check --skip-audio && jest src/audio/__tests__/published-content.test.ts --runInBand",
+    "check:audio": "node ./scripts/sync-signals.js --check",
+    "test:signals": "node --test ./scripts/tests/sync-signals.cjs",
     "generate:bundled-scripts": "node ./scripts/sync-bundled-scripts.js",
     "version:info": "node ./scripts/version-info.js",
     "release": "node ./scripts/release.js",
@@ -107,7 +111,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "line-endings:check": "node ./scripts/check-line-endings.js",
-    "check": "npm run format:check && npm run line-endings:check && npm run lint && npm run typecheck && npm test -- --runInBand",
+    "check": "npm run format:check && npm run line-endings:check && npm run lint && npm run typecheck && npm run check:content && npm run test:signals && npm test -- --runInBand",
     "typecheck": "tsc --noEmit",
     "test": "jest --watchAll=false",
     "test:watch": "jest --watchAll",

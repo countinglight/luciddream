@@ -124,15 +124,19 @@ Before each of these, `generate:bundled-scripts` regenerates `src/storage/bundle
 `npm run clean:build` removes build output (`dist/`, Android build folders, coverage, `.expo`) and
 leaves source untouched.
 
+All utilities under `scripts/` are indexed in the [developer script reference](scripts/README.md).
+
 ### Quality checks
 
 ```bash
 npm run check
 ```
 
-Runs, in order: `format:check`, `line-endings:check`, `lint`, `typecheck`, and the full test suite.
-Run it before pushing. The individual steps are also scripts: `npm run lint`, `npm run typecheck`,
-`npm test`, and `npm run test:ci` for coverage. `npm run format` rewrites formatting.
+Runs, in order: `format:check`, `line-endings:check`, `lint`, `typecheck`, the published-content
+integrity check, the signal-tool tests, and the full Jest suite. The mandatory checks need no FFmpeg
+components. Run it before pushing. The individual steps are also scripts: `npm run lint`,
+`npm run typecheck`, `npm run check:content`, `npm run test:signals`, `npm test`, and
+`npm run test:ci` for coverage. `npm run format` rewrites formatting.
 
 `lint` runs with `--no-cache`: Expo's lint cache is keyed on each file's own modification time, so a
 cross-file rule such as the `src/engine` import boundary can otherwise keep reporting a dependency's
@@ -733,20 +737,74 @@ listed item at once. The format is described in [README.md](README.md#library-ex
 
 File rules:
 
-- lowercase, URL-safe names with no spaces
-- scripts as `.yaml`; audio normally `.wav` or `.mp3`
+- prefer lowercase, URL-safe filenames; the signal catalog tool percent-encodes spaces and other URL characters
+- scripts as `.yaml`; prefer AAC-LC audio in `.m4a`, with `.wav` and `.mp3` also supported
 - every file below 25 MiB
 - every URL in the manifest must be `https://`
 
 To publish:
 
 1. Add the file under `site/content/scripts/` or `site/content/signals/` on the release branch.
-2. Add its name and absolute production URL to `site/content/manifest.json`. An entry left out is
-   published but invisible on `/scripts/`, and every script in a manifest must be valid, or the app
-   refuses the whole import.
+2. Run `npm run sync:signals` to inspect audio and update signal entries in
+   `site/content/manifest.json`. Add script entries manually. Fix reported reference errors before
+   publishing; an entry left out is published but invisible on `/scripts/`.
 3. `npm run preview:site` and fetch the file locally.
 4. Merge the release branch into `deploy`.
 5. Fetch the production URL and add it in the app's Library.
+
+### Maintaining the signal catalog
+
+The catalog tool requires FFprobe, and FFmpeg if you accept a conversion. Put them on `PATH`, set
+`FFPROBE_PATH` / `FFMPEG_PATH`, or pass executable paths. When `--ffmpeg` supplies a full path, the
+tool looks for FFprobe beside it. For example, from the repository root in PowerShell:
+
+```powershell
+npm run sync:signals -- --ffmpeg "C:\tools\vcpkg\buildtrees\ffmpeg\x64-windows-static-rel\ffmpeg.exe"
+npm run sync:signals -- --check --ffprobe "C:\tools\vcpkg\buildtrees\ffmpeg\x64-windows-static-rel\ffprobe.exe"
+```
+
+`npm run check` always performs the dependency-free integrity check. It parses every published
+script with the app's real parser, verifies that every referenced signal is either bundled or listed
+in the manifest, checks local script and signal manifest/file correspondence, and enforces the 25 MiB file limit.
+Run `npm run check:content` for that check alone. Neither command opens or decodes audio.
+
+Audio encoding inspection is optional:
+
+```powershell
+npm run check:audio -- --ffprobe "C:\tools\vcpkg\buildtrees\ffmpeg\x64-windows-static-rel\ffprobe.exe"
+```
+
+The tool scans audio under `site/content/signals/`, verifies encoding metadata, removes signal
+entries whose local files are missing, and adds URLs for uncataloged audio. New signal names equal
+the filenames **including extensions**; existing names and other entry fields are preserved.
+If a missing file has exactly one replacement with the same filename stem and a different extension,
+the existing name is retained and its URL is updated. Ambiguous replacements are not guessed.
+Duplicate names are errors. External URLs are retained and identified as unverified.
+
+AAC-LC M4A at up to 48 kHz, with mono or stereo and a sensible bitrate, is retained. Other encodings
+receive a conversion suggestion and an interactive `[y/N]` prompt. Conversion uses 96 kbps mono or
+160 kbps stereo, preserves stereo by default, caps the sample rate at 48 kHz, and keeps the original.
+Use `--mono` to request downmixing during conversion. Converted files get separate catalog entries;
+the tool never overwrites existing audio. Remove unwanted originals yourself, then rerun the tool.
+Encoding suggestions alone do not fail an audit, and declining conversion keeps the original listed.
+
+`--no-transcode` updates the catalog without prompts. `--check` is read-only and exits with code 1
+for a stale catalog or errors. `--skip-audio` avoids FFprobe and encoding inspection; this is the
+mode used by `check:content`. Noninteractive runs skip conversion. All YAML/JSON scripts under
+`site/content/scripts/` are checked for missing signal names, including nested bodies and branches;
+bundled sounds such as `chime` are recognized from the app registry. Diagnostics identify the file
+and YAML location. The Jest integrity test supplies full validation with the real engine parser.
+Broken references produce exit code 1 even when signal catalog repairs are written. Failed audio inspection prevents
+manifest writes. Run the focused tests with `npm run test:signals`; supplying both FFmpeg environment
+variables also enables the real conversion and CLI integration test.
+
+To invoke FFmpeg directly, put its executable only once in the command. A second bare `ffmpeg`
+argument is interpreted as an output filename and causes "Unable to choose an output format":
+
+```powershell
+# Run from site/content. Stereo is deliberately downmixed here for this breathing signal.
+& "C:\tools\vcpkg\buildtrees\ffmpeg\x64-windows-static-rel\ffmpeg.exe" -n -i "signals\sleeping_man_breathing.mp3" -map 0:a:0 -c:a aac -profile:a aac_low -b:a 96k -ac 1 -movflags +faststart "signals\sleeping_man_breathing.m4a"
+```
 
 Content is public and served with `Access-Control-Allow-Origin: *`. `site/_headers` makes browsers
 revalidate `/content/*`, so a stable URL never serves stale content for long. There is no directory

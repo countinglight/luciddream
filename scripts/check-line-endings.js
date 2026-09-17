@@ -5,7 +5,7 @@ const fs = require("fs");
 
 const files = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
   .split("\0")
-  .filter(Boolean);
+  .filter((file) => file && fs.existsSync(file));
 
 const filesWithCrLf = files.filter((file) => {
   const contents = fs.readFileSync(file);
