@@ -181,7 +181,16 @@ export class ExpoAudioPort implements AudioPort {
   async release(): Promise<void> {
     const pending = [...this.pendingFinishes.values()];
     if (pending.length > 0) {
-      await Promise.race([Promise.all(pending), delay(RELEASE_TIMEOUT_MS)]);
+      // The loser of the race has to be cancelled, not just ignored: an
+      // uncleared timeout keeps the event loop alive for RELEASE_TIMEOUT_MS
+      // after teardown. Jest surfaced it as "did not exit one second after the
+      // test run has completed" (issue #7).
+      const giveUp = cancellableDelay(RELEASE_TIMEOUT_MS);
+      try {
+        await Promise.race([Promise.all(pending), giveUp.promise]);
+      } finally {
+        giveUp.cancel();
+      }
     }
     this.dispose();
   }
@@ -232,6 +241,20 @@ export class ExpoAudioPort implements AudioPort {
   }
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** A delay whose timer can be cancelled, so losing a `Promise.race` does not
+ * leave the process (or a Jest run) waiting for a timeout nobody needs. */
+function cancellableDelay(ms: number): {
+  promise: Promise<void>;
+  cancel: () => void;
+} {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const promise = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, ms);
+  });
+  return {
+    promise,
+    cancel: () => {
+      if (timer !== undefined) clearTimeout(timer);
+    },
+  };
 }

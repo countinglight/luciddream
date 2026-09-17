@@ -19,7 +19,13 @@ import { resolveScriptText } from "@/storage/scripts";
 import { telemetry } from "@/telemetry";
 
 export type SessionStatus =
-  "idle" | "starting" | "running" | "completed" | "stopped" | "error";
+  | "idle"
+  | "starting"
+  | "running"
+  | "stopping"
+  | "completed"
+  | "stopped"
+  | "error";
 
 /** Refreshes the open-run marker through long silent waits, so an interrupted
  * night reports an end time within this margin. */
@@ -31,16 +37,14 @@ export type SelectedRunPhase = {
   script: LibraryScript | null;
 };
 
-/** The service distinguishes `preparing` from `stopping`, which the screens
- * do not need: both are moments the user sees as "the night is coming up" or
- * "the night is still here". Collapsing them here keeps one vocabulary in the
- * UI while the service keeps the precise one for its own tests and for v2. */
+/** `preparing` is the service's name for what the UI calls `starting`.
+ * `stopping` used to be collapsed onto `running`, which left a user who had
+ * just held Stop looking at an unchanged Sleeping screen with no sign it had
+ * registered (issue #7); the screens now show it. */
 function toScreenStatus(status: NightSessionSnapshot["status"]): SessionStatus {
   switch (status) {
     case "preparing":
       return "starting";
-    case "stopping":
-      return "running";
     default:
       return status;
   }

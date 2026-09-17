@@ -88,6 +88,10 @@ function SleepingView() {
       isLockDemo(window.location.search, process.env.EXPO_PUBLIC_DEMO),
   );
   const running = session.status === "running";
+  // Stop is not instant: cues in flight are allowed to finish. Saying so is
+  // the difference between "it ignored me" and "it heard me" for someone half
+  // asleep (issue #7).
+  const stopping = session.status === "stopping";
 
   useEffect(
     () => () => {
@@ -183,9 +187,11 @@ function SleepingView() {
           onPress={() => setShowActivity((shown) => !shown)}
         >
           <Text style={[styles.nightEyebrow, styles.centered]}>
-            {activeIndex === null
-              ? "PREPARING THE NIGHT"
-              : `${(session.activePhaseLabel ?? "").toUpperCase()} · PHASE ${activeIndex + 1} OF 3`}
+            {stopping
+              ? "ENDING THE NIGHT"
+              : activeIndex === null
+                ? "PREPARING THE NIGHT"
+                : `${(session.activePhaseLabel ?? "").toUpperCase()} · PHASE ${activeIndex + 1} OF 3`}
           </Text>
 
           <View style={styles.dialWrap}>
@@ -274,6 +280,7 @@ function SleepingView() {
           <View style={styles.spacer} />
 
           <HoldToStopButton
+            label={stopping ? "Ending the night…" : undefined}
             onConfirm={stopRun}
             color={NightColors.accentBright}
             trackColor={NightColors.ring}

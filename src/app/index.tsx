@@ -44,7 +44,10 @@ export default function TonightScreen() {
   const [testingId, setTestingId] = useState<string | null>(null);
   const [pickerPhase, setPickerPhase] = useState<RunPhaseKey | null>(null);
   const [greeting] = useState(() => greetingFor(new Date().getHours()));
-  const isBusy = session.status === "starting" || session.status === "running";
+  const isBusy =
+    session.status === "starting" ||
+    session.status === "running" ||
+    session.status === "stopping";
 
   const selectedScripts = Object.fromEntries(
     RUN_PHASES.map((phase) => [
