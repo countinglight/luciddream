@@ -8,7 +8,6 @@
   "use strict";
 
   var REPO = "countinglight/luciddream";
-  var TESTFLIGHT_URL = "https://testflight.apple.com/join/PLACEHOLDER";
 
   function megabytes(bytes) {
     return (bytes / 1048576).toFixed(1) + " MB";
@@ -27,10 +26,6 @@
   function each(selector, fn) {
     document.querySelectorAll(selector).forEach(fn);
   }
-
-  each("[data-testflight=download]", function (el) {
-    el.href = TESTFLIGHT_URL;
-  });
 
   fetch("https://api.github.com/repos/" + REPO + "/releases/latest", {
     headers: { Accept: "application/vnd.github+json" },
