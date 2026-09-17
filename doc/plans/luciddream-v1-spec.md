@@ -417,7 +417,16 @@ by downloading the APK from the release page and allowing install-from-unknown-s
 adequate for v1's small, known audience and avoids Play Console review latency entirely. This flow
 is verified manually against a real build before being treated as validated.
 
-**Build:** EAS cloud build, `preview` profile (`buildType: apk`, `distribution: internal`).
+**Build and publish:** `release-android.yml` on a version tag. EAS builds with the `preview` profile
+(`buildType: apk`, `distribution: internal`); the workflow downloads the APK and publishes it as an
+asset on a GitHub Release, with notes from `doc/release/v<version>.md` when that file exists.
+`npm run release` prepares the tag locally. One tag therefore releases both platforms, since §5.2's
+workflow runs on the same tag.
+
+**Signing:** tester APKs must come from EAS, whose release key is stable. A locally built APK
+(`npm run android:apk:release`) is signed with the per-machine debug keystore and cannot be upgraded
+across signatures; releases up to v0.6.0 were built that way, so the first workflow-built release
+costs testers one uninstall (evidence E-009, owner decision 2026-09-17).
 
 **Signing:** EAS generates and stores the upload keystore. Immediately after the first build we
 export it (`eas credentials`) and store it outside the repo — losing it means users must uninstall
@@ -448,7 +457,14 @@ app. §6's `release-ios.yml` automates the re-submit so this is not a manual cho
 
 1. Enroll in the **Apple Developer Program** ($99/yr) — required for both TestFlight and Ad Hoc.
 2. In App Store Connect, create the app record (bundle ID `com.vladsadovsky.luciddream`, already set
-   in `app.json`) and add external testers by email or generate a public TestFlight link.
+   in `app.json`) and add testers.
+
+   **Decided 2026-09-17: v1 uses an Internal group only.** Every v1 tester is a member of the
+   organisation, which avoids Beta App Review entirely and makes builds available minutes after
+   processing. Each internal tester needs an App Store Connect user account (up to 100). External
+   testing — a public link, Beta App Review and tester onboarding — is v2 (v2 plan F9.3). The
+   10,000-tester ceiling in the table above therefore does not apply to v1.
+
 3. Generate an **App Store Connect API key** (Users and Access → Keys) for EAS to submit
    non-interactively; store its `.p8`, key ID and issuer ID as CI secrets (§6).
 
@@ -473,7 +489,7 @@ the release workflow fails if the tag and `package.json` disagree — enforced o
 platforms.
 
 Full treatment, including the maintainer rules this imposes:
-[`luciddream-ios-support-plan.md`](./luciddream-ios-support-plan.md) §3.
+[`doc/archive/luciddream-ios-support-plan.md`](../archive/luciddream-ios-support-plan.md) §3.
 
 **Build budget:** the EAS free plan gives 15 builds **per platform** per billing cycle. Comfortable
 because **releases are built on version tags only** — never on every push — for both platforms.

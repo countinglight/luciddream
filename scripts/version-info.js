@@ -10,7 +10,7 @@
  *
  * Shares scripts/build-number.js with app.config.js, so what this prints is by
  * construction what Expo, Gradle and EAS will use — not a reimplementation
- * that can drift. See doc/plans/luciddream-ios-support-plan.md §3.7.
+ * that can drift. See BUILD.md "Versioning".
  */
 
 const { COUNTER_ENV, resolveVersionInfo } = require("./build-number");

@@ -48,7 +48,7 @@ operate the services behind it. For what the app does and how to use it, see [RE
 | Website and published content | `luciddream.countinglight.com`                                                 | `site/` (static, no build)   | Cloudflare Workers Build `luciddream-site`, on push to `deploy` |
 | Prototype web app             | `luciddream-prototype.countinglight.com`                                       | Expo static export           | `npm run deploy:prototype` only                                 |
 | Diagnostics ingest            | `luciddream-telemetry.countinglight.com`                                       | `telemetry/worker/`          | `npm run deploy:telemetry` only                                 |
-| Android app                   | APK on [GitHub Releases](https://github.com/countinglight/luciddream/releases) | EAS `preview` profile        | Attached to a GitHub Release                                    |
+| Android app                   | APK on [GitHub Releases](https://github.com/countinglight/luciddream/releases) | EAS `preview` profile        | `release-android.yml` on a version tag                          |
 | iOS app                       | TestFlight                                                                     | EAS `ios-testflight` profile | `release-ios.yml` on a version tag, and monthly                 |
 
 Every Wrangler command in this guide uses the pinned version `npx wrangler@4.129.0`. Run
@@ -134,8 +134,21 @@ Runs, in order: `format:check`, `line-endings:check`, `lint`, `typecheck`, and t
 Run it before pushing. The individual steps are also scripts: `npm run lint`, `npm run typecheck`,
 `npm test`, and `npm run test:ci` for coverage. `npm run format` rewrites formatting.
 
+`lint` runs with `--no-cache`: Expo's lint cache is keyed on each file's own modification time, so a
+cross-file rule such as the `src/engine` import boundary can otherwise keep reporting a dependency's
+old state.
+
+After a fresh `npm ci`, `typecheck` can fail with
+`Cannot find module or type declarations for side-effect import of '@/global.css'`. `expo-env.d.ts` is
+generated and gitignored; `npm start` or `expo lint` writes it, or create it directly:
+
+```bash
+printf '/// <reference types="expo/types" />
+' > expo-env.d.ts
+```
+
 CI (`.github/workflows/ci.yml`) runs lint, typecheck and tests with coverage on pushes and pull
-requests to `master`.
+requests to `master`, and generates that file itself.
 
 ### Versioning
 
@@ -150,10 +163,12 @@ npm run version:info
 
 prints the version and build number the working tree will produce.
 
-To release a version: update `version` in `package.json`, commit, and tag the commit `v<version>`
-(for example `v0.6.0`). Release workflows refuse to build when the tag and `package.json` disagree.
-The full rules are in [doc/plans/luciddream-ios-support-plan.md](doc/plans/luciddream-ios-support-plan.md)
-§3.
+To release a version, use `npm run release -- <major|minor|patch|x.y.z>`, which sets the version,
+commits and tags `v<version>` (for example `v0.6.0`), then prints the push command
+([Release to testers](#release-to-testers)). Release workflows refuse to build when the tag and
+`package.json` disagree.
+The rules are enforced by `scripts/build-number.js`; the reasoning behind them is in
+[doc/archive/luciddream-ios-support-plan.md](doc/archive/luciddream-ios-support-plan.md) §3.
 
 ### Repository layout
 
@@ -478,13 +493,29 @@ Testers install an APK attached to a
 `preview` profile (`buildType: apk`), so every release is signed with the same EAS-managed key and
 installs over the previous one.
 
-1. Update and tag the version ([Versioning](#versioning)).
-2. Run the **EAS Build (Android)** workflow (`eas-build-android.yml`, manual dispatch) with profile
-   `preview`, or `npx eas-cli build --platform android --profile preview` locally.
-3. Download the APK from the build page on expo.dev and attach it to a GitHub Release for the tag.
+One tag releases both platforms:
+
+```bash
+npm run release -- patch
+```
+
+`npm run release` takes `major`, `minor`, `patch` or an explicit `x.y.z`, and `--dry-run` to see the
+result first. It refuses a dirty tree, the `deploy` branch and an existing tag, then sets the version
+in `package.json`, commits, tags `v<version>` and prints the push command. It never pushes.
+
+Pushing that tag starts `release-android.yml` — EAS builds the APK, the workflow downloads it and
+publishes a GitHub Release with the APK attached — and `release-ios.yml` for TestFlight. Write
+`doc/release/v<version>.md` before tagging to control the release notes and title; without it, notes
+are generated from the commits. `eas-build-android.yml` remains for one-off builds that are not
+releases.
 
 Export the upload keystore once with `npx eas-cli credentials` and keep it outside the repository:
 losing it forces every tester to uninstall to update.
+
+**Never publish a locally built APK.** `npm run android:apk:release` signs with the debug keystore,
+which is per-machine, so testers cannot upgrade across the two signatures. Releases up to and
+including v0.6.0 were built that way (evidence E-009), so the first release from this workflow
+requires testers to uninstall once; after that, upgrades keep their data.
 
 The workflows need the `EXPO_TOKEN` repository secret. Play Store submission (`eas-submit-android.yml`,
 `production` profile, needs `GOOGLE_SERVICE_ACCOUNT_KEY`) exists but is not a v1 distribution channel.

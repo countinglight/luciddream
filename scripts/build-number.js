@@ -2,7 +2,7 @@
 
 /**
  * The single definition of LucidDream's build number — iOS `CFBundleVersion`
- * and Android `versionCode`. See doc/plans/luciddream-ios-support-plan.md §3.
+ * and Android `versionCode`. See BUILD.md "Versioning".
  *
  * Deliberately a pure function of files already on disk plus one environment
  * variable, so that:

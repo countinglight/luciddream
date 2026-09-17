@@ -6,7 +6,7 @@ name: EAS Build (iOS)
 # (Actions → EAS Build (iOS) → Run workflow).
 #
 # Two distinct uses, matching the two flows in
-# doc/plans/luciddream-ios-support-plan.md §2:
+# doc/archive/luciddream-ios-support-plan.md §2:
 #  - profile `development` → a dev client for YOUR iPhone. Requires the device
 #    to be registered first (`eas device:create`, plan step A9), because
 #    internal distribution on iOS is Ad Hoc and compiles the UDID list in.

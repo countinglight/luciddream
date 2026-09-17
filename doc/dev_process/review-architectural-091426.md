@@ -23,7 +23,7 @@ touch architecture (§3.7).
 [v1 redesign note](../plans/luciddream-v1-redesign.md), [v2 plan](../plans/luciddream-v2-plan.md)
 (§1.4, §4.2, §5.4, D14, D19 and the related F3.1, F3.5, F4.3, F6.3),
 [v3 plan](../plans/luciddream-v3-plan.md) §2.5-§2.12,
-[iOS support plan](../plans/luciddream-ios-support-plan.md) Part J and D4,
+[iOS support plan](../archive/luciddream-ios-support-plan.md) Part J and D4,
 [telemetry session record](telemetry_session_091326.md), [v1 evidence](../evidence/v1-evidence.md).
 
 **Conventions:** findings are numbered AR-01 to AR-25. Severity is judged against v1's own claims in

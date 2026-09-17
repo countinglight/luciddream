@@ -10,7 +10,7 @@ collected (§4), how the service works (§5), how to operate it (§7), and how t
 results (§8).
 
 Related: [luciddream-v1-spec.md](luciddream-v1-spec.md) §4.8,
-[luciddream-ios-support-plan.md](luciddream-ios-support-plan.md),
+[luciddream-ios-support-plan.md](../archive/luciddream-ios-support-plan.md),
 [doc/evidence/](../evidence/README.md). Process record with the full design detail, the options and
 questions behind it, setup, smoke tests and operations:
 [telemetry_session_091326.md](../dev_process/telemetry_session_091326.md).
