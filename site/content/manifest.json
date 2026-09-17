@@ -15,18 +15,54 @@
       "url": "https://luciddream.countinglight.com/content/scripts/pre_sleep_clusters.yaml"
     },
     {
-      "name": "post_sleep_clusters",
-      "url": "https://luciddream.countinglight.com/content/scripts/post_sleep_clusters.yaml"
+      "name": "rem_sleep_clusters",
+      "url": "https://luciddream.countinglight.com/content/scripts/rem_sleep_clusters.yaml"
     }
   ],
   "signals": [
     {
-      "name": "galchirp",
-      "url": "https://luciddream.countinglight.com/content/signals/galya_chirp.mp3"
+      "name": "sleepbreath",
+      "url": "https://luciddream.countinglight.com/content/signals/sleeping_man_breathing.m4a"
     },
     {
-      "name": "sleepbreath",
-      "url": "https://luciddream.countinglight.com/content/signals/sleeping_man_breathing.mp3"
+      "name": "A5.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/A5.m4a"
+    },
+    {
+      "name": "Breathing hard.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/Breathing%20hard.m4a"
+    },
+    {
+      "name": "CelestaE.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/CelestaE.m4a"
+    },
+    {
+      "name": "GlokenA7.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/GlokenA7.m4a"
+    },
+    {
+      "name": "JazzVibeA5.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/JazzVibeA5.m4a"
+    },
+    {
+      "name": "KalimbaA5.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/KalimbaA5.m4a"
+    },
+    {
+      "name": "MarimbaA5.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/MarimbaA5.m4a"
+    },
+    {
+      "name": "MeloDrawA7.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/MeloDrawA7.m4a"
+    },
+    {
+      "name": "Scratch.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/Scratch.m4a"
+    },
+    {
+      "name": "SoftVibeA5.m4a",
+      "url": "https://luciddream.countinglight.com/content/signals/SoftVibeA5.m4a"
     }
   ]
 }

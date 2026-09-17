@@ -10,10 +10,11 @@ body:
   - log: "run started"
   - wait: 1m
   - with: { gain: 0.2 }
-  - repeat: infinite
-    until: { elapsed: { gte: 1h } }
     body:
-      - repeat: 5
+      - repeat: infinite
+        until: { elapsed: { gte: 1h } }
         body:
-          - play: { signal:chime, wait: true }
-          - wait: 30s
+          - repeat: 5
+            body:
+              - play: { signal: chime, wait: true }
+              - wait: 30s

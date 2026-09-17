@@ -10,10 +10,11 @@ body:
   - log: "REM run started"
   - wait: 5m
   - with: { gain: 0.2 }
-  - repeat: infinite
-    until: { elapsed: { gte: 2h } }
     body:
-      - repeat: 6
+      - repeat: infinite
+        until: { elapsed: { gte: 2h } }
         body:
-          - play: { signal:chime, wait: true }
-          - wait: 40s
+          - repeat: 6
+            body:
+              - play: { signal: chime, wait: true }
+              - wait: 40s
