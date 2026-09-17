@@ -76,9 +76,11 @@
             </a>
           </div>
           <p class="btn-note">
-            <span data-release="version">v0.5.0</span> ·
-            <span data-release="size">59.8 MB</span> · published
-            <span data-release="date">7 September 2026</span> ·
+            <span data-release-meta hidden
+              ><span data-release="version"></span> ·
+              <span data-release="size"></span> · published
+              <span data-release="date"></span> ·
+            </span>
             <a href="https://github.com/countinglight/luciddream/releases"
               >all releases</a
             >
@@ -140,8 +142,8 @@
             </li>
             <li>
               <strong>Over a cable, if you prefer.</strong> With USB debugging
-              on, the equivalent is
-              <code>adb install luciddream-v0.5.0-release.apk</code>.
+              on, the equivalent is <code>adb install</code> followed by the
+              downloaded APK's file name.
             </li>
           </ul>
         </div>
@@ -301,9 +303,9 @@
         <p class="site-footer__base">
           <span>Owl painting by Galina Landes.</span>
           <span
-            >LucidDream Beta 1 ·
-            <span data-release="version">v0.5.0</span></span
-          >
+            >LucidDream Beta 1<span data-release-meta hidden>
+              · <span data-release="version"></span></span
+          ></span>
         </p>
       </div>
     </footer>

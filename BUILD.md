@@ -220,9 +220,9 @@ npm run preview:site
 
 Two things to know when reviewing the website locally:
 
-- The download button and version badges call GitHub's public releases API. Offline or rate-limited,
-  the page falls back to the values in `site/assets/js/release.js`, which must be kept roughly
-  current.
+- The download button and version badges call GitHub's public releases API. No version, size or
+  date is written into the pages: offline or rate-limited, they are simply omitted, and download
+  links point to the latest release page. No site edit is needed when a release is published.
 - The `/scripts/` page is rendered from `/content/manifest.json`. A published file missing from the
   manifest does not appear there.
 

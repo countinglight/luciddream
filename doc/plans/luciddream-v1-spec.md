@@ -423,8 +423,8 @@ is verified manually against a real build before being treated as validated.
 export it (`eas credentials`) and store it outside the repo — losing it means users must uninstall
 and reinstall to take an update.
 
-**Play Store:** out of scope for v1. The existing `eas-submit-android.yml` workflow is kept, unused,
-as the on-ramp.
+**Store publishing:** neither Google Play nor the App Store is a v1 channel; both belong to v2 (v2
+plan F9.1, D36). The existing `eas-submit-android.yml` workflow is kept, unused, as the on-ramp.
 
 ### 5.2 iOS — TestFlight
 

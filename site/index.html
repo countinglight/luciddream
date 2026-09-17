@@ -52,7 +52,9 @@
         <div class="container hero__grid">
           <div>
             <p class="badge">
-              Beta 1 · <span data-release="version">v0.5.0</span>
+              Beta 1<span data-release-meta hidden>
+                · <span data-release="version"></span
+              ></span>
             </p>
             <h1>Sounds you chose, at the times you chose, all night.</h1>
             <p class="hero__lede">
@@ -83,11 +85,13 @@
               </a>
             </div>
             <p class="btn-note">
-              Android <span data-release="version">v0.5.0</span>,
-              <span data-release="size">59.8 MB</span> —
-              <a href="/install/">installation instructions</a>. iOS builds are
-              distributed through TestFlight. The browser version runs the same
-              app, with the limits described <a href="#limits">below</a>.
+              <a href="/install/">Installation instructions</a
+              ><span data-release-meta hidden>
+                for Android <span data-release="version"></span>,
+                <span data-release="size"></span></span
+              >. iOS builds are distributed through TestFlight. The browser
+              version runs the same app, with the limits described
+              <a href="#limits">below</a>.
             </p>
           </div>
           <figure class="frame">
@@ -393,10 +397,10 @@ body:
                 </a>
                 <a class="btn btn--ghost" href="/install/">Install guide</a>
               </div>
-              <p class="meta">
-                <span data-release="version">v0.5.0</span> ·
-                <span data-release="size">59.8 MB</span> · published
-                <span data-release="date">7 September 2026</span>
+              <p class="meta" data-release-meta hidden>
+                <span data-release="version"></span> ·
+                <span data-release="size"></span> · published
+                <span data-release="date"></span>
               </p>
             </article>
             <article class="channel">
@@ -429,9 +433,8 @@ body:
           <h2>What this is, and what it is not</h2>
           <ul class="notes">
             <li>
-              <strong>This is a beta.</strong> Version 0.5.0 is an early build,
-              handed out to a small group. Expect rough edges, and expect things
-              to change.
+              <strong>This is a beta.</strong> It is an early build, handed out
+              to a small group. Expect rough edges, and expect things to change.
             </li>
             <li>
               <strong>Nothing here promises a lucid dream.</strong> Whether
@@ -540,9 +543,9 @@ body:
         <p class="site-footer__base">
           <span>Owl painting by Galina Landes.</span>
           <span
-            >LucidDream Beta 1 ·
-            <span data-release="version">v0.5.0</span></span
-          >
+            >LucidDream Beta 1<span data-release-meta hidden>
+              · <span data-release="version"></span></span
+          ></span>
         </p>
       </div>
     </footer>
