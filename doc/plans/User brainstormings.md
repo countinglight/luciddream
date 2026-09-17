@@ -224,3 +224,12 @@ Create comprehensive chapter with details on both funcitonality, user scenario a
 Ideally, but pragmatically, integrate usage of modern AI capabilities (analysis, generative, etc) into scenarios and feature list, invoking AI APIs (OpenAI or others). I want this for marketing reasons as a second priority, real intelligent user features with self improvement as a top priority. Third priority is that I want a test bed app for myself to learn AI platforms and the best way to learn is to implement. Yet I do NOT want to have clearly artificially bolted on AI features for this sake, they MUST bring real value. I Want you to spend quality time on this last paragraph and weave reasonable thoughts into the document, not special chapter, but organic.
 
 go.
+
+09/17/2026 Brainstorming scope of the v2 with external expert
+
+Feedback:
+
+- scope of use cases parallels multiple apps in a separate use case: improve going to sleep, make it faster and smoother, while using customized auditory stimuli. Suggestion: consider making it a special case and expand the scope of the tool as manipulating/study/experiment with sleep stages in general, toolkit and platform.
+- direct bodily feedback would be great, like in a proper science experiment, but is unrealistic in an accurate form. Doing wearables real time in v3 is a good idea, to demonstrate an approach and get _some_ benefit from the closed loop. Especially sleep stage detection, see previous point (what we call now training phase could be expanded in cocept to handle sleep inducing)
+- Suggested study existing science of sleep methods of using frequency based auditory sequences, i.e. for a given person not melody or sequence of finished sounds may be important, but group of frequences, "resonating" in some way (term is not correct pedantically, used as a literary analogy) to make the most impact on a person. Suggested expanding richness of our generated audio sequeces to go beyond sequence of sounds with some effects to richer descriptions of generated audio forms.
+- Affirmed our observation that waking up or worsening sleep is unacceptable, so we must work harder on methods of interacting with the phone state (gestures, like turning the body, perhaps pushing phone away with variable strength, perhaps some specific personal sounds, that can be learnt over time)
